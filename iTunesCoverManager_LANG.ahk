@@ -1,0 +1,11 @@
+global lAppName := "iTunesCoverManager"
+global lAppTagline := "iTunes Cover Manager"
+global lAppVersion := "v" . strCurrentVersion
+global lSBEmpty := "Empty"
+global lUpdateButtonRemind := "Remind me"
+global lUpdateCheck4Update := "Check for &update"
+global lDonate := "Support Freeware!"
+global lUpdatePrompt := "Update ~1~ from v~2~ to v~3~?"
+global lUpdateTitle := "Update ~1~?"
+global lUpdateYouHaveLatest := "You have the latest version: ~1~.`n`nVisit the ~2~ web page anyway?"
+global lGuiLvHeader := "Col1|Col2|Col3"
