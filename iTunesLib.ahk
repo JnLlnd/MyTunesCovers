@@ -64,7 +64,7 @@ InitArtistsAlbumsIndex()
 		; ###_D(strArtistAlbum . " : " . objArtistsAlbumsIndex[strArtistAlbum])
 		; ###_D(objITunesTrack.Index . " " . objAlbumsIndex[strAlbum])
 		; ###_D(objITunesTrack.Index . " " . objTracksAndAlbumID[objITunesTrack.Index])
-		if (A_Index = 200)
+		if (A_Index = 2000)
 			break
 	}
 	/*
@@ -96,6 +96,7 @@ InitArtistsAlbumsIndex()
 }
 ;-----------------------------------------------------------
 
+
 ;-----------------------------------------------------------
 InitCoverScan(strArtist := "", strAlbum := "")
 {
@@ -109,7 +110,7 @@ InitCoverScan(strArtist := "", strAlbum := "")
 		return 0
 	intTracksArrayIndex := 0
 
-	return 1
+	return arrTracks.MaxIndex()
 }
 ;-----------------------------------------------------------
 
@@ -123,19 +124,18 @@ NextCover()
 	objThisCover := New Cover()
 	; ###_D(arrTracks[intTracksArrayIndex])
 	objTrack := objITunesTracks.Item(arrTracks[intTracksArrayIndex])
-	strCoverFile := GetImageFile(objTrack, objThisCover.GUID)
-	objThisCover.SetCoverFile(strCoverFile)
+	strCoverFile := GetTempImageFile(objTrack, objThisCover.GUID)
+	objThisCover.SetCoverTempFile(strCoverFile)
 
-	objThisCover.SetCoverProperties(objTrack.Name, objTrack.Index, objTrack.TrackID, objTrack.TrackDatabaseID)
+	objThisCover.SetCoverProperties(objTrack.Name, objTrack.Artist, objTrack.Album, objTrack.Index, objTrack.TrackID, objTrack.TrackDatabaseID)
 
-	; objThisCover.SetCoverAlbum(objITunesTracks.Item(arrTracks[intTracksArrayIndex]).Album)
 	return objThisCover
 }
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
-GetImageFile(objTrack, strNameNoext)
+GetTempImageFile(objTrack, strNameNoext)
 {
 	global strCoversCacheFolder
 	
@@ -169,3 +169,17 @@ GetImageFile(objTrack, strNameNoext)
 }
 ;-----------------------------------------------------------
 
+
+;-----------------------------------------------------------
+SetImageFile(intIndex, strFile)
+{
+	; ###_D("SetImageFile index: " . intIndex . "`nCount" . objITunesTracks.Count)
+	objTrack := objITunesTracks.Item(intIndex)
+	###_D("Name: " . objTrack.Name)
+	
+	objArtwork := objTrack.Artwork.Item(1)
+	strResult := objArtwork.SetArtworkFromFile(strFile)   
+
+	return %strResult%
+}
+;-----------------------------------------------------------

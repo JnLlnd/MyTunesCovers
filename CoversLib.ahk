@@ -24,24 +24,20 @@ class Cover
 		this.FileNamePath := strFilePathName
 	}
 
-	SetCoverFile(strFilePathName)
+	SetCoverTempFile(strFilePathName)
 	{
-		this.CoverFilePathName := strFilePathName
+		this.CoverTempFilePathName := strFilePathName
 	}
 
-	SetCoverProperties(strName, strIndex, strTrackID, strTrackDatabaseID)
+	SetCoverProperties(strName, strArtist, strAlbum, intIndex, intTrackID, intTrackDatabaseID)
 	{
 		this.Name := strName
-		this.Index := strIndex
-		this.TrackID := strTrackID
-		this.TrackDatabaseID := strTrackDatabaseID
-	}
-
-	SetCoverPropertiesZZZ(strName, strIndex, strAlbum)
-	{
+		this.Artist := strArtist
 		this.Album := strAlbum
+		this.Index := intIndex
+		this.TrackID := intTrackID
+		this.TrackDatabaseID := intTrackDatabaseID
 	}
-
 /*
 Name ; Returns the name of the object. 
 Index ; Returns the index of the object in internal application order. 
@@ -63,6 +59,12 @@ TrackNumber ; Returns the index of the track on the source album.
 Year ; Returns the year the track was recorded/released. 
 Artwork ; Returns a collection containing the artwork for the track. 
 */
+
+	SaveCover(strFilePathName)
+	{
+		strResult := SetImageFile(this.Index, strFilePathName)
+		return strResult
+	}
 
 }
 ;-----------------------------------------------------------

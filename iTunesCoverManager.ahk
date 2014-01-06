@@ -34,7 +34,7 @@
 ; ListLines, Off
 Thread, interrupt, 0 ; essai pour GDIP
 
-strCurrentVersion := "0.1 alpha" ; always "." between sub-versions, eg "0.1.2"
+strCurrentVersion := "0.2 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\iTunesCoverManager_LANG.ahk
 #Include %A_ScriptDir%\CoversLib.ahk
@@ -58,33 +58,25 @@ pToken := InitGDIP()
 Gosub, LoadIniFile
 Gosub, Check4Update
 Gosub, BuildGui
-
 InitCoversSource()
 InitArtistsAlbumsIndex()
+Gosub, PopulateDropdownLists
+; Gosub, DisplayArtistAlbumCovers
 
-if InitCoverScan("Albin de la Simone", "")
-	loop, 40
+/*
+if InitCoverScan("", "Les duos improbables")
+	loop, 20
 	{
 		objCover%A_Index% := NextCover()
+		###_D(A_Index . " " . objCover%A_Index%.Name)
 		if !(objCover%A_Index%)
 			break
-		strTrackTitle := objCover%A_Index%.Name
-		if !StrLen(objCover%A_Index%.CoverFilePathName)
-			strCoverFilePathName := A_ScriptDir  . "\no_cover-200x200.png" ; if absent, url download from repo ? ###
-		else
-			strCoverFilePathName := objCover%A_Index%.CoverFilePathName
-		TrayTip, %strTrackTitle%, %strCoverFilePathName%
-		pBitmapPreview := Gdip_CreateBitmap(Pos%A_Index%w, Pos%A_Index%h)
-		; ###_D(pBitmapPreview)
-		GPreview := Gdip_GraphicsFromImage(pBitmapPreview)
-		; ###_D(GPreview)
-		Gdip_SetInterpolationMode(GPreview, 7)
-		LoadPreview(Preview%A_Index%, strCoverFilePathName)
-		
-		GuiControl, , Label%A_Index%, % objCover%A_Index%.Name
+		strResult := objCover%A_Index%.SaveCover(A_ScriptDir  . "\no_cover-200x200.png")
+		###_D("objCover.SaveCover result: " . strResult)
 	}
 else
 	###_D("Oops ###")
+*/
 
 OnExit, CleanUpBeforeQuit
 return
@@ -120,45 +112,23 @@ return
 
 
 ;-----------------------------------------------------------
-GuiClose:
-CleanUpBeforeQuit:
-;-----------------------------------------------------------
-Gdip_Shutdown(pToken)
-ptrObjITunesunesApp := Object(objITunesunesApp)
-ObjRelease(ptrObjITunesunesApp)
-
-; ### delete covers cache
-ExitApp
-return
-;-----------------------------------------------------------
-
-
-
-;-----------------------------------------------------------
 BuildGui:
 ;-----------------------------------------------------------
 Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
 Gui, Font, s12 w700, Verdana
 Gui, Add, Text, x10, % L(lAppName)
-Gui, Font, s10 w500, Verdana
 
-intX := 10
-intY := 30
-loop, 40
-{
-	if (intX > 1200)
-	{
-		intX := 10
-		intY := intY + 160
-	}
-	Gui, Add, Picture, x%intX% y%intY% w150 h150 0xE vPreview%A_Index% gPreviewClicked ; 0xE ?
-	GuiControlGet, Pos%A_Index%, Pos, Preview%A_Index%
-	GuiControlGet, hwnd%A_Index%, hwnd, Preview%A_Index%
-	Gui, Add, Text, x%intX% y%intY% w150 h150 vLabel%A_Index% gLabelClicked hidden border
-	; ###_D(Pos%A_Index%x . " " . Pos%A_Index%y . " " . hwnd%A_Index%)
-	intX := intX + 160
-}
+Gui, Font, s10 w500, Verdana
+Gui, Add, Text, x+50 yp, %lArtists%
+Gui, Add, DropDownList, x+50 yp vlstArtists gArtistsDropDownChanged Sort
+Gui, Add, Text, x+20 yp, %lAlbums%
+Gui, Add, DropDownList, x+50 yp vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
+
+gosub, PreparePicPreviews
+
+Gui, Add, Button, x150 y+10 vbtnPrevious gButtonPreviousClicked, <-
+Gui, Add, Button, x+50 yp vbtnNext gButtonNextClicked, ->
 
 Gui, Add, StatusBar
 SB_SetParts(200)
@@ -175,9 +145,181 @@ return
 
 
 ;-----------------------------------------------------------
-LoadPreview(ByRef Variable, File)
+PreparePicPreviews:
+;-----------------------------------------------------------
+SysGet, intMonWork, MonitorWorkArea
+intPicWidth := 150
+intPicHeight := 150
+intNameLabelHeight := 30
+intColWidth := intPicWidth + 10
+intRowHeight := intPicHeight + intNameLabelHeight + 10
+
+intClipboardWidth := 160
+intMaxNbCol := Floor((intMonWorkRight - intClipboardWidth) / (intColWidth + 10))
+intHeaderHeight := 60
+intFooterHeight := 60
+intMaxNbRow := Floor((intMonWorkBottom - intHeaderHeight - intFooterHeight) / (intRowHeight + 10))
+
+intX := intClipboardWidth + 5
+intY := intHeaderHeight + 5
+intCol := 1
+intRow := 1
+intXPic := intX + 5
+intYPic := intY + 5
+intYNameLabel := intY + intPicHeight + 5
+loop
 {
-	global pBitmapPreview, GPreview
+	Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicPreview%A_Index% gPicPreviewClicked ; 0xE ?
+	GuiControlGet, Pos%A_Index%, Pos, picPreview%A_Index% ; required?
+	GuiControlGet, hwnd%A_Index%, hwnd, picPreview%A_Index% ; required?
+	Gui, Font, s8 w500, Arial
+	Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
+	Gui, Font, s8 w700, Arial
+	Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
+	Gui, Font
+	
+	if (intCol = intMaxNbCol)
+	{
+		if (intRow = intMaxNbRow)
+		{
+			intNbPicPreviewsOnScreen := A_Index
+			break
+		}
+		intRow := intRow + 1
+		intY := intY + intRowHeight
+		intYPic := intY + 5
+		intYNameLabel := intY + intPicHeight + 5
+		
+		intCol := 0
+		intX := 5 - intColWidth + intClipboardWidth
+	}
+	intCol := intCol + 1
+	intX := intX + intColWidth
+	intXPic := intX + 5
+	if (A_Index > 1000)
+	{
+		###_D("Infinite Loop Error :-)")
+		ExitApp
+	}
+}
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+GuiClose:
+CleanUpBeforeQuit:
+;-----------------------------------------------------------
+Gdip_Shutdown(pToken)
+ptrObjITunesunesApp := Object(objITunesunesApp)
+ObjRelease(ptrObjITunesunesApp)
+
+; ### delete covers cache
+ExitApp
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+PopulateDropdownLists:
+;-----------------------------------------------------------
+strArtistsDropDownList := "|"
+for strArtist, strTracks in objArtistsIndex
+	strArtistsDropDownList := strArtistsDropDownList . "|" . strArtist
+GuiControl, , lstArtists, %strArtistsDropDownList%
+
+strAlbumsDropDownList := "|"
+for strAlbum, strTracks in objAlbumsIndex
+	strAlbumsDropDownList := strAlbumsDropDownList . "|" . strAlbum
+GuiControl, , lstAlbums, %strAlbumsDropDownList%
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+ArtistsDropDownChanged:
+;-----------------------------------------------------------
+GuiControl, Choose, lstAlbums, 0
+Gui, Submit, NoHide
+; ###_D(lstArtists . " / " . lstAlbums)
+Gosub, DisplayArtistAlbumCovers
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+AlbumsDropDownChanged:
+;-----------------------------------------------------------
+GuiControl, Choose, lstArtists, 0
+Gui, Submit, NoHide
+; ###_D(lstArtists . " / " . lstAlbums)
+Gosub, DisplayArtistAlbumCovers
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+ButtonPreviousClicked:
+;-----------------------------------------------------------
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+ButtonNextClicked:
+;-----------------------------------------------------------
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+DisplayArtistAlbumCovers:
+;-----------------------------------------------------------
+intNbCovers := InitCoverScan(lstArtists, lstAlbums)
+if (intNbCovers)
+	loop, %intNbPicPreviewsOnScreen%
+	{
+		objCover%A_Index% := NextCover()
+		if (objCover%A_Index%)
+			strTrackTitle := objCover%A_Index%.Name
+		else
+			strTrackTitle := ""
+		if !StrLen(objCover%A_Index%.CoverTempFilePathName)
+			strCoverTempFilePathName := A_ScriptDir  . "\no_cover-200x200.png" ; if absent, url download from repo ? ###
+		else
+			strCoverTempFilePathName := objCover%A_Index%.CoverTempFilePathName
+		TrayTip, %strTrackTitle%, %strCoverTempFilePathName%
+		pBitmapPicPreview := Gdip_CreateBitmap(Pos%A_Index%w, Pos%A_Index%h)
+		; ###_D(pBitmapPicPreview)
+		GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
+		; ###_D(GPicPreview)
+		Gdip_SetInterpolationMode(GPicPreview, 7)
+		LoadPicPreview(picPreview%A_Index%, strCoverTempFilePathName)
+		
+		GuiControl, , lblNameLabel%A_Index%, % objCover%A_Index%.Name
+		GuiControl, , lblCoverLabel%A_Index%, % "Artist: " . objCover%A_Index%.Artist . "`n"
+			. "Album: " . objCover%A_Index%.Album . "`n"
+			. "Index: " . objCover%A_Index%.Index . "`n"
+			. "TrackID: " . objCover%A_Index%.TrackID . "`n"
+			. "TrackDatabaseID: " . objCover%A_Index%.TrackDatabaseID
+	}
+else
+	###_D("Oops ###")
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+LoadPicPreview(ByRef Variable, File)
+{
+	global pBitmapPicPreview, GPicPreview
 
 	GuiControlGet, Pos, Pos, Variable
 	GuiControlGet, hwnd, hwnd, Variable
@@ -191,10 +333,10 @@ LoadPreview(ByRef Variable, File)
 	else
 		NewWidth := Posw, NewHeight := Round(Height*(NewWidth/Width))
 	
-	Gdip_GraphicsClear(GPreview)
-	Gdip_DrawImage(GPreview, pBitmap, (Posw-NewWidth)//2, (Posh-NewHeight)//2, NewWidth, NewHeight, 0, 0, Width, Height)
+	Gdip_GraphicsClear(GPicPreview)
+	Gdip_DrawImage(GPicPreview, pBitmap, (Posw-NewWidth)//2, (Posh-NewHeight)//2, NewWidth, NewHeight, 0, 0, Width, Height)
 	
-	hBitmap := Gdip_CreateHBITMAPFromBitmap(pBitmapPreview)
+	hBitmap := Gdip_CreateHBITMAPFromBitmap(pBitmapPicPreview)
 	SetImage(hwnd, hBitmap)
 
 	DeleteObject(hBitmap)
@@ -205,21 +347,34 @@ LoadPreview(ByRef Variable, File)
 
 
 ;-----------------------------------------------------------
-PreviewClicked:
+PicPreviewClicked:
 ;-----------------------------------------------------------
-StringReplace, strLabel, A_GuiControl, Preview, Label
+StringReplace, strThisLabel, A_GuiControl, picPreview, lblCoverLabel
+; ###_D("PicPreviewClicked, strThisLabel: " . strThisLabel)
 GuiControl, Hide, %A_GuiControl%
-GuiControl, Show, %strLabel%
+GuiControl, Show, %strThisLabel%
+
 return
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
-LabelClicked:
+CoverLabelClicked:
 ;-----------------------------------------------------------
-StringReplace, strPreview, A_GuiControl, Label, Preview
+StringReplace, strThisPicPreview, A_GuiControl, lblCoverLabel, picPreview
+; ###_D("CoverLabelClicked, strThisPicPreview: " . strThisPicPreview)
 GuiControl, Hide, %A_GuiControl%
-GuiControl, Show, %strPreview%
+GuiControl, Show, %strThisPicPreview%
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+NameLabelClicked:
+;-----------------------------------------------------------
+###_D("NameLabelClicked")
+
 return
 ;-----------------------------------------------------------
 
