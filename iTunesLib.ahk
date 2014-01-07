@@ -2,20 +2,29 @@ global objITunesTracks := Object()
 global objArtistsIndex := Object()
 global objAlbumsIndex := Object()
 global objArtistsAlbumsIndex := Object()
+global objAlbumsOfArtistsIndex := Object()
 global arrTracks
 global intTracksArrayIndex
 
 ;-----------------------------------------------------------
 InitCoversSource()
 {
-	; Creates a COM object for the iTunes application (iTunes will be launched if not running)
 	objITunesunesApp := ComObjCreate("iTunes.Application")
-	; iTunes library (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - source #1 is the main library
-	; objLibrary := objITunesunesApp.Sources.ItemByName("Bibliothèque")
+	; Creates a COM object for the iTunes application (iTunes will be launched if not running)
 	objITunesLibrary := objITunesunesApp.Sources.Item(1)
-	; Retrieve by its name the strPlaylist from the Playlists collection
-	objITunesPlaylist := objITunesLibrary.Playlists.ItemByName("! iTunesCovers") ; objPlaylist := objLibrary.Playlists.Item(2)
+	; iTunes library (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - source #1 is the main library
+	objITunesPlaylist := objITunesLibrary.Playlists.Item(1)
+	; iTunes main playlist (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - playlist #1 is the library
 	objITunesTracks := objITunesPlaylist.Tracks
+
+ /*
+	objTrack := objITunesTracks.Item(1)
+	###_D("TrackDatabaseID: " . objTrack.TrackDatabaseID)
+	###_D("SourceID: " . objTrack.SourceID)
+	###_D("PlaylistID: " . objTrack.PlaylistID)
+	###_D("TrackID: " . objTrack.TrackID)
+	; IiTunes::ITObjectPersistentIDHigh() and IiTunes::ITObjectPersistentIDLow() properties -> DOES NOT WORK
+*/
 }
 ;-----------------------------------------------------------
 
@@ -25,10 +34,6 @@ InitArtistsAlbumsIndex()
 {
 	global strAlbumArtistDelimiter
 	
-	intArtistID := 0
-	intAlbumID := 0
-	intArtistAlbumID := 0
-
 	Loop, % objITunesTracks.Count ; around 75 sec./10k tracks to build 3 index for 27 k tracks
 	{
 		objITunesTrack := objITunesTracks.Item(A_Index)
@@ -36,37 +41,47 @@ InitArtistsAlbumsIndex()
 			TrayTip, , % A_Index . " / " . objITunesTracks.Count
 
 		strArtist := objITunesTracks.Item(A_Index).Artist
-		StringReplace, strArtist, strArtist, %strAlbumArtistDelimiter%
+		if !StrLen(strArtist)
+			continue
+		StringReplace, strArtist, strArtist, %strAlbumArtistDelimiter%, -
 		if !StrLen(objArtistsIndex[strArtist])
-		{
-			intArtistID := intArtistID + 1
 			objArtistsIndex.Insert(strArtist, "")
-		}
 		objArtistsIndex[strArtist] := objArtistsIndex[strArtist] . objITunesTrack.Index . ","
+		; we will strip the "," in surplus only if/when we access the value
 		
 		strAlbum := objITunesTracks.Item(A_Index).Album
-		StringReplace, strAlbum, strAlbum, %strAlbumArtistDelimiter%
+		if !StrLen(strAlbum)
+			strAlbum := "-"
+		StringReplace, strAlbum, strAlbum, %strAlbumArtistDelimiter%, -
 		if !StrLen(objAlbumsIndex[strAlbum])
-		{
-			intAlbumID := intAlbumID + 1
 			objAlbumsIndex.Insert(strAlbum, "")
-		}
 		objAlbumsIndex[strAlbum] := objAlbumsIndex[strAlbum] . objITunesTrack.Index . ","
+		; we will strip the "," in surplus only if/when we access the value
 		
 		strArtistAlbum := strArtist . strAlbumArtistDelimiter . strAlbum
 		if !StrLen(objArtistsAlbumsIndex[strArtistAlbum])
-		{
-			intArtistAlbumID := intArtistAlbumID + 1
 			objArtistsAlbumsIndex.Insert(strArtistAlbum, "")
-		}
 		objArtistsAlbumsIndex[strArtistAlbum] := objArtistsAlbumsIndex[strArtistAlbum] . objITunesTrack.Index . ","
+		; we will strip the "," in surplus only if/when we access the value
 
-		; ###_D(strArtistAlbum . " : " . objArtistsAlbumsIndex[strArtistAlbum])
-		; ###_D(objITunesTrack.Index . " " . objAlbumsIndex[strAlbum])
-		; ###_D(objITunesTrack.Index . " " . objTracksAndAlbumID[objITunesTrack.Index])
+		if !StrLen(objAlbumsOfArtistsIndex[strArtist])
+			objAlbumsOfArtistsIndex.Insert(strArtist)
+		blnAlbumFound := False
+		strTempAlbumList := objAlbumsOfArtistsIndex[strArtist]
+		Loop, Parse, strTempAlbumList, %strAlbumArtistDelimiter%
+			if (A_LoopField = strAlbum)
+			{
+				blnAlbumFound := True
+				break
+			}
+		if (!blnAlbumFound)
+			objAlbumsOfArtistsIndex[strArtist] := objAlbumsOfArtistsIndex[strArtist] . strAlbum . strAlbumArtistDelimiter
+			; we will strip the strAlbumArtistDelimiter in surplus only if/when we access the value
+
 		if (A_Index = 2000)
 			break
 	}
+	
 	/*
 	for strAlbum, strTracks in objAlbumsIndex
 	{
@@ -98,8 +113,22 @@ InitArtistsAlbumsIndex()
 
 
 ;-----------------------------------------------------------
+AddAlbumToArtistIndex(strArtist := "", strAlbum := "")
+{
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 InitCoverScan(strArtist := "", strAlbum := "")
 {
+	global strAlbumArtistDelimiter
+	
+	if (strArtist = lDropDownAllArtists)
+		strArtist := ""
+	if (strAlbum = lDropDownAllAlbums)
+		strAlbum := ""
+
 	if (StrLen(strArtist) > 0) and (StrLen(strAlbum) > 0)
 		arrTracks := StrSplit(objArtistsAlbumsIndex[strArtist . strAlbumArtistDelimiter . strAlbum], ",")
 	else if StrLen(strArtist)

@@ -115,14 +115,15 @@ return
 BuildGui:
 ;-----------------------------------------------------------
 Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
+Gui, +Delimiter%strAlbumArtistDelimiter%
 Gui, Font, s12 w700, Verdana
 Gui, Add, Text, x10, % L(lAppName)
 
 Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+50 yp, %lArtists%
-Gui, Add, DropDownList, x+50 yp vlstArtists gArtistsDropDownChanged Sort
+Gui, Add, DropDownList, x+50 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp, %lAlbums%
-Gui, Add, DropDownList, x+50 yp vlstAlbums gAlbumsDropDownChanged Sort
+Gui, Add, DropDownList, x+50 yp w300 vlstAlbums gAlbumsDropDownChanged
 Gui, Font
 
 gosub, PreparePicPreviews
@@ -224,15 +225,20 @@ return
 ;-----------------------------------------------------------
 PopulateDropdownLists:
 ;-----------------------------------------------------------
-strArtistsDropDownList := "|"
+strArtistsDropDownList := ""
 for strArtist, strTracks in objArtistsIndex
-	strArtistsDropDownList := strArtistsDropDownList . "|" . strArtist
+{
+	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
+	; strArtistsDropDownList := strArtistsDropDownList . "`n" . strArtist
+}
 GuiControl, , lstArtists, %strArtistsDropDownList%
+GuiControl, Choose, lstArtists, 0
 
-strAlbumsDropDownList := "|"
+strAlbumsDropDownList := strAlbumArtistDelimiter . lDropDownAllAlbums
 for strAlbum, strTracks in objAlbumsIndex
-	strAlbumsDropDownList := strAlbumsDropDownList . "|" . strAlbum
+	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
 GuiControl, , lstAlbums, %strAlbumsDropDownList%
+GuiControl, Choose, lstAlbums, 1
 
 return
 ;-----------------------------------------------------------
@@ -241,9 +247,9 @@ return
 ;-----------------------------------------------------------
 ArtistsDropDownChanged:
 ;-----------------------------------------------------------
-GuiControl, Choose, lstAlbums, 0
 Gui, Submit, NoHide
-; ###_D(lstArtists . " / " . lstAlbums)
+GuiControl, , lstAlbums, % strAlbumArtistDelimiter . lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
+GuiControl, Choose, lstAlbums, 1
 Gosub, DisplayArtistAlbumCovers
 
 return
@@ -253,7 +259,6 @@ return
 ;-----------------------------------------------------------
 AlbumsDropDownChanged:
 ;-----------------------------------------------------------
-GuiControl, Choose, lstArtists, 0
 Gui, Submit, NoHide
 ; ###_D(lstArtists . " / " . lstAlbums)
 Gosub, DisplayArtistAlbumCovers
@@ -281,6 +286,7 @@ return
 ;-----------------------------------------------------------
 DisplayArtistAlbumCovers:
 ;-----------------------------------------------------------
+Gui, Submit, NoHide
 intNbCovers := InitCoverScan(lstArtists, lstAlbums)
 if (intNbCovers)
 	loop, %intNbPicPreviewsOnScreen%

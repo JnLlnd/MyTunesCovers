@@ -11,3 +11,5 @@ global lUpdateYouHaveLatest := "You have the latest version: ~1~.`n`nVisit the ~
 global lGuiLvHeader := "Col1|Col2|Col3"
 global lArtists := "Artists"
 global lAlbums := "Albums"
+global lDropDownAllArtists := "All Artists"
+global lDropDownAllAlbums := "All Albums"
