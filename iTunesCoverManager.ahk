@@ -37,8 +37,7 @@ Thread, interrupt, 0 ; essai pour GDIP
 strCurrentVersion := "0.2 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\iTunesCoverManager_LANG.ahk
-#Include %A_ScriptDir%\CoversLib.ahk
-#Include %A_ScriptDir%\iTunesLib.ahk ; Cover source
+#Include %A_ScriptDir%\lib\Cover.ahk
 
 SetWorkingDir, %A_ScriptDir%
 
@@ -53,13 +52,13 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 ;@Ahk2Exe-IgnoreEnd
 
 
-pToken := InitGDIP()
+pToken := Cover_InitGDIP()
 
 Gosub, LoadIniFile
 Gosub, Check4Update
 Gosub, BuildGui
-InitCoversSource()
-InitArtistsAlbumsIndex()
+Cover_InitCoversSource()
+Cover_InitArtistsAlbumsIndex()
 Gosub, PopulateDropdownLists
 ; Gosub, DisplayArtistAlbumCovers
 
@@ -287,36 +286,55 @@ return
 DisplayArtistAlbumCovers:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
-intNbCovers := InitCoverScan(lstArtists, lstAlbums)
-if (intNbCovers)
-	loop, %intNbPicPreviewsOnScreen%
-	{
-		objCover%A_Index% := NextCover()
-		if (objCover%A_Index%)
-			strTrackTitle := objCover%A_Index%.Name
-		else
-			strTrackTitle := ""
-		if !StrLen(objCover%A_Index%.CoverTempFilePathName)
-			strCoverTempFilePathName := A_ScriptDir  . "\no_cover-200x200.png" ; if absent, url download from repo ? ###
-		else
-			strCoverTempFilePathName := objCover%A_Index%.CoverTempFilePathName
-		TrayTip, %strTrackTitle%, %strCoverTempFilePathName%
-		pBitmapPicPreview := Gdip_CreateBitmap(Pos%A_Index%w, Pos%A_Index%h)
-		; ###_D(pBitmapPicPreview)
-		GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
-		; ###_D(GPicPreview)
-		Gdip_SetInterpolationMode(GPicPreview, 7)
-		LoadPicPreview(picPreview%A_Index%, strCoverTempFilePathName)
-		
-		GuiControl, , lblNameLabel%A_Index%, % objCover%A_Index%.Name
-		GuiControl, , lblCoverLabel%A_Index%, % "Artist: " . objCover%A_Index%.Artist . "`n"
-			. "Album: " . objCover%A_Index%.Album . "`n"
-			. "Index: " . objCover%A_Index%.Index . "`n"
-			. "TrackID: " . objCover%A_Index%.TrackID . "`n"
-			. "TrackDatabaseID: " . objCover%A_Index%.TrackDatabaseID
-	}
-else
+intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums) - 1
+if !(intNbCovers)
+{
 	###_D("Oops ###")
+	return
+}
+intCoversDisplayedNow := 0
+loop, %intNbCovers%
+{
+	intCoversDisplayedNow := intCoversDisplayedNow + 1
+	objCover%intCoversDisplayedNow% := Cover_NextCover()
+	if (objCover%intCoversDisplayedNow%)
+		strTrackTitle := objCover%intCoversDisplayedNow%.Name
+	else
+		strTrackTitle := ""
+	if !StrLen(objCover%intCoversDisplayedNow%.CoverTempFilePathName)
+		strCoverTempFilePathName := A_ScriptDir  . "\no_cover-200x200.png" ; if absent, url download from repo ? ###
+	else
+		strCoverTempFilePathName := objCover%intCoversDisplayedNow%.CoverTempFilePathName
+	TrayTip, %strTrackTitle%, %strCoverTempFilePathName%
+	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intCoversDisplayedNow%w, Pos%intCoversDisplayedNow%h)
+	; ###_D(pBitmapPicPreview)
+	GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
+	; ###_D(GPicPreview)
+	Gdip_SetInterpolationMode(GPicPreview, 7)
+	LoadPicPreview(picPreview%intCoversDisplayedNow%, strCoverTempFilePathName)
+	
+	GuiControl, , lblNameLabel%intCoversDisplayedNow%, % objCover%intCoversDisplayedNow%.Name
+	GuiControl, , lblCoverLabel%intCoversDisplayedNow%, % "Artist: " . objCover%intCoversDisplayedNow%.Artist . "`n"
+		. "Album: " . objCover%intCoversDisplayedNow%.Album . "`n"
+		. "Index: " . objCover%intCoversDisplayedNow%.Index . "`n"
+		. "TrackID: " . objCover%intCoversDisplayedNow%.TrackID . "`n"
+		. "TrackDatabaseID: " . objCover%intCoversDisplayedNow%.TrackDatabaseID
+}
+intRemainingCovers := intCoversDisplayedPrevious - intCoversDisplayedNow
+intCoversDisplayedPrevious := intCoversDisplayedNow
+loop, %intRemainingCovers%
+{
+	intCoversDisplayedNow := intCoversDisplayedNow + 1
+	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intCoversDisplayedNow%w, Pos%intCoversDisplayedNow%h)
+	; ###_D(pBitmapPicPreview)
+	GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
+	; ###_D(GPicPreview)
+	Gdip_SetInterpolationMode(GPicPreview, 7)
+	LoadPicPreview(picPreview%intCoversDisplayedNow%, A_ScriptDir  . "\fill_cover-200x200.png")
+	
+	GuiControl, , lblNameLabel%intCoversDisplayedNow%
+	GuiControl, , lblCoverLabel%intCoversDisplayedNow%
+}
 
 return
 ;-----------------------------------------------------------

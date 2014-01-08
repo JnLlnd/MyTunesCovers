@@ -7,7 +7,7 @@ global arrTracks
 global intTracksArrayIndex
 
 ;-----------------------------------------------------------
-InitCoversSource()
+iTunes_InitCoversSource()
 {
 	objITunesunesApp := ComObjCreate("iTunes.Application")
 	; Creates a COM object for the iTunes application (iTunes will be launched if not running)
@@ -30,7 +30,7 @@ InitCoversSource()
 
 
 ;-----------------------------------------------------------
-InitArtistsAlbumsIndex()
+iTunes_InitArtistsAlbumsIndex()
 {
 	global strAlbumArtistDelimiter
 	
@@ -48,7 +48,7 @@ InitArtistsAlbumsIndex()
 			objArtistsIndex.Insert(strArtist, "")
 		objArtistsIndex[strArtist] := objArtistsIndex[strArtist] . objITunesTrack.Index . ","
 		; we will strip the "," in surplus only if/when we access the value
-		
+
 		strAlbum := objITunesTracks.Item(A_Index).Album
 		if !StrLen(strAlbum)
 			strAlbum := "-"
@@ -78,7 +78,7 @@ InitArtistsAlbumsIndex()
 			objAlbumsOfArtistsIndex[strArtist] := objAlbumsOfArtistsIndex[strArtist] . strAlbum . strAlbumArtistDelimiter
 			; we will strip the strAlbumArtistDelimiter in surplus only if/when we access the value
 
-		if (A_Index = 2000)
+		if (A_Index = 200)
 			break
 	}
 	
@@ -113,14 +113,14 @@ InitArtistsAlbumsIndex()
 
 
 ;-----------------------------------------------------------
-AddAlbumToArtistIndex(strArtist := "", strAlbum := "")
+iTunes_AddAlbumToArtistIndex(strArtist := "", strAlbum := "")
 {
 }
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
-InitCoverScan(strArtist := "", strAlbum := "")
+iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 {
 	global strAlbumArtistDelimiter
 	
@@ -137,6 +137,7 @@ InitCoverScan(strArtist := "", strAlbum := "")
 		arrTracks := StrSplit(objAlbumsIndex[strAlbum], ",")
 	else
 		return 0
+
 	intTracksArrayIndex := 0
 
 	return arrTracks.MaxIndex()
@@ -145,7 +146,7 @@ InitCoverScan(strArtist := "", strAlbum := "")
 
 
 ;-----------------------------------------------------------
-NextCover()
+iTunes_NextCover()
 {
 	intTracksArrayIndex := intTracksArrayIndex + 1
 	if (intTracksArrayIndex = arrTracks.MaxIndex()) ; the last item if the array is always empty
@@ -153,8 +154,9 @@ NextCover()
 	objThisCover := New Cover()
 	; ###_D(arrTracks[intTracksArrayIndex])
 	objTrack := objITunesTracks.Item(arrTracks[intTracksArrayIndex])
-	strCoverFile := GetTempImageFile(objTrack, objThisCover.GUID)
+	strCoverFile := iTunes_GetTempImageFile(objTrack, objThisCover.GUID)
 	objThisCover.SetCoverTempFile(strCoverFile)
+	; ###_D("objThisCover.CoverTempFilePathName: " . objThisCover.CoverTempFilePathName)
 
 	objThisCover.SetCoverProperties(objTrack.Name, objTrack.Artist, objTrack.Album, objTrack.Index, objTrack.TrackID, objTrack.TrackDatabaseID)
 
@@ -164,7 +166,7 @@ NextCover()
 
 
 ;-----------------------------------------------------------
-GetTempImageFile(objTrack, strNameNoext)
+iTunes_GetTempImageFile(objTrack, strNameNoext)
 {
 	global strCoversCacheFolder
 	
@@ -200,11 +202,11 @@ GetTempImageFile(objTrack, strNameNoext)
 
 
 ;-----------------------------------------------------------
-SetImageFile(intIndex, strFile)
+iTunes_SetImageFile(intIndex, strFile)
 {
 	; ###_D("SetImageFile index: " . intIndex . "`nCount" . objITunesTracks.Count)
 	objTrack := objITunesTracks.Item(intIndex)
-	###_D("Name: " . objTrack.Name)
+	; ###_D("Name: " . objTrack.Name)
 	
 	objArtwork := objTrack.Artwork.Item(1)
 	strResult := objArtwork.SetArtworkFromFile(strFile)   

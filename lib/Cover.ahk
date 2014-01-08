@@ -1,5 +1,28 @@
+#Include %A_ScriptDir%\lib\iTunes.ahk ; Cover source
+
+Cover_InitCoversSource()
+{
+	iTunes_InitCoversSource()
+}
+
+
+Cover_InitArtistsAlbumsIndex()
+{
+	iTunes_InitArtistsAlbumsIndex()
+}
+
+Cover_InitCoverScan(lstArtists, lstAlbums)
+{
+	return iTunes_InitCoverScan(lstArtists, lstAlbums)
+}
+
+Cover_NextCover()
+{
+	return iTunes_NextCover()
+}
+
 ;-----------------------------------------------------------
-InitGDIP()
+Cover_InitGDIP()
 {
 	If !pToken := Gdip_Startup()
 	{
@@ -62,7 +85,7 @@ Artwork ; Returns a collection containing the artwork for the track.
 
 	SaveCover(strFilePathName)
 	{
-		strResult := SetImageFile(this.Index, strFilePathName)
+		strResult := iTunes_SetImageFile(this.Index, strFilePathName)
 		return strResult
 	}
 
