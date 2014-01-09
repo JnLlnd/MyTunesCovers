@@ -1,8 +1,17 @@
 ;===============================================
 /*
-	iTunesCoverManager
+	MyTunesCovers
 	Written using AutoHotkey_L v1.1.09.03+ (http://l.autohotkey.net/)
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
+
+	2014-01-## v0.3 ALPHA
+	*
+
+	2014-01-08 v0.2 ALPHA
+	* Add properties to Covers class, POC for set image
+	* Show max covers for screen size, add paging buttons not functional
+	* Add dropdown lists for artists and albums, add info to cover label
+	* Library Cover_ and iTunes_ refactoring, add iTunes/MP3 sources radio buttons, iTunes source implemented
 
 	2014-01-05 v0.1 ALPHA
 	* First Alpha release. Not ready for alpha distribution yet. But you can take a lkook at sources
@@ -18,10 +27,10 @@
 ; Doc: http://fincs.ahk4.net/Ahk2ExeDirectives.htm
 ; Note: prefix comma with `
 
-;@Ahk2Exe-SetName iTunesCoverManager
+;@Ahk2Exe-SetName MyTunesCovers
 ;@Ahk2Exe-SetDescription iTunes Cover Manager. Freeware.
 ;@Ahk2Exe-SetVersion 0.3
-;@Ahk2Exe-SetOrigFilename iTunesCoverManager.exe
+;@Ahk2Exe-SetOrigFilename MyTunesCovers.exe
 
 
 ;============================================================
@@ -36,7 +45,7 @@ Thread, interrupt, 0 ; essai pour GDIP
 
 strCurrentVersion := "0.3 alpha" ; always "." between sub-versions, eg "0.1.2"
 
-#Include %A_ScriptDir%\iTunesCoverManager_LANG.ahk
+#Include %A_ScriptDir%\MyTunesCovers_LANG.ahk
 #Include %A_ScriptDir%\lib\Cover.ahk ; this lib is also calling lib\iTunes.ahk
 
 SetWorkingDir, %A_ScriptDir%

@@ -1,5 +1,5 @@
 global lAlbums := "Albums"
-global lAppName := "iTunesCoverManager"
+global lAppName := "MyTunesCovers"
 global lAppTagline := "iTunes Cover Manager"
 global lAppVersion := "v" . strCurrentVersion
 global lArtists := "Artists"
