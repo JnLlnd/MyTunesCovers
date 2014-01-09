@@ -20,7 +20,7 @@
 
 ;@Ahk2Exe-SetName iTunesCoverManager
 ;@Ahk2Exe-SetDescription iTunes Cover Manager. Freeware.
-;@Ahk2Exe-SetVersion 0.1
+;@Ahk2Exe-SetVersion 0.3
 ;@Ahk2Exe-SetOrigFilename iTunesCoverManager.exe
 
 
@@ -34,7 +34,7 @@
 ; ListLines, Off
 Thread, interrupt, 0 ; essai pour GDIP
 
-strCurrentVersion := "0.2 alpha" ; always "." between sub-versions, eg "0.1.2"
+strCurrentVersion := "0.3 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\iTunesCoverManager_LANG.ahk
 #Include %A_ScriptDir%\lib\Cover.ahk ; this lib is also calling lib\iTunes.ahk
@@ -135,7 +135,7 @@ Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+20 yp, %lArtists%
 Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp, %lAlbums%
-Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged
+Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
 
 gosub, PreparePicPreviews
@@ -179,44 +179,26 @@ return
 ;-----------------------------------------------------------
 PopulateDropdownLists:
 ;-----------------------------------------------------------
-strArtistsDropDownList := ""
+strArtistsDropDownList := strAlbumArtistDelimiter . lDropDownAllArtists
 for strArtist, strTracks in objArtistsIndex
 	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
-
 GuiControl, , lstArtists, %strArtistsDropDownList%
-GuiControl, Choose, lstArtists, 0
+GuiControl, Choose, lstArtists, 1
 
+Gosub, PopulateAlbumDropdownList
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+PopulateAlbumDropdownList:
+;-----------------------------------------------------------
 strAlbumsDropDownList := strAlbumArtistDelimiter . lDropDownAllAlbums
 for strAlbum, strTracks in objAlbumsIndex
 	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
 GuiControl, , lstAlbums, %strAlbumsDropDownList%
 GuiControl, Choose, lstAlbums, 1
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-ClickRadSourceITunes:
-;-----------------------------------------------------------
-; GuiControl, Disable, id
-; GuiControl, Enable, id
-
-Gosub, PopulateDropdownLists
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-ClickRadSourceMP3:
-;-----------------------------------------------------------
-; GuiControl, Disable, id
-; GuiControl, Enable, id
-
-GuiControl, , lstArtists, %strAlbumArtistDelimiter%
-GuiControl, , lstAlbums, %strAlbumArtistDelimiter%
-
 
 return
 ;-----------------------------------------------------------
@@ -260,7 +242,7 @@ loop
 	{
 		if (intRow = intMaxNbRow)
 		{
-			intNbPicPreviewsOnScreen := A_Index
+			intCoversDisplayedPrevious := A_Index
 			break
 		}
 		intRow := intRow + 1
@@ -300,10 +282,40 @@ return
 
 
 ;-----------------------------------------------------------
+ClickRadSourceITunes:
+;-----------------------------------------------------------
+; GuiControl, Disable, id
+; GuiControl, Enable, id
+
+Gosub, PopulateDropdownLists
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+ClickRadSourceMP3:
+;-----------------------------------------------------------
+; GuiControl, Disable, id
+; GuiControl, Enable, id
+
+Cover_ReleaseSource()
+GuiControl, , lstArtists, %strAlbumArtistDelimiter%
+GuiControl, , lstAlbums, %strAlbumArtistDelimiter%
+
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 ArtistsDropDownChanged:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
-GuiControl, , lstAlbums, % strAlbumArtistDelimiter . lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
+if (lstArtists = lDropDownAllArtists)
+	Gosub, PopulateAlbumDropdownList
+else
+	GuiControl, , lstAlbums, % strAlbumArtistDelimiter . lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
 GuiControl, Choose, lstAlbums, 1
 Gosub, DisplayArtistAlbumCovers
 

@@ -1,4 +1,5 @@
 global objITunesTracks := Object()
+global intTracksArrayIndex
 
 
 ;-----------------------------------------------------------
@@ -62,7 +63,7 @@ iTunes_InitArtistsAlbumsIndex()
 		; we will strip the "," in surplus only if/when we access the value
 
 		if !StrLen(objAlbumsOfArtistsIndex[strArtist])
-			objAlbumsOfArtistsIndex.Insert(strArtist)
+			objAlbumsOfArtistsIndex.Insert(strArtist, "")
 		blnAlbumFound := False
 		strTempAlbumList := objAlbumsOfArtistsIndex[strArtist]
 		Loop, Parse, strTempAlbumList, %strAlbumArtistDelimiter%
@@ -80,17 +81,17 @@ iTunes_InitArtistsAlbumsIndex()
 	}
 	
 	/*
-	for strAlbum, strTracks in objAlbumsIndex
+	for strArtist, strTracks in objArtistsIndex
 	{
-		s := strAlbum . "`n"
+		s := strArtist . "`n"
 		loop, parse, strTracks, `,
 			if StrLen(A_LoopField)
 				s := s . "`n" . objITunesTracks.Item(A_LoopField).Name
 		###_D(s)
 	}
-	for strArtist, strTracks in objArtistsIndex
+	for strAlbum, strTracks in objAlbumsIndex
 	{
-		s := strArtist . "`n"
+		s := strAlbum . "`n"
 		loop, parse, strTracks, `,
 			if StrLen(A_LoopField)
 				s := s . "`n" . objITunesTracks.Item(A_LoopField).Name
@@ -105,13 +106,6 @@ iTunes_InitArtistsAlbumsIndex()
 		###_D(s)
 	}
 	*/
-}
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-iTunes_AddAlbumToArtistIndex(strArtist := "", strAlbum := "")
-{
 }
 ;-----------------------------------------------------------
 
@@ -158,6 +152,30 @@ iTunes_NextCover()
 	objThisCover.SetCoverProperties(objTrack.Name, objTrack.Artist, objTrack.Album, objTrack.Index, objTrack.TrackID, objTrack.TrackDatabaseID)
 
 	return objThisCover
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+iTunes_ReleaseSource()
+{
+	; objAlbumsOfArtistsIndex := Object()
+
+	strData := "Index`tKey`tValue`n"
+	for strArtist, strTracks in objArtistsIndex
+		strData := strData . "objArtistsIndex`t" . strArtist . "`t" . strTracks . "`n"
+
+	for strAlbum, strTracks in objAlbumsIndex
+		strData := strData . "objAlbumsIndex`t" . strAlbum . "`t" . strTracks . "`n"
+	
+	for strArtistAlbum, strTracks in objArtistsAlbumsIndex
+		strData := strData . "objArtistsAlbumsIndex`t" . strArtistAlbum . "`t" . strTracks . "`n"
+
+	for strArtist, strAlbums in objAlbumsOfArtistsIndex
+		strData := strData . "objAlbumsOfArtistsIndex`t" . strArtist . "`t" . strAlbums . "`n"
+
+	FileDelete, %A_ScriptDir%\iTunesSourceDump.csv
+	FileAppend, %strData%, %A_ScriptDir%\iTunesSourceDump.csv
 }
 ;-----------------------------------------------------------
 

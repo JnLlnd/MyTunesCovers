@@ -5,7 +5,6 @@ global objAlbumsIndex := Object()
 global objArtistsAlbumsIndex := Object()
 global objAlbumsOfArtistsIndex := Object()
 global arrTracks
-global intTracksArrayIndex
 global strCoverSourceType ; "iTunes" currently implemented, "MP3" coming
 
 
@@ -92,6 +91,14 @@ Cover_InitCoverScan(lstArtists, lstAlbums)
 Cover_NextCover()
 {
 	return %strCoverSourceType%_NextCover()
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_ReleaseSource()
+{
+	return %strCoverSourceType%_ReleaseSource()
 }
 ;-----------------------------------------------------------
 
