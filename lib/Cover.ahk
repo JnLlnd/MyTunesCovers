@@ -1,39 +1,12 @@
 #Include %A_ScriptDir%\lib\iTunes.ahk ; Cover source
 
-Cover_InitCoversSource()
-{
-	iTunes_InitCoversSource()
-}
-
-
-Cover_InitArtistsAlbumsIndex()
-{
-	iTunes_InitArtistsAlbumsIndex()
-}
-
-Cover_InitCoverScan(lstArtists, lstAlbums)
-{
-	return iTunes_InitCoverScan(lstArtists, lstAlbums)
-}
-
-Cover_NextCover()
-{
-	return iTunes_NextCover()
-}
-
-;-----------------------------------------------------------
-Cover_InitGDIP()
-{
-	If !pToken := Gdip_Startup()
-	{
-		MsgBox, 48, gdiplus error!, Gdiplus failed to start. Please ensure you have gdiplus on your system
-		ExitApp
-	}
-	return pToken
-}
-;-----------------------------------------------------------
-
-
+global objArtistsIndex := Object()
+global objAlbumsIndex := Object()
+global objArtistsAlbumsIndex := Object()
+global objAlbumsOfArtistsIndex := Object()
+global arrTracks
+global intTracksArrayIndex
+global strCoverSourceType ; "iTunes" currently implemented, "MP3" coming
 
 
 ;-----------------------------------------------------------
@@ -85,13 +58,42 @@ Artwork ; Returns a collection containing the artwork for the track.
 
 	SaveCover(strFilePathName)
 	{
-		strResult := iTunes_SetImageFile(this.Index, strFilePathName)
+		strResult := %strCoverSourceType%_SetImageFile(this.Index, strFilePathName)
 		return strResult
 	}
 
 }
 ;-----------------------------------------------------------
 
+
+;-----------------------------------------------------------
+Cover_InitCoversSource(strSource)
+{
+	strCoverSourceType := strSource
+
+	blnSourceOK := %strCoverSourceType%_InitCoversSource()
+	if (blnSourceOK)
+		%strCoverSourceType%_InitArtistsAlbumsIndex()
+
+	return blnSourceOK
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_InitCoverScan(lstArtists, lstAlbums)
+{
+	return %strCoverSourceType%_InitCoverScan(lstArtists, lstAlbums)
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_NextCover()
+{
+	return %strCoverSourceType%_NextCover()
+}
+;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------

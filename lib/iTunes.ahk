@@ -1,10 +1,5 @@
 global objITunesTracks := Object()
-global objArtistsIndex := Object()
-global objAlbumsIndex := Object()
-global objArtistsAlbumsIndex := Object()
-global objAlbumsOfArtistsIndex := Object()
-global arrTracks
-global intTracksArrayIndex
+
 
 ;-----------------------------------------------------------
 iTunes_InitCoversSource()
@@ -16,6 +11,8 @@ iTunes_InitCoversSource()
 	objITunesPlaylist := objITunesLibrary.Playlists.Item(1)
 	; iTunes main playlist (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - playlist #1 is the library
 	objITunesTracks := objITunesPlaylist.Tracks
+
+	return objITunesTracks.Count
 
  /*
 	objTrack := objITunesTracks.Item(1)
@@ -123,7 +120,7 @@ iTunes_AddAlbumToArtistIndex(strArtist := "", strAlbum := "")
 iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 {
 	global strAlbumArtistDelimiter
-	
+
 	if (strArtist = lDropDownAllArtists)
 		strArtist := ""
 	if (strAlbum = lDropDownAllAlbums)

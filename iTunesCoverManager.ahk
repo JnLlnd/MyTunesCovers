@@ -37,7 +37,7 @@ Thread, interrupt, 0 ; essai pour GDIP
 strCurrentVersion := "0.2 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\iTunesCoverManager_LANG.ahk
-#Include %A_ScriptDir%\lib\Cover.ahk
+#Include %A_ScriptDir%\lib\Cover.ahk ; this lib is also calling lib\iTunes.ahk
 
 SetWorkingDir, %A_ScriptDir%
 
@@ -51,16 +51,11 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 ; / Piece of code for developement phase only - won't be compiled
 ;@Ahk2Exe-IgnoreEnd
 
-
-pToken := Cover_InitGDIP()
-
+Gosub, InitGDIP
 Gosub, LoadIniFile
 Gosub, Check4Update
 Gosub, BuildGui
-Cover_InitCoversSource()
-Cover_InitArtistsAlbumsIndex()
-Gosub, PopulateDropdownLists
-; Gosub, DisplayArtistAlbumCovers
+Gosub, InitSources
 
 /*
 if InitCoverScan("", "Les duos improbables")
@@ -82,6 +77,19 @@ return
 
 
 ;-----------------------------------------------------------
+InitGDIP:
+;-----------------------------------------------------------
+objGdiToken := Gdip_Startup()
+If !(objGdiToken)
+{
+	Oops(lGdiFailed, lAppName)
+	ExitApp
+}
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 LoadIniFile:
 ;-----------------------------------------------------------
 strAlbumArtistDelimiter := chr(182)
@@ -99,7 +107,7 @@ Loop
 {
 	IniRead, strAlbumArtistDelimiter, %strIniFile%, Global, AlbumArtistDelimiter, %strAlbumArtistDelimiter%
 	if (strAlbumArtistDelimiter = "ERROR")
-		###_D(strAlbumArtistDelimiter) ; Sleep, 20
+		Sleep, 20
 	else
 		break
 }
@@ -117,12 +125,17 @@ Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
 Gui, +Delimiter%strAlbumArtistDelimiter%
 Gui, Font, s12 w700, Verdana
 Gui, Add, Text, x10, % L(lAppName)
-
+Gui, Font
 Gui, Font, s10 w500, Verdana
-Gui, Add, Text, x+50 yp, %lArtists%
-Gui, Add, DropDownList, x+50 yp w300 vlstArtists gArtistsDropDownChanged Sort
+Gui, Add, Text, x+30 yp, %lSource%
+Gui, Font
+Gui, Add, Radio, x+10 yp vradSourceITunes gClickRadSourceITunes checked, % L(lSourceITunes)
+Gui, Add, Radio, x+10 yp vradSourceMP3 gClickRadSourceMP3, % L(lSourceMP3)
+Gui, Font, s10 w500, Verdana
+Gui, Add, Text, x+20 yp, %lArtists%
+Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp, %lAlbums%
-Gui, Add, DropDownList, x+50 yp w300 vlstAlbums gAlbumsDropDownChanged
+Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged
 Gui, Font
 
 gosub, PreparePicPreviews
@@ -139,6 +152,71 @@ else
 	SB_SetIcon("C:\Dropbox\AutoHotkey\CSVBuddy\build\Ico - Visual Pharm\angel.ico") ; ###
 
 Gui, Show, Autosize
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+InitSources:
+;-----------------------------------------------------------
+Gui, Submit, NoHide
+
+if (radSourceITunes)
+	strSource := "iTunes"
+else
+	strSource := ""
+
+if (Cover_InitCoversSource(strSource))
+	Gosub, PopulateDropdownLists
+else
+	Oops(lInitSourceError)
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+PopulateDropdownLists:
+;-----------------------------------------------------------
+strArtistsDropDownList := ""
+for strArtist, strTracks in objArtistsIndex
+	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
+
+GuiControl, , lstArtists, %strArtistsDropDownList%
+GuiControl, Choose, lstArtists, 0
+
+strAlbumsDropDownList := strAlbumArtistDelimiter . lDropDownAllAlbums
+for strAlbum, strTracks in objAlbumsIndex
+	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
+GuiControl, , lstAlbums, %strAlbumsDropDownList%
+GuiControl, Choose, lstAlbums, 1
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+ClickRadSourceITunes:
+;-----------------------------------------------------------
+; GuiControl, Disable, id
+; GuiControl, Enable, id
+
+Gosub, PopulateDropdownLists
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+ClickRadSourceMP3:
+;-----------------------------------------------------------
+; GuiControl, Disable, id
+; GuiControl, Enable, id
+
+GuiControl, , lstArtists, %strAlbumArtistDelimiter%
+GuiControl, , lstAlbums, %strAlbumArtistDelimiter%
+
 
 return
 ;-----------------------------------------------------------
@@ -211,34 +289,12 @@ return
 GuiClose:
 CleanUpBeforeQuit:
 ;-----------------------------------------------------------
-Gdip_Shutdown(pToken)
+Gdip_Shutdown(objGdiToken)
 ptrObjITunesunesApp := Object(objITunesunesApp)
 ObjRelease(ptrObjITunesunesApp)
 
 ; ### delete covers cache
 ExitApp
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-PopulateDropdownLists:
-;-----------------------------------------------------------
-strArtistsDropDownList := ""
-for strArtist, strTracks in objArtistsIndex
-{
-	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
-	; strArtistsDropDownList := strArtistsDropDownList . "`n" . strArtist
-}
-GuiControl, , lstArtists, %strArtistsDropDownList%
-GuiControl, Choose, lstArtists, 0
-
-strAlbumsDropDownList := strAlbumArtistDelimiter . lDropDownAllAlbums
-for strAlbum, strTracks in objAlbumsIndex
-	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
-GuiControl, , lstAlbums, %strAlbumsDropDownList%
-GuiControl, Choose, lstAlbums, 1
-
 return
 ;-----------------------------------------------------------
 
