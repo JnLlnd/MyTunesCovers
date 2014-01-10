@@ -5,7 +5,7 @@
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
 	2014-01-## v0.3 ALPHA
-	*
+	* implemented release, save cache and reload cache for iTunes source
 
 	2014-01-08 v0.2 ALPHA
 	* Add properties to Covers class, POC for set image
@@ -138,8 +138,8 @@ Gui, Font
 Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+30 yp, %lSource%
 Gui, Font
-Gui, Add, Radio, x+10 yp vradSourceITunes gClickRadSourceITunes checked, % L(lSourceITunes)
-Gui, Add, Radio, x+10 yp vradSourceMP3 gClickRadSourceMP3, % L(lSourceMP3)
+Gui, Add, Radio, x+10 yp vradSourceITunes gClickRadSource checked, % L(lSourceITunes)
+Gui, Add, Radio, x+10 yp vradSourceMP3 gClickRadSource, % L(lSourceMP3)
 Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+20 yp, %lArtists%
 Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
@@ -174,7 +174,7 @@ Gui, Submit, NoHide
 if (radSourceITunes)
 	strSource := "iTunes"
 else
-	strSource := ""
+	strSource := "MP3"
 
 if (Cover_InitCoversSource(strSource))
 	Gosub, PopulateDropdownLists
@@ -251,7 +251,8 @@ loop
 	{
 		if (intRow = intMaxNbRow)
 		{
-			intCoversDisplayedPrevious := A_Index
+			intCoversPerPage := A_Index
+			intCoversDisplayedPrevious := intCoversPerPage
 			break
 		}
 		intRow := intRow + 1
@@ -278,8 +279,15 @@ return
 
 ;-----------------------------------------------------------
 GuiClose:
+;-----------------------------------------------------------
+ExitApp ; will call CleanUpBeforeQuit
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 CleanUpBeforeQuit:
 ;-----------------------------------------------------------
+Cover_ReleaseSource()
 Gdip_Shutdown(objGdiToken)
 ptrObjITunesunesApp := Object(objITunesunesApp)
 ObjRelease(ptrObjITunesunesApp)
@@ -291,24 +299,39 @@ return
 
 
 ;-----------------------------------------------------------
-ClickRadSourceITunes:
+ClickRadSource:
 ;-----------------------------------------------------------
 ; GuiControl, Disable, id
 ; GuiControl, Enable, id
 
-Gosub, PopulateDropdownLists
+Cover_ReleaseSource()
+
+Gui, Submit, NoHide
+
+if (radSourceITunes)
+	strSource := "iTunes"
+else
+	strSource := "MP3"
+
+if (Cover_InitCoversSource(strSource))
+	Gosub, PopulateDropdownLists
+else
+	Oops(lInitSourceError)
 
 return
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
-ClickRadSourceMP3:
+ClickRadSourceMP3: ; NOT USED
 ;-----------------------------------------------------------
 ; GuiControl, Disable, id
 ; GuiControl, Enable, id
 
 Cover_ReleaseSource()
+Gui, Submit, NoHide
+Cover_LoadSource()
+
 GuiControl, , lstArtists, %strAlbumArtistDelimiter%
 GuiControl, , lstAlbums, %strAlbumArtistDelimiter%
 
@@ -370,7 +393,7 @@ if !(intNbCovers)
 	return
 }
 intCoversDisplayedNow := 0
-loop, %intNbCovers%
+loop
 {
 	intCoversDisplayedNow := intCoversDisplayedNow + 1
 	objCover%intCoversDisplayedNow% := Cover_NextCover()
@@ -396,7 +419,7 @@ loop, %intNbCovers%
 		. "Index: " . objCover%intCoversDisplayedNow%.Index . "`n"
 		. "TrackID: " . objCover%intCoversDisplayedNow%.TrackID . "`n"
 		. "TrackDatabaseID: " . objCover%intCoversDisplayedNow%.TrackDatabaseID
-}
+} until (A_Index = intCoversPerPage) or (intCoversDisplayedNow = intNbCovers)
 intRemainingCovers := intCoversDisplayedPrevious - intCoversDisplayedNow
 intCoversDisplayedPrevious := intCoversDisplayedNow
 loop, %intRemainingCovers%

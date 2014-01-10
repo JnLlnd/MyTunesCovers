@@ -1,3 +1,5 @@
+global intTestLimit := 30000
+global intLinesPerBatch := 500
 global objITunesTracks := Object()
 global intTracksArrayIndex
 
@@ -76,7 +78,7 @@ iTunes_InitArtistsAlbumsIndex()
 			objAlbumsOfArtistsIndex[strArtist] := objAlbumsOfArtistsIndex[strArtist] . strAlbum . strAlbumArtistDelimiter
 			; we will strip the strAlbumArtistDelimiter in surplus only if/when we access the value
 
-		if (A_Index = 200)
+		if (A_Index = intTestLimit)
 			break
 	}
 	
@@ -106,6 +108,29 @@ iTunes_InitArtistsAlbumsIndex()
 		###_D(s)
 	}
 	*/
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+iTunes_LoadSource()
+{
+	Loop, Read, %A_ScriptDir%\iTunesSourceDump.csv
+	{
+		if (A_Index = 1)
+		{
+			objArtistsIndex := Object()
+			objAlbumsIndex := Object()
+			objArtistsAlbumsIndex := Object()
+			objAlbumsOfArtistsIndex := Object()
+		}
+		if !Mod(A_Index, intLinesPerBatch)
+			TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), % L(lliTunesSavingSourceIndexProgress, A_Index)
+		arrRecord := StrSplit(A_LoopReadLine, "`t")
+		strObjName := arrRecord[1]
+		%strObjName%.Insert(arrRecord[2], arrRecord[3])
+    }
+	TrayTip
 }
 ;-----------------------------------------------------------
 
@@ -157,25 +182,68 @@ iTunes_NextCover()
 
 
 ;-----------------------------------------------------------
-iTunes_ReleaseSource()
+iTunes_ReleaseSource() ; NOT USED
 {
-	; objAlbumsOfArtistsIndex := Object()
+}
+;-----------------------------------------------------------
 
-	strData := "Index`tKey`tValue`n"
-	for strArtist, strTracks in objArtistsIndex
-		strData := strData . "objArtistsIndex`t" . strArtist . "`t" . strTracks . "`n"
 
-	for strAlbum, strTracks in objAlbumsIndex
-		strData := strData . "objAlbumsIndex`t" . strAlbum . "`t" . strTracks . "`n"
-	
-	for strArtistAlbum, strTracks in objArtistsAlbumsIndex
-		strData := strData . "objArtistsAlbumsIndex`t" . strArtistAlbum . "`t" . strTracks . "`n"
-
-	for strArtist, strAlbums in objAlbumsOfArtistsIndex
-		strData := strData . "objAlbumsOfArtistsIndex`t" . strArtist . "`t" . strAlbums . "`n"
-
+;-----------------------------------------------------------
+iTunes_SaveSource()
+{
 	FileDelete, %A_ScriptDir%\iTunesSourceDump.csv
+	intLines := 0
+	strData := "Index`tKey`tValue`n"
+	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex1%
+	for strArtist, strTracks in objArtistsIndex
+	{
+		intLines := intLine + 1
+		if !Mod(intLines, intLinesPerBatch)
+		{
+			FileAppend, %strData%, %A_ScriptDir%\iTunesSourceDump.csv
+			strData := ""
+		}
+		strData := strData . "objArtistsIndex`t" . strArtist . "`t" . strTracks . "`n"
+	}
+
+	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex2%
+	for strAlbum, strTracks in objAlbumsIndex
+	{
+		intLines := intLine + 1
+		if !Mod(intLines, intLinesPerBatch)
+		{
+			FileAppend, %strData%, %A_ScriptDir%\iTunesSourceDump.csv
+			strData := ""
+		}
+		strData := strData . "objAlbumsIndex`t" . strAlbum . "`t" . strTracks . "`n"
+	}
+	
+	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex3%
+	for strArtistAlbum, strTracks in objArtistsAlbumsIndex
+	{
+		intLines := intLine + 1
+		if !Mod(intLines, intLinesPerBatch)
+		{
+			FileAppend, %strData%, %A_ScriptDir%\iTunesSourceDump.csv
+			strData := ""
+		}
+		strData := strData . "objArtistsAlbumsIndex`t" . strArtistAlbum . "`t" . strTracks . "`n"
+	}
+
+	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex4%
+	for strArtist, strAlbums in objAlbumsOfArtistsIndex
+	{
+		intLines := intLine + 1
+		if !Mod(intLines, intLinesPerBatch)
+		{
+			FileAppend, %strData%, %A_ScriptDir%\iTunesSourceDump.csv
+			strData := ""
+		}
+		strData := strData . "objAlbumsOfArtistsIndex`t" . strArtist . "`t" . strAlbums . "`n"
+	}
+
 	FileAppend, %strData%, %A_ScriptDir%\iTunesSourceDump.csv
+	TrayTip
 }
 ;-----------------------------------------------------------
 

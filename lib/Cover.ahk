@@ -70,11 +70,32 @@ Cover_InitCoversSource(strSource)
 {
 	strCoverSourceType := strSource
 
-	blnSourceOK := %strCoverSourceType%_InitCoversSource()
-	if (blnSourceOK)
-		%strCoverSourceType%_InitArtistsAlbumsIndex()
-
-	return blnSourceOK
+	if (strCoverSourceType = "MP3")
+	{
+		###_D("Load MP3 not implemented") ; %strCoverSourceType%_LoadSource()
+		return false
+	}
+	else
+	{
+		blnSourceOK := %strCoverSourceType%_InitCoversSource()
+		if (blnSourceOK)
+		{
+			if FileExist(A_ScriptDir . "\" . strCoverSourceType . "SourceDump.csv")
+			{
+				MsgBox, 36, %lAppName%, %lLoadCache% ; ### or if number of tracks changed
+				IfMsgBox, Yes
+					%strCoverSourceType%_LoadSource() ; WANT TO USE CACHE
+				IfMsgBox, No
+				{
+					FileDelete, %A_ScriptDir%\%strCoverSourceType%SourceDump.csv
+					%strCoverSourceType%_InitArtistsAlbumsIndex() ; WANT TO REFRESH
+				}
+			}
+			else
+				%strCoverSourceType%_InitArtistsAlbumsIndex() ; HAVE TO REFRESH
+		}
+		return blnSourceOK
+	}
 }
 ;-----------------------------------------------------------
 
@@ -96,10 +117,25 @@ Cover_NextCover()
 
 
 ;-----------------------------------------------------------
+Cover_LoadSource() ; NOT USED
+{
+	###_D("Load: " . strCoverSourceType)
+	return %strCoverSourceType%_LoadSource()
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 Cover_ReleaseSource()
 {
-	return %strCoverSourceType%_ReleaseSource()
+	###_D("Release: " . strCoverSourceType)
+	if (strCoverSourceType = "MP3")
+		###_D("Save MP3 not implemented") ; %strCoverSourceType%_SaveSource()
+	else
+		if !FileExist(A_ScriptDir . "\" . strCoverSourceType . "SourceDump.csv")
+			%strCoverSourceType%_SaveSource()
 }
+
 ;-----------------------------------------------------------
 
 
