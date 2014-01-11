@@ -40,7 +40,7 @@ iTunes_InitArtistsAlbumsIndex()
 		if !Mod(A_Index,100)
 			TrayTip, , % A_Index . " / " . objITunesTracks.Count
 
-		strArtist := objITunesTracks.Item(A_Index).Artist
+		strArtist := Trim(objITunesTracks.Item(A_Index).Artist)
 		if !StrLen(strArtist)
 			continue
 		StringReplace, strArtist, strArtist, %strAlbumArtistDelimiter%, -
@@ -49,9 +49,9 @@ iTunes_InitArtistsAlbumsIndex()
 		objArtistsIndex[strArtist] := objArtistsIndex[strArtist] . objITunesTrack.Index . ","
 		; we will strip the "," in surplus only if/when we access the value
 
-		strAlbum := objITunesTracks.Item(A_Index).Album
+		strAlbum := Trim(objITunesTracks.Item(A_Index).Album)
 		if !StrLen(strAlbum)
-			strAlbum := "-"
+			strAlbum := lUnknown
 		StringReplace, strAlbum, strAlbum, %strAlbumArtistDelimiter%, -
 		if !StrLen(objAlbumsIndex[strAlbum])
 			objAlbumsIndex.Insert(strAlbum, "")
@@ -127,8 +127,14 @@ iTunes_LoadSource()
 		if !Mod(A_Index, intLinesPerBatch)
 			TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), % L(lliTunesSavingSourceIndexProgress, A_Index)
 		arrRecord := StrSplit(A_LoopReadLine, "`t")
+		str1 := arrRecord[1]
+		str2 := arrRecord[2]
+		str3 := arrRecord[3]
+		strL := A_LoopReadLine
 		strObjName := arrRecord[1]
 		%strObjName%.Insert(arrRecord[2], arrRecord[3])
+;		if (arrRecord[1] = "objArtistsIndex" and InStr(arrRecord[2], "|m"))
+;			ListVars
     }
 	TrayTip
 }
@@ -145,6 +151,7 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 	if (strAlbum = lDropDownAllAlbums)
 		strAlbum := ""
 
+	###_D("objArtistsIndex[" . strArtist . "] : " . objArtistsIndex[strArtist])
 	if (StrLen(strArtist) > 0) and (StrLen(strAlbum) > 0)
 		arrTracks := StrSplit(objArtistsAlbumsIndex[strArtist . strAlbumArtistDelimiter . strAlbum], ",")
 	else if StrLen(strArtist)
@@ -154,6 +161,8 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 	else
 		return 0
 
+	; for k, v in arrTracks
+	; 	###_D("k: " . k . " / v: " . v)
 	intTracksArrayIndex := 0
 
 	return arrTracks.MaxIndex()
@@ -167,14 +176,20 @@ iTunes_NextCover()
 	intTracksArrayIndex := intTracksArrayIndex + 1
 	if (intTracksArrayIndex = arrTracks.MaxIndex()) ; the last item if the array is always empty
 		return 0
+	
 	objThisCover := New Cover()
-	; ###_D(arrTracks[intTracksArrayIndex])
+	; ###_D("arrTracks[" . intTracksArrayIndex . "]: " . arrTracks[intTracksArrayIndex])
 	objTrack := objITunesTracks.Item(arrTracks[intTracksArrayIndex])
+
+	if (objTrack.Index <> arrTracks[intTracksArrayIndex])
+		Oops("arrTracks[" . intTracksArrayIndex . "]: " . arrTracks[intTracksArrayIndex] . "`nobjTrack.Index: " . objTrack.Index)
 	strCoverFile := iTunes_GetTempImageFile(objTrack, objThisCover.GUID)
 	objThisCover.SetCoverTempFile(strCoverFile)
 	; ###_D("objThisCover.CoverTempFilePathName: " . objThisCover.CoverTempFilePathName)
 
+	; ###_D("objTrack.Index: " . objTrack.Index)
 	objThisCover.SetCoverProperties(objTrack.Name, objTrack.Artist, objTrack.Album, objTrack.Index, objTrack.TrackID, objTrack.TrackDatabaseID)
+	; ###_D("objThisCover.Index: " . objThisCover.Index)
 
 	return objThisCover
 }

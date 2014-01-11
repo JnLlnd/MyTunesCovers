@@ -1,3 +1,13 @@
+/*
+Next:
+- bug Artist -M- donne McGarrigle & Beau d'hommage tandis que McGarrigle & Beau d'hommage donne rien
+- bug Artist (|m&e|) de 16 pièces commence offset de 1 trop tôt et manque le dernier, et ler & est strippé du non
+- pagination
+
+FAIT:
+- commencr All... par un espace _ et terminer pas _ pour qu'il soit toujours en premier
+- striper les espaces au début des artistes et albums
+*/
 ;===============================================
 /*
 	MyTunesCovers
@@ -291,8 +301,8 @@ Cover_ReleaseSource()
 Gdip_Shutdown(objGdiToken)
 ptrObjITunesunesApp := Object(objITunesunesApp)
 ObjRelease(ptrObjITunesunesApp)
-
-; ### delete covers cache
+if StrLen(strCoversCacheFolder)
+	FileDelete, %strCoversCacheFolder%\*.*
 ExitApp
 return
 ;-----------------------------------------------------------
@@ -387,7 +397,7 @@ DisplayArtistAlbumCovers:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums) - 1
-if !(intNbCovers)
+if (intNbCovers < 1)
 {
 	###_D("Oops ###")
 	return
