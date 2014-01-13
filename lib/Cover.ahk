@@ -1,12 +1,11 @@
-#Include %A_ScriptDir%\lib\iTunes.ahk ; Cover source
-
 global objArtistsIndex := Object()
 global objAlbumsIndex := Object()
 global objArtistsAlbumsIndex := Object()
 global objAlbumsOfArtistsIndex := Object()
-global arrTracks
 global strCoverSourceType ; "iTunes" currently implemented, "MP3" coming
+global strSourceCacheFilenameExtension := "SourceCache.csv"
 
+#Include %A_ScriptDir%\lib\iTunes.ahk ; Cover source (INCLUDE MUST BE AFTER GLOBAL DECLARATIONS)
 
 ;-----------------------------------------------------------
 class Cover
@@ -80,14 +79,14 @@ Cover_InitCoversSource(strSource)
 		blnSourceOK := %strCoverSourceType%_InitCoversSource()
 		if (blnSourceOK)
 		{
-			if FileExist(A_ScriptDir . "\" . strCoverSourceType . "SourceDump.csv")
+			if FileExist(A_ScriptDir . "\" . strCoverSourceType . "_" . strSourceCacheFilenameExtension)
 			{
 				MsgBox, 36, %lAppName%, %lLoadCache% ; ### or if number of tracks changed
 				IfMsgBox, Yes
 					%strCoverSourceType%_LoadSource() ; WANT TO USE CACHE
 				IfMsgBox, No
 				{
-					FileDelete, %A_ScriptDir%\%strCoverSourceType%SourceDump.csv
+					FileDelete, %A_ScriptDir%\%strCoverSourceType%_%strSourceCacheFilenameExtension%
 					%strCoverSourceType%_InitArtistsAlbumsIndex() ; WANT TO REFRESH
 				}
 			}
@@ -132,7 +131,7 @@ Cover_ReleaseSource()
 	if (strCoverSourceType = "MP3")
 		###_D("Save MP3 not implemented") ; %strCoverSourceType%_SaveSource()
 	else
-		if !FileExist(A_ScriptDir . "\" . strCoverSourceType . "SourceDump.csv")
+		if !FileExist(A_ScriptDir . "\" . strCoverSourceType . "_" . strSourceCacheFilenameExtension)
 			%strCoverSourceType%_SaveSource()
 }
 

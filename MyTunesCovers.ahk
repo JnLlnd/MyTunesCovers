@@ -415,7 +415,7 @@ loop
 		strCoverTempFilePathName := A_ScriptDir  . "\no_cover-200x200.png" ; if absent, url download from repo ? ###
 	else
 		strCoverTempFilePathName := objCover%intCoversDisplayedNow%.CoverTempFilePathName
-	TrayTip, %strTrackTitle%, %strCoverTempFilePathName%
+	; TrayTip, %strTrackTitle%, %strCoverTempFilePathName%
 	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intCoversDisplayedNow%w, Pos%intCoversDisplayedNow%h)
 	; ###_D(pBitmapPicPreview)
 	GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
