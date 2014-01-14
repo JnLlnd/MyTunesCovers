@@ -23,7 +23,7 @@ iTunes_InitCoversSource()
 
 	intSourceID := objITunesLibrary.sourceID
 	intPlaylistID := objITunesPlaylist.PlaylistID
-	###_D("intSourceID / intPlaylistID: " . intSourceID . " / " . intPlaylistID)
+	; ###_D("intSourceID / intPlaylistID: " . intSourceID . " / " . intPlaylistID)
 	objITunesSourceIDs.Insert("intSourceID", intSourceID)
 	objITunesSourceIDs.Insert("intPlaylistID", intPlaylistID)
 	
