@@ -47,7 +47,7 @@ iTunes_InitArtistsAlbumsIndex()
 
 		strArtist := Trim(objITunesTracks.Item(A_Index).Artist)
 		if !StrLen(strArtist)
-			strArtist := lArtistUnknown
+			strArtist := A_Space . lArtistUnknown
 		StringReplace, strArtist, strArtist, %strAlbumArtistDelimiter%, _
 		if !StrLen(objArtistsIndex[strArtist])
 			objArtistsIndex.Insert(strArtist, "")
@@ -165,7 +165,7 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 	for k, v in arrTracks
 		###_D("k: " . k . " / v: " . v)
 	*/
-	
+
 	return arrTracks.MaxIndex()
 }
 ;-----------------------------------------------------------
@@ -185,6 +185,7 @@ iTunes_NextCover()
 	arrTrackIDs := StrSplit(arrTracks[intTracksArrayIndex], ";") ; "TrackID ; DatabaseID"
 	; ###_D(arrTrackIDs[1] . " `; " . arrTrackIDs[2])
 	objTrack := objITunesunesApp.GetITObjectByID(intSourceID, intPlaylistID, arrTrackIDs[1], arrTrackIDs[2]) ; intTrackID, intDatabaseID
+	; ###_D("objTrack.Name: " . objTrack.Name)
 
 	strCoverFile := iTunes_GetTempImageFile(objTrack, objThisCover.GUID)
 	objThisCover.SetCoverTempFile(strCoverFile)

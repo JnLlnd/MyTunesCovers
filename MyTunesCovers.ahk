@@ -73,23 +73,12 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 Gosub, InitGDIP
 Gosub, LoadIniFile
 Gosub, Check4Update
-Gosub, BuildGui
-Gosub, InitSources
 
-/*
-if InitCoverScan("", "Les duos improbables")
-	loop, 20
-	{
-		objCover%A_Index% := NextCover()
-		###_D(A_Index . " " . objCover%A_Index%.Name)
-		if !(objCover%A_Index%)
-			break
-		strResult := objCover%A_Index%.SaveCover(A_ScriptDir  . "\no_cover-200x200.png")
-		###_D("objCover.SaveCover result: " . strResult)
-	}
-else
-	###_D("Oops ###")
-*/
+intCoversPerPage := 0
+intNbCoversCreated := 0
+Gosub, BuildGui
+
+Gosub, InitSources
 
 OnExit, CleanUpBeforeQuit
 return
@@ -157,10 +146,11 @@ Gui, Add, Text, x+20 yp, %lAlbums%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
 
-gosub, PreparePicPreviews
+; gosub, PreparePicPreviews
 
-Gui, Add, Button, x150 y+10 vbtnPrevious gButtonPreviousClicked, <- Previous ; ###
-Gui, Add, Button, x+50 yp vbtnNext gButtonNextClicked, Next -> ; ###
+Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
+Gui, Add, Text, x+50 yp w40 vlblPage
+Gui, Add, Button, x+50 yp w80 vbtnNext gButtonNextClicked hidden, % lNext . " ->"
 
 Gui, Add, StatusBar
 SB_SetParts(200)
@@ -170,7 +160,25 @@ if (A_IsCompiled)
 else
 	SB_SetIcon("C:\Dropbox\AutoHotkey\CSVBuddy\build\Ico - Visual Pharm\angel.ico") ; ###
 
-Gui, Show, Autosize
+intPicWidth := 350 ; 150
+intPicHeight := 350 ; 150
+intNameLabelHeight := 30
+intColWidth := intPicWidth + 10
+intRowHeight := intPicHeight + intNameLabelHeight + 10
+intClipboardWidth := 160
+intHeaderHeight := 60
+intFooterHeight := 60
+
+SysGet, intMonWork, MonitorWorkArea
+intAvailWidth := intMonWorkRight - 50
+intAvailHeight := intMonWorkBottom - 50
+Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
+intTotalWidth := (intMaxNbCol * intColWidth) + intClipboardWidth + 20
+intTotalHeight := (intMaxNbRow * intRowHeight) + intHeaderHeight + intFooterHeight
+
+intPage := 1
+
+Gui, Show, w%intTotalWidth% h%intTotalHeight%
 
 return
 ;-----------------------------------------------------------
@@ -198,7 +206,7 @@ return
 ;-----------------------------------------------------------
 PopulateDropdownLists:
 ;-----------------------------------------------------------
-strArtistsDropDownList := strAlbumArtistDelimiter . lDropDownAllArtists
+strArtistsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllArtists
 for strArtist, strTracks in objArtistsIndex
 	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
 GuiControl, , lstArtists, %strArtistsDropDownList%
@@ -213,7 +221,7 @@ return
 ;-----------------------------------------------------------
 PopulateAlbumDropdownList:
 ;-----------------------------------------------------------
-strAlbumsDropDownList := strAlbumArtistDelimiter . lDropDownAllAlbums
+strAlbumsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums
 for strAlbum, strTracks in objAlbumsIndex
 	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
 GuiControl, , lstAlbums, %strAlbumsDropDownList%
@@ -224,94 +232,19 @@ return
 
 
 ;-----------------------------------------------------------
-PreparePicPreviews:
-;-----------------------------------------------------------
-SysGet, intMonWork, MonitorWorkArea
-intPicWidth := 150
-intPicHeight := 150
-intNameLabelHeight := 30
-intColWidth := intPicWidth + 10
-intRowHeight := intPicHeight + intNameLabelHeight + 10
-intClipboardWidth := 160
-intHeaderHeight := 60
-intFooterHeight := 60
-
-intAvailWidth := intMonWorkRight - 50
-intAvailHeight := intMonWorkBottom - 50
-Gosub, CalcMaxRowsAndCols ; intMaxNbCol x intMaxNbRow
-; ###_D("Init: " . intMaxNbCol . " x " . intMaxNbRow)
-
-intX := intClipboardWidth + 5
-intY := intHeaderHeight + 5
-intCol := 1
-intRow := 1
-intXPic := intX + 5
-intYPic := intY + 5
-intYNameLabel := intY + intPicHeight + 5
-loop
-{
-	Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicPreview%A_Index% gPicPreviewClicked ; 0xE ?
-	GuiControlGet, Pos%A_Index%, Pos, picPreview%A_Index%
-	; GuiControlGet, hwnd%A_Index%, hwnd, picPreview%A_Index%
-	Gui, Font, s8 w500, Arial
-	Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
-	Gui, Font, s8 w700, Arial
-	Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
-	Gui, Font
-	
-	if (intCol = intMaxNbCol)
-	{
-		if (intRow = intMaxNbRow)
-		{
-			intCoversPerPage := A_Index
-			intNbCoversCreated := A_Index
-			intCoversDisplayedPrevious := intCoversPerPagePrev
-			break
-		}
-		intRow := intRow + 1
-		intY := intY + intRowHeight
-		intYPic := intY + 5
-		intYNameLabel := intY + intPicHeight + 5
-		
-		intCol := 0
-		intX := 5 - intColWidth + intClipboardWidth
-	}
-	intCol := intCol + 1
-	intX := intX + intColWidth
-	intXPic := intX + 5
-	if (A_Index > 1000)
-	{
-		###_D("Infinite Loop Error :-)")
-		ExitApp
-	}
-}
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-CalcMaxRowsAndCols:
-;-----------------------------------------------------------
-intMaxNbCol := Floor((intAvailWidth - intClipboardWidth) / intColWidth)
-intMaxNbRow := Floor((intAvailHeight - intHeaderHeight - intFooterHeight) / intRowHeight)
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
 ; !q::
 GuiSize:
 ;-----------------------------------------------------------
+
 ; WinGetPos, intFoo, intFoo, intWinWidth, intWinHeight, A
 ; intAvailWidth := intWinWidth -16 - 5
 ; intAvailHeight := intWinHeight - 38
 intAvailWidth := A_GuiWidth - 5
 intAvailHeight := A_GuiHeight
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
-; ToolTip, % "Resize: " . intMaxNbCol . " x " . intMaxNbRow . "`n" . intAvailWidth . " x " . intAvailHeight
-
-; ### handle minimal size of Gui
+ToolTip, % "Resize: " . intMaxNbCol . " x " . intMaxNbRow . "`n" . intAvailWidth . " x " . intAvailHeight
+intCoverPerPagePrevious := intCoverPerPage
+intCoverPerPage := (intMaxNbCol * intMaxNbRow)
 
 intX := intClipboardWidth + 5
 intY := intHeaderHeight + 5
@@ -321,35 +254,25 @@ intXPic := intX + 5
 intYPic := intY + 5
 intYNameLabel := intY + intPicHeight + 5
 
-loop, %intCoversPerPage%
+loop, %intCoverPerPagePrevious%
 {
 	GuiControl, Hide, picPreview%A_Index%
 	GuiControl, Hide, lblCoverLabel%A_Index%
 	GuiControl, Hide, lblNameLabel%A_Index%
 }
 
-loop
+loop, %intCoverPerPage%
 {
-/*
-	###_D(""
-		. "A_Index: " . A_Index . "`n"
-		. "intCoversPerPagePrev: " . intCoversPerPagePrev . "`n"
-		. "intCol: " . intCol . "`n"
-		. "intMaxNbCol: " . intMaxNbCol . "`n"
-		. "intRow: " . intRow . "`n"
-		. "intMaxNbRow: " . intMaxNbRow . "`n"
-		. "intNbCoversCreated: " . intNbCoversCreated . "`n"
-		. "")
-*/
 	if (intNbCoversCreated < A_Index)
 	{
+		; ###_D(intNbCoversCreated . " < " . A_Index . " intCoversPerPage: " . intCoversPerPage)
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicPreview%A_Index% gPicPreviewClicked ; 0xE ?
 		GuiControlGet, Pos%A_Index%, Pos, picPreview%A_Index% ; required?
 		; GuiControlGet, hwnd%A_Index%, hwnd, picPreview%A_Index% ; required?
 		Gui, Font, s8 w500, Arial
 		Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
 		Gui, Font, s8 w700, Arial
-		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% vlblNameLabel%A_Index% center vlblNameLabel%A_Index% gNameLabelClicked, %A_Index% C: %intCol% R: %intRow%
 		Gui, Font
 		intNbCoversCreated := A_Index
 	}
@@ -369,7 +292,6 @@ loop
 	{
 		if (intRow = intMaxNbRow)
 		{
-			intCoversPerPage := A_Index
 			intCoversDisplayedPrevious := intCoversPerPage
 			break
 		}
@@ -385,17 +307,35 @@ loop
 	intCol := intCol + 1
 	intX := intX + intColWidth
 	intXPic := intX + 5
-	if (A_Index > 1000)
+	if (A_Index > 200)
 	{
 		###_D("Infinite Loop Error :-)")
 		ExitApp
 	}
 }
 intGuiMiddle := A_GuiWidth / 2
-GuiControl, Move, btnPrevious, % "X" . (intGuiMiddle - 30) . " Y" . A_GuiHeight - 55
+GuiControl, Move, btnPrevious, % "X" . (intGuiMiddle - 150) . " Y" . A_GuiHeight - 55
 ; Gui, Add, Button, x150 y+10 vbtnPrevious gButtonPreviousClicked, <-
-GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 30) . " Y" . A_GuiHeight - 55
+GuiControl, Move, lblPage, % "X" . (intGuiMiddle) . " Y" . A_GuiHeight - 55
+GuiControl, , lblPage, % "Page " . intPage
+; Gui, Add, Button, x+50 yp vlblPage
+GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 135) . " Y" . A_GuiHeight - 55
 ; Gui, Add, Button, x+50 yp vbtnNext gButtonNextClicked, ->
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+CalcMaxRowsAndCols:
+;-----------------------------------------------------------
+intMaxNbCol := Floor((intAvailWidth - intClipboardWidth) / intColWidth)
+intMaxNbRow := Floor((intAvailHeight - intHeaderHeight - intFooterHeight) / intRowHeight)
+
+if (!intMaxNbCol)
+	intMaxNbCol := 1
+if (!intMaxNbRow)
+	intMaxNbRow := 1
 
 return
 ;-----------------------------------------------------------
@@ -468,10 +408,10 @@ return
 ArtistsDropDownChanged:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
-if (lstArtists = lDropDownAllArtists)
+if (lstArtists = A_Space . lDropDownAllArtists)
 	Gosub, PopulateAlbumDropdownList
 else
-	GuiControl, , lstAlbums, % strAlbumArtistDelimiter . lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
+	GuiControl, , lstAlbums, % strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
 GuiControl, Choose, lstAlbums, 1
 Gosub, DisplayArtistAlbumCovers
 
@@ -493,6 +433,8 @@ return
 ;-----------------------------------------------------------
 ButtonPreviousClicked:
 ;-----------------------------------------------------------
+intPage := intPage - 1
+Gosub,	DisplayArtistAlbumCovers
 
 return
 ;-----------------------------------------------------------
@@ -501,6 +443,8 @@ return
 ;-----------------------------------------------------------
 ButtonNextClicked:
 ;-----------------------------------------------------------
+intPage := intPage + 1
+Gosub,	DisplayArtistAlbumCovers
 
 return
 ;-----------------------------------------------------------
@@ -509,8 +453,19 @@ return
 ;-----------------------------------------------------------
 DisplayArtistAlbumCovers:
 ;-----------------------------------------------------------
+
+/*
+	intPosition := 1 to intCoversPerPage
+	intCoverDisplayedNow := ((intPage - 1) * intCoversPerPage) + intPosition
+	
+	if intPage > 1, show btnPrevious, else hide
+	if intCoverDisplayedNow < intNbCovers, show btnNext, else cache
+	
+	check displayedNow vs PositionWithContentNow to calculate intRemainingCovers
+*/
+
 Gui, Submit, NoHide
-intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums) - 1
+intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums) - 1 ; -1 because of the last comma in lists
 if (intNbCovers < 1)
 {
 	###_D("Oops ###")
@@ -521,6 +476,7 @@ loop
 {
 	intCoversDisplayedNow := intCoversDisplayedNow + 1
 	objCover%intCoversDisplayedNow% := Cover_NextCover()
+	
 	if (objCover%intCoversDisplayedNow%)
 		strTrackTitle := objCover%intCoversDisplayedNow%.Name
 	else
@@ -538,8 +494,8 @@ loop
 	LoadPicPreview(picPreview%intCoversDisplayedNow%, strCoverTempFilePathName)
 	
 	GuiControl, , lblNameLabel%intCoversDisplayedNow%, % objCover%intCoversDisplayedNow%.Name
-	GuiControl, , lblCoverLabel%intCoversDisplayedNow%, % "Artist: " . objCover%intCoversDisplayedNow%.Artist . "`n"
-		. "Album: " . objCover%intCoversDisplayedNow%.Album . "`n"
+	GuiControl, , lblCoverLabel%intCoversDisplayedNow%, % lArtist . ": " . objCover%intCoversDisplayedNow%.Artist . "`n"
+		. lAlbum . ": " . objCover%intCoversDisplayedNow%.Album . "`n"
 		. "Index: " . objCover%intCoversDisplayedNow%.Index . "`n"
 		. "TrackID: " . objCover%intCoversDisplayedNow%.TrackID . "`n"
 		. "TrackDatabaseID: " . objCover%intCoversDisplayedNow%.TrackDatabaseID
@@ -847,5 +803,74 @@ ITunesLibArtworkFormatPICT = 8
 
 
 GDI_SaveBitmap( ClipboardGet_DIB(), "filename.bmp" )
+
+
+
+;-----------------------------------------------------------
+PreparePicPreviews:
+;-----------------------------------------------------------
+SysGet, intMonWork, MonitorWorkArea
+intPicWidth := 150
+intPicHeight := 150
+intNameLabelHeight := 30
+intColWidth := intPicWidth + 10
+intRowHeight := intPicHeight + intNameLabelHeight + 10
+intClipboardWidth := 160
+intHeaderHeight := 60
+intFooterHeight := 60
+
+intAvailWidth := intMonWorkRight - 50
+intAvailHeight := intMonWorkBottom - 50
+Gosub, CalcMaxRowsAndCols ; intMaxNbCol x intMaxNbRow
+; ###_D("Init: " . intMaxNbCol . " x " . intMaxNbRow)
+
+intX := intClipboardWidth + 5
+intY := intHeaderHeight + 5
+intCol := 1
+intRow := 1
+intXPic := intX + 5
+intYPic := intY + 5
+intYNameLabel := intY + intPicHeight + 5
+loop
+{
+	Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicPreview%A_Index% gPicPreviewClicked ; 0xE ?
+	GuiControlGet, Pos%A_Index%, Pos, picPreview%A_Index%
+	; GuiControlGet, hwnd%A_Index%, hwnd, picPreview%A_Index%
+	Gui, Font, s8 w500, Arial
+	Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
+	Gui, Font, s8 w700, Arial
+	Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
+	Gui, Font
+	
+	if (intCol = intMaxNbCol)
+	{
+		if (intRow = intMaxNbRow)
+		{
+			intCoversPerPage := A_Index
+			intNbCoversCreated := A_Index
+			intCoversDisplayedPrevious := intCoversPerPagePrev
+			break
+		}
+		intRow := intRow + 1
+		intY := intY + intRowHeight
+		intYPic := intY + 5
+		intYNameLabel := intY + intPicHeight + 5
+		
+		intCol := 0
+		intX := 5 - intColWidth + intClipboardWidth
+	}
+	intCol := intCol + 1
+	intX := intX + intColWidth
+	intXPic := intX + 5
+	if (A_Index > 1000)
+	{
+		###_D("Infinite Loop Error :-)")
+		ExitApp
+	}
+}
+return
+;-----------------------------------------------------------
+
+
 
 */

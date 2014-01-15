@@ -127,7 +127,7 @@ Cover_LoadSource() ; NOT USED
 ;-----------------------------------------------------------
 Cover_ReleaseSource()
 {
-	###_D("Release: " . strCoverSourceType)
+	; ###_D("Release: " . strCoverSourceType)
 	if (strCoverSourceType = "MP3")
 		###_D("Save MP3 not implemented") ; %strCoverSourceType%_SaveSource()
 	else
