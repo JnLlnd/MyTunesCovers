@@ -145,9 +145,9 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 {
 	global strAlbumArtistDelimiter
 
-	if (strArtist = lDropDownAllArtists)
+	if (strArtist = A_Space . lDropDownAllArtists)
 		strArtist := ""
-	if (strAlbum = lDropDownAllAlbums)
+	if (strAlbum = A_Space . lDropDownAllAlbums)
 		strAlbum := ""
 
 	; ###_D("objArtistsIndex[" . strArtist . "] : " . objArtistsIndex[strArtist])
@@ -172,17 +172,16 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 
 
 ;-----------------------------------------------------------
-iTunes_NextCover()
+iTunes_GetCover(intTrackIndex)
 {
-	intTracksArrayIndex := intTracksArrayIndex + 1
-	if (intTracksArrayIndex = arrTracks.MaxIndex()) ; the last item if the array is always empty
+	if (intTracksArrayIndex => arrTracks.MaxIndex()) ; the last item if the array is always empty
 		return 0
 	
 	objThisCover := New Cover()
-	; ###_D("arrTracks[" . intTracksArrayIndex . "]: " . arrTracks[intTracksArrayIndex])
-	; objTrack := objITunesTracks.Item(arrTracks[intTracksArrayIndex])
+	; ###_D("arrTracks[" . intTrackIndex . "]: " . arrTracks[intTrackIndex])
+	; objTrack := objITunesTracks.Item(arrTracks[intTrackIndex])
 
-	arrTrackIDs := StrSplit(arrTracks[intTracksArrayIndex], ";") ; "TrackID ; DatabaseID"
+	arrTrackIDs := StrSplit(arrTracks[intTrackIndex], ";") ; "TrackID ; DatabaseID"
 	; ###_D(arrTrackIDs[1] . " `; " . arrTrackIDs[2])
 	objTrack := objITunesunesApp.GetITObjectByID(intSourceID, intPlaylistID, arrTrackIDs[1], arrTrackIDs[2]) ; intTrackID, intDatabaseID
 	; ###_D("objTrack.Name: " . objTrack.Name)

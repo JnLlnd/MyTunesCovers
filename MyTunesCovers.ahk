@@ -165,7 +165,7 @@ intPicHeight := 350 ; 150
 intNameLabelHeight := 30
 intColWidth := intPicWidth + 10
 intRowHeight := intPicHeight + intNameLabelHeight + 10
-intClipboardWidth := 160
+intClipboardWidth := intPicWidth + 10
 intHeaderHeight := 60
 intFooterHeight := 60
 
@@ -243,8 +243,8 @@ intAvailWidth := A_GuiWidth - 5
 intAvailHeight := A_GuiHeight
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
 ToolTip, % "Resize: " . intMaxNbCol . " x " . intMaxNbRow . "`n" . intAvailWidth . " x " . intAvailHeight
-intCoverPerPagePrevious := intCoverPerPage
-intCoverPerPage := (intMaxNbCol * intMaxNbRow)
+intCoversPerPagePrevious := intCoversPerPage
+intCoversPerPage := (intMaxNbCol * intMaxNbRow)
 
 intX := intClipboardWidth + 5
 intY := intHeaderHeight + 5
@@ -254,14 +254,14 @@ intXPic := intX + 5
 intYPic := intY + 5
 intYNameLabel := intY + intPicHeight + 5
 
-loop, %intCoverPerPagePrevious%
+loop, %intCoversPerPagePrevious%
 {
 	GuiControl, Hide, picPreview%A_Index%
 	GuiControl, Hide, lblCoverLabel%A_Index%
 	GuiControl, Hide, lblNameLabel%A_Index%
 }
 
-loop, %intCoverPerPage%
+loop, %intCoversPerPage%
 {
 	if (intNbCoversCreated < A_Index)
 	{
@@ -313,14 +313,18 @@ loop, %intCoverPerPage%
 		ExitApp
 	}
 }
-intGuiMiddle := A_GuiWidth / 2
-GuiControl, Move, btnPrevious, % "X" . (intGuiMiddle - 150) . " Y" . A_GuiHeight - 55
+intGuiMiddle := intClipboardWidth + (A_GuiWidth - intClipboardWidth) / 2
+GuiControl, Move, btnPrevious, % "X" . (intGuiMiddle - 120) . " Y" . A_GuiHeight - 55
 ; Gui, Add, Button, x150 y+10 vbtnPrevious gButtonPreviousClicked, <-
 GuiControl, Move, lblPage, % "X" . (intGuiMiddle) . " Y" . A_GuiHeight - 55
-GuiControl, , lblPage, % "Page " . intPage
+GuiControl, , lblPage, % L(lPageFooter, intPage)
 ; Gui, Add, Button, x+50 yp vlblPage
-GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 135) . " Y" . A_GuiHeight - 55
+GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 105) . " Y" . A_GuiHeight - 55
 ; Gui, Add, Button, x+50 yp vbtnNext gButtonNextClicked, ->
+
+ToolTip,
+
+Gosub, DisplayCoversPage
 
 return
 ;-----------------------------------------------------------
@@ -413,7 +417,7 @@ if (lstArtists = A_Space . lDropDownAllArtists)
 else
 	GuiControl, , lstAlbums, % strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
 GuiControl, Choose, lstAlbums, 1
-Gosub, DisplayArtistAlbumCovers
+Gosub, DisplayCovers
 
 return
 ;-----------------------------------------------------------
@@ -424,7 +428,7 @@ AlbumsDropDownChanged:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 ; ###_D(lstArtists . " / " . lstAlbums)
-Gosub, DisplayArtistAlbumCovers
+Gosub, DisplayCovers
 
 return
 ;-----------------------------------------------------------
@@ -434,7 +438,7 @@ return
 ButtonPreviousClicked:
 ;-----------------------------------------------------------
 intPage := intPage - 1
-Gosub,	DisplayArtistAlbumCovers
+Gosub,	DisplayCoversPage
 
 return
 ;-----------------------------------------------------------
@@ -444,26 +448,15 @@ return
 ButtonNextClicked:
 ;-----------------------------------------------------------
 intPage := intPage + 1
-Gosub,	DisplayArtistAlbumCovers
+Gosub,	DisplayCoversPage
 
 return
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
-DisplayArtistAlbumCovers:
+DisplayCovers:
 ;-----------------------------------------------------------
-
-/*
-	intPosition := 1 to intCoversPerPage
-	intCoverDisplayedNow := ((intPage - 1) * intCoversPerPage) + intPosition
-	
-	if intPage > 1, show btnPrevious, else hide
-	if intCoverDisplayedNow < intNbCovers, show btnNext, else cache
-	
-	check displayedNow vs PositionWithContentNow to calculate intRemainingCovers
-*/
-
 Gui, Submit, NoHide
 intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums) - 1 ; -1 because of the last comma in lists
 if (intNbCovers < 1)
@@ -471,50 +464,78 @@ if (intNbCovers < 1)
 	###_D("Oops ###")
 	return
 }
-intCoversDisplayedNow := 0
+intPage := 1
+Gosub, DisplayCoversPage
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+DisplayCoversPage:
+;-----------------------------------------------------------
+intPosition := 0
+intTrackIndexDisplayedNow := ((intPage - 1) * intCoversPerPage)
 loop
 {
-	intCoversDisplayedNow := intCoversDisplayedNow + 1
-	objCover%intCoversDisplayedNow% := Cover_NextCover()
+	intTrackIndexDisplayedNow := intTrackIndexDisplayedNow + 1
+	intPosition := intPosition + 1
+	objCover%intPosition% := Cover_GetCover(intTrackIndexDisplayedNow)
 	
-	if (objCover%intCoversDisplayedNow%)
-		strTrackTitle := objCover%intCoversDisplayedNow%.Name
+	if (objCover%intPosition%)
+		strTrackTitle := objCover%intPosition%.Name
 	else
 		strTrackTitle := ""
-	if !StrLen(objCover%intCoversDisplayedNow%.CoverTempFilePathName)
+	if !StrLen(objCover%intPosition%.CoverTempFilePathName)
 		strCoverTempFilePathName := A_ScriptDir  . "\no_cover-200x200.png" ; if absent, url download from repo ? ###
 	else
-		strCoverTempFilePathName := objCover%intCoversDisplayedNow%.CoverTempFilePathName
+		strCoverTempFilePathName := objCover%intPosition%.CoverTempFilePathName
 	; TrayTip, %strTrackTitle%, %strCoverTempFilePathName%
-	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intCoversDisplayedNow%w, Pos%intCoversDisplayedNow%h)
+	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intPosition%w, Pos%intPosition%h)
 	; ###_D(pBitmapPicPreview)
 	GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
 	; ###_D(GPicPreview)
 	Gdip_SetInterpolationMode(GPicPreview, 7)
-	LoadPicPreview(picPreview%intCoversDisplayedNow%, strCoverTempFilePathName)
+	LoadPicPreview(picPreview%intPosition%, strCoverTempFilePathName)
 	
-	GuiControl, , lblNameLabel%intCoversDisplayedNow%, % objCover%intCoversDisplayedNow%.Name
-	GuiControl, , lblCoverLabel%intCoversDisplayedNow%, % lArtist . ": " . objCover%intCoversDisplayedNow%.Artist . "`n"
-		. lAlbum . ": " . objCover%intCoversDisplayedNow%.Album . "`n"
-		. "Index: " . objCover%intCoversDisplayedNow%.Index . "`n"
-		. "TrackID: " . objCover%intCoversDisplayedNow%.TrackID . "`n"
-		. "TrackDatabaseID: " . objCover%intCoversDisplayedNow%.TrackDatabaseID
-} until (A_Index = intCoversPerPage) or (intCoversDisplayedNow = intNbCovers)
-intRemainingCovers := intCoversDisplayedPrevious - intCoversDisplayedNow
-intCoversDisplayedPrevious := intCoversDisplayedNow
+	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name
+	GuiControl, , lblCoverLabel%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
+		. lAlbum . ": " . objCover%intPosition%.Album . "`n"
+		. "Index: " . objCover%intPosition%.Index . "`n"
+		. "TrackID: " . objCover%intPosition%.TrackID . "`n"
+		. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID
+} until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
+intRemainingCovers := intCoversDisplayedPrevious - intPosition
+intCoversDisplayedPrevious := intPosition
 loop, %intRemainingCovers%
 {
-	intCoversDisplayedNow := intCoversDisplayedNow + 1
-	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intCoversDisplayedNow%w, Pos%intCoversDisplayedNow%h)
+	intPosition := intPosition + 1
+	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intPosition%w, Pos%intPosition%h)
 	; ###_D(pBitmapPicPreview)
 	GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
 	; ###_D(GPicPreview)
 	Gdip_SetInterpolationMode(GPicPreview, 7)
-	LoadPicPreview(picPreview%intCoversDisplayedNow%, A_ScriptDir  . "\fill_cover-200x200.png")
+	LoadPicPreview(picPreview%intPosition%, A_ScriptDir  . "\fill_cover-200x200.png")
 	
-	GuiControl, , lblNameLabel%intCoversDisplayedNow%
-	GuiControl, , lblCoverLabel%intCoversDisplayedNow%
+	GuiControl, , lblNameLabel%intPosition%
+	GuiControl, , lblCoverLabel%intPosition%
 }
+
+/*
+	if intPage > 1, show btnPrevious, else hide
+	if intTrackIndexDisplayedNow < intNbCovers, show btnNext, else cache
+	
+	check displayedNow vs PositionWithContentNow to calculate intRemainingCovers
+*/
+/*
+###_D(""
+	. "intTrackIndexDisplayedNow: " . intTrackIndexDisplayedNow . "`n"
+	. "intNbCovers: " . intNbCovers . "`n"
+	. "")
+*/
+GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
+GuiControl, % (intTrackIndexDisplayedNow < intNbCovers ? "Show" : "Hide"), btnNext
+GuiControl, , lblPage, % L(lPageFooter, intPage)
 
 return
 ;-----------------------------------------------------------

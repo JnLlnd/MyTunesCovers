@@ -108,9 +108,9 @@ Cover_InitCoverScan(lstArtists, lstAlbums)
 
 
 ;-----------------------------------------------------------
-Cover_NextCover()
+Cover_GetCover(intTrackIndex)
 {
-	return %strCoverSourceType%_NextCover()
+	return %strCoverSourceType%_GetCover(intTrackIndex)
 }
 ;-----------------------------------------------------------
 
