@@ -102,15 +102,21 @@ Cover_InitCoversSource(strSource)
 ;-----------------------------------------------------------
 Cover_InitCoverScan(lstArtists, lstAlbums)
 {
-	return %strCoverSourceType%_InitCoverScan(lstArtists, lstAlbums)
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_InitCoverScan(lstArtists, lstAlbums)
+	else
+		return false
 }
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
-Cover_GetCover(intTrackIndex)
+Cover_GetCover(ByRef objCover, intTrackIndex)
 {
-	return %strCoverSourceType%_GetCover(intTrackIndex)
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_GetCover(objCover, intTrackIndex)
+	else
+		return false
 }
 ;-----------------------------------------------------------
 

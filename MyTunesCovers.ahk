@@ -149,7 +149,7 @@ Gui, Font
 ; gosub, PreparePicPreviews
 
 Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
-Gui, Add, Text, x+50 yp w40 vlblPage
+Gui, Add, Text, x+50 yp w60 vlblPage
 Gui, Add, Button, x+50 yp w80 vbtnNext gButtonNextClicked hidden, % lNext . " ->"
 
 Gui, Add, StatusBar
@@ -317,12 +317,11 @@ intGuiMiddle := intClipboardWidth + (A_GuiWidth - intClipboardWidth) / 2
 GuiControl, Move, btnPrevious, % "X" . (intGuiMiddle - 120) . " Y" . A_GuiHeight - 55
 ; Gui, Add, Button, x150 y+10 vbtnPrevious gButtonPreviousClicked, <-
 GuiControl, Move, lblPage, % "X" . (intGuiMiddle) . " Y" . A_GuiHeight - 55
-GuiControl, , lblPage, % L(lPageFooter, intPage)
 ; Gui, Add, Button, x+50 yp vlblPage
 GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 105) . " Y" . A_GuiHeight - 55
 ; Gui, Add, Button, x+50 yp vbtnNext gButtonNextClicked, ->
 
-ToolTip,
+ToolTip
 
 Gosub, DisplayCoversPage
 
@@ -465,6 +464,7 @@ if (intNbCovers < 1)
 	return
 }
 intPage := 1
+intNbPages := Ceil(intNbCovers / intCoversPerPage)
 Gosub, DisplayCoversPage
 
 return
@@ -474,13 +474,16 @@ return
 ;-----------------------------------------------------------
 DisplayCoversPage:
 ;-----------------------------------------------------------
+Gui, Submit, NoHide
 intPosition := 0
 intTrackIndexDisplayedNow := ((intPage - 1) * intCoversPerPage)
 loop
 {
 	intTrackIndexDisplayedNow := intTrackIndexDisplayedNow + 1
+	if !Cover_GetCover(objThisCover, intTrackIndexDisplayedNow)
+		break
 	intPosition := intPosition + 1
-	objCover%intPosition% := Cover_GetCover(intTrackIndexDisplayedNow)
+	objCover%intPosition% := objThisCover
 	
 	if (objCover%intPosition%)
 		strTrackTitle := objCover%intPosition%.Name
@@ -535,7 +538,8 @@ loop, %intRemainingCovers%
 */
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
 GuiControl, % (intTrackIndexDisplayedNow < intNbCovers ? "Show" : "Hide"), btnNext
-GuiControl, , lblPage, % L(lPageFooter, intPage)
+if (intNbPages)
+	GuiControl, , lblPage, % L(lPageFooter, intPage, intNbPages)
 
 return
 ;-----------------------------------------------------------
