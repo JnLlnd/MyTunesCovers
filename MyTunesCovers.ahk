@@ -146,8 +146,6 @@ Gui, Add, Text, x+20 yp, %lAlbums%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
 
-; gosub, PreparePicPreviews
-
 Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
 Gui, Add, Text, x+50 yp w60 vlblPage
 Gui, Add, Button, x+50 yp w80 vbtnNext gButtonNextClicked hidden, % lNext . " ->"
@@ -256,7 +254,7 @@ intYNameLabel := intY + intPicHeight + 5
 
 loop, %intCoversPerPagePrevious%
 {
-	GuiControl, Hide, picPreview%A_Index%
+	GuiControl, Hide, picCover%A_Index%
 	GuiControl, Hide, lblCoverLabel%A_Index%
 	GuiControl, Hide, lblNameLabel%A_Index%
 }
@@ -266,9 +264,9 @@ loop, %intCoversPerPage%
 	if (intNbCoversCreated < A_Index)
 	{
 		; ###_D(intNbCoversCreated . " < " . A_Index . " intCoversPerPage: " . intCoversPerPage)
-		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicPreview%A_Index% gPicPreviewClicked ; 0xE ?
-		GuiControlGet, Pos%A_Index%, Pos, picPreview%A_Index% ; required?
-		; GuiControlGet, hwnd%A_Index%, hwnd, picPreview%A_Index% ; required?
+		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicCover%A_Index% gPicCoverClicked ; 0xE ?
+		GuiControlGet, posCover%A_Index%, Pos, picCover%A_Index% ; required? YES
+		; GuiControlGet, hwnd%A_Index%, hwnd, picCover%A_Index% ; required? NO
 		Gui, Font, s8 w500, Arial
 		Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
 		Gui, Font, s8 w700, Arial
@@ -278,9 +276,9 @@ loop, %intCoversPerPage%
 	}
 	else
 	{
-		GuiControl, Move, picPreview%A_Index%, x%intXPic% y%intYPic%
-		GuiControl, Show, picPreview%A_Index%
-		; Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicPreview%A_Index% gPicPreviewClicked ; 0xE ?
+		GuiControl, Move, picCover%A_Index%, x%intXPic% y%intYPic%
+		GuiControl, Show, picCover%A_Index%
+		; Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicCover%A_Index% gPicCoverClicked ; 0xE ?
 		GuiControl, Move, lblCoverLabel%A_Index%, x%intXPic% y%intYPic%
 		; Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
 		GuiControl, Move, lblNameLabel%A_Index%, x%intXPic% y%intYNameLabel%
@@ -494,12 +492,12 @@ loop
 	else
 		strCoverTempFilePathName := objCover%intPosition%.CoverTempFilePathName
 	; TrayTip, %strTrackTitle%, %strCoverTempFilePathName%
-	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intPosition%w, Pos%intPosition%h)
-	; ###_D(pBitmapPicPreview)
-	GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
-	; ###_D(GPicPreview)
-	Gdip_SetInterpolationMode(GPicPreview, 7)
-	LoadPicPreview(picPreview%intPosition%, strCoverTempFilePathName)
+	ptrBitmapPicCover := Gdip_CreateBitmap(posCover%intPosition%w, posCover%intPosition%h)
+	; ###_D(ptrBitmapPicCover)
+	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
+	; ###_D(ptrGraphicPicCover)
+	Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
+	LoadPicCover(picCover%intPosition%, strCoverTempFilePathName)
 	
 	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name
 	GuiControl, , lblCoverLabel%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
@@ -513,12 +511,12 @@ intCoversDisplayedPrevious := intPosition
 loop, %intRemainingCovers%
 {
 	intPosition := intPosition + 1
-	pBitmapPicPreview := Gdip_CreateBitmap(Pos%intPosition%w, Pos%intPosition%h)
-	; ###_D(pBitmapPicPreview)
-	GPicPreview := Gdip_GraphicsFromImage(pBitmapPicPreview)
-	; ###_D(GPicPreview)
-	Gdip_SetInterpolationMode(GPicPreview, 7)
-	LoadPicPreview(picPreview%intPosition%, A_ScriptDir  . "\fill_cover-200x200.png")
+	ptrBitmapPicCover := Gdip_CreateBitmap(posCover%intPosition%w, posCover%intPosition%h)
+	; ###_D(ptrBitmapPicCover)
+	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
+	; ###_D(ptrGraphicPicCover)
+	Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
+	LoadPicCover(picCover%intPosition%, A_ScriptDir  . "\fill_cover-200x200.png")
 	
 	GuiControl, , lblNameLabel%intPosition%
 	GuiControl, , lblCoverLabel%intPosition%
@@ -546,40 +544,47 @@ return
 
 
 ;-----------------------------------------------------------
-LoadPicPreview(ByRef Variable, File)
+LoadPicCover(ByRef picCover, strFile)
 {
-	global pBitmapPicPreview, GPicPreview
+	global ptrBitmapPicCover, ptrGraphicPicCover
 
-	GuiControlGet, Pos, Pos, Variable
-	GuiControlGet, hwnd, hwnd, Variable
+	GuiControlGet, posCover, Pos, picCover
+	GuiControlGet, hwnd, hwnd, picCover
 	
-	If !pBitmap := Gdip_CreateBitmapFromFile(File)
+	If !ptrBitmap := Gdip_CreateBitmapFromFile(strFile)
 		return
-	Width := Gdip_GetImageWidth(pBitmap), Height := Gdip_GetImageHeight(pBitmap)
+	intWidth := Gdip_GetImageWidth(ptrBitmap)
+	intHeight := Gdip_GetImageHeight(ptrBitmap)
 	
-	if (Posw/Width >= Posh/Height)
-		NewHeight := Posh, NewWidth := Round(Width*(NewHeight/Height))
+	if (posCoverw/intWidth >= posCoverh/intHeight)
+	{
+		intNewHeight := posCoverh
+		intNewWidth := Round(intWidth*(intNewHeight/intHeight))
+	}
 	else
-		NewWidth := Posw, NewHeight := Round(Height*(NewWidth/Width))
+	{
+		intNewWidth := posCoverw
+		intNewHeight := Round(intHeight*(intNewWidth/intWidth))
+	}
 	
-	Gdip_GraphicsClear(GPicPreview)
-	Gdip_DrawImage(GPicPreview, pBitmap, (Posw-NewWidth)//2, (Posh-NewHeight)//2, NewWidth, NewHeight, 0, 0, Width, Height)
+	Gdip_GraphicsClear(ptrGraphicPicCover)
+	Gdip_DrawImage(ptrGraphicPicCover, ptrBitmap, (posCoverw-intNewWidth)//2, (posCoverh-intNewHeight)//2, intNewWidth, intNewHeight, 0, 0, intWidth, intHeight)
 	
-	hBitmap := Gdip_CreateHBITMAPFromBitmap(pBitmapPicPreview)
-	SetImage(hwnd, hBitmap)
+	hndlBitmap := Gdip_CreateHBITMAPFromBitmap(ptrBitmapPicCover)
+	SetImage(hwnd, hndlBitmap)
 
-	DeleteObject(hBitmap)
-	Gdip_DisposeImage(pBitmap)
+	DeleteObject(hndlBitmap)
+	Gdip_DisposeImage(ptrBitmap)
 }
 ;-----------------------------------------------------------
 
 
 
 ;-----------------------------------------------------------
-PicPreviewClicked:
+PicCoverClicked:
 ;-----------------------------------------------------------
-StringReplace, strThisLabel, A_GuiControl, picPreview, lblCoverLabel
-; ###_D("PicPreviewClicked, strThisLabel: " . strThisLabel)
+StringReplace, strThisLabel, A_GuiControl, picCover, lblCoverLabel
+; ###_D("PicCoverClicked, strThisLabel: " . strThisLabel)
 GuiControl, Hide, %A_GuiControl%
 GuiControl, Show, %strThisLabel%
 
@@ -590,10 +595,10 @@ return
 ;-----------------------------------------------------------
 CoverLabelClicked:
 ;-----------------------------------------------------------
-StringReplace, strThisPicPreview, A_GuiControl, lblCoverLabel, picPreview
-; ###_D("CoverLabelClicked, strThisPicPreview: " . strThisPicPreview)
+StringReplace, strThisPicCover, A_GuiControl, lblCoverLabel, picCover
+; ###_D("CoverLabelClicked, strThisPicCover: " . strThisPicCover)
 GuiControl, Hide, %A_GuiControl%
-GuiControl, Show, %strThisPicPreview%
+GuiControl, Show, %strThisPicCover%
 
 return
 ;-----------------------------------------------------------
@@ -829,72 +834,6 @@ ITunesLibArtworkFormatPICT = 8
 
 GDI_SaveBitmap( ClipboardGet_DIB(), "filename.bmp" )
 
-
-
-;-----------------------------------------------------------
-PreparePicPreviews:
-;-----------------------------------------------------------
-SysGet, intMonWork, MonitorWorkArea
-intPicWidth := 150
-intPicHeight := 150
-intNameLabelHeight := 30
-intColWidth := intPicWidth + 10
-intRowHeight := intPicHeight + intNameLabelHeight + 10
-intClipboardWidth := 160
-intHeaderHeight := 60
-intFooterHeight := 60
-
-intAvailWidth := intMonWorkRight - 50
-intAvailHeight := intMonWorkBottom - 50
-Gosub, CalcMaxRowsAndCols ; intMaxNbCol x intMaxNbRow
-; ###_D("Init: " . intMaxNbCol . " x " . intMaxNbRow)
-
-intX := intClipboardWidth + 5
-intY := intHeaderHeight + 5
-intCol := 1
-intRow := 1
-intXPic := intX + 5
-intYPic := intY + 5
-intYNameLabel := intY + intPicHeight + 5
-loop
-{
-	Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicPreview%A_Index% gPicPreviewClicked ; 0xE ?
-	GuiControlGet, Pos%A_Index%, Pos, picPreview%A_Index%
-	; GuiControlGet, hwnd%A_Index%, hwnd, picPreview%A_Index%
-	Gui, Font, s8 w500, Arial
-	Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
-	Gui, Font, s8 w700, Arial
-	Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
-	Gui, Font
-	
-	if (intCol = intMaxNbCol)
-	{
-		if (intRow = intMaxNbRow)
-		{
-			intCoversPerPage := A_Index
-			intNbCoversCreated := A_Index
-			intCoversDisplayedPrevious := intCoversPerPagePrev
-			break
-		}
-		intRow := intRow + 1
-		intY := intY + intRowHeight
-		intYPic := intY + 5
-		intYNameLabel := intY + intPicHeight + 5
-		
-		intCol := 0
-		intX := 5 - intColWidth + intClipboardWidth
-	}
-	intCol := intCol + 1
-	intX := intX + intColWidth
-	intXPic := intX + 5
-	if (A_Index > 1000)
-	{
-		###_D("Infinite Loop Error :-)")
-		ExitApp
-	}
-}
-return
-;-----------------------------------------------------------
 
 
 
