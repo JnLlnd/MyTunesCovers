@@ -49,14 +49,16 @@ FAIT:
 
 #NoEnv
 #SingleInstance force
-; #KeyHistory 0
-; ListLines, Off
+#KeyHistory 0
+ListLines, Off
 Thread, interrupt, 0 ; essai pour GDIP
 
 strCurrentVersion := "0.3 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\MyTunesCovers_LANG.ahk
-#Include %A_ScriptDir%\lib\Cover.ahk ; this lib is also calling lib\iTunes.ahk
+#Include %A_ScriptDir%\lib\Cover.ahk
+; Cover.ahk is also calling lib\iTunes.ahk
+; Also using Gdip.ahk in \AutoHotkey\Lib default lib folder
 
 SetWorkingDir, %A_ScriptDir%
 
@@ -73,11 +75,7 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 Gosub, InitGDIP
 Gosub, LoadIniFile
 Gosub, Check4Update
-
-intCoversPerPage := 0
-intNbCoversCreated := 0
 Gosub, BuildGui
-
 Gosub, InitSources
 
 OnExit, CleanUpBeforeQuit
@@ -102,6 +100,7 @@ LoadIniFile:
 ;-----------------------------------------------------------
 strAlbumArtistDelimiter := chr(182)
 strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
+intPictureSize := 160
 
 IfNotExist, %strIniFile%
 	FileAppend,
@@ -109,6 +108,7 @@ IfNotExist, %strIniFile%
 			[Global]
 			AlbumArtistDelimiter=%strAlbumArtistDelimiter%
 			CoversCacheFolder=%A_ScriptDir%\covers_cache\
+			PictureSize=%intPictureSize%
 )
 		, %strIniFile%
 Loop
@@ -121,6 +121,7 @@ Loop
 }
 IniRead, strLatestSkipped, %strIniFile%, Global, LatestVersionSkipped, 0.0
 IniRead, strCoversCacheFolder, %strIniFile%, Global, CoversCacheFolder, %strCoversCacheFolder%
+IniRead, intPictureSize, %strIniFile%, Global, PictureSize, %intPictureSize%
 
 return
 ;------------------------------------------------------------
@@ -129,6 +130,9 @@ return
 ;-----------------------------------------------------------
 BuildGui:
 ;-----------------------------------------------------------
+intCoversPerPage := 0
+intNbCoversCreated := 0
+
 Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
 Gui, +Delimiter%strAlbumArtistDelimiter%
 Gui, Font, s12 w700, Verdana
@@ -158,8 +162,8 @@ if (A_IsCompiled)
 else
 	SB_SetIcon("C:\Dropbox\AutoHotkey\CSVBuddy\build\Ico - Visual Pharm\angel.ico") ; ###
 
-intPicWidth := 350 ; 150
-intPicHeight := 350 ; 150
+intPicWidth := intPictureSize
+intPicHeight := intPictureSize
 intNameLabelHeight := 30
 intColWidth := intPicWidth + 10
 intRowHeight := intPicHeight + intNameLabelHeight + 10
@@ -230,17 +234,16 @@ return
 
 
 ;-----------------------------------------------------------
-; !q::
 GuiSize:
 ;-----------------------------------------------------------
 
-; WinGetPos, intFoo, intFoo, intWinWidth, intWinHeight, A
-; intAvailWidth := intWinWidth -16 - 5
-; intAvailHeight := intWinHeight - 38
+intPage := 1 ; always come back to page 1 when resize
+
 intAvailWidth := A_GuiWidth - 5
 intAvailHeight := A_GuiHeight
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
-ToolTip, % "Resize: " . intMaxNbCol . " x " . intMaxNbRow . "`n" . intAvailWidth . " x " . intAvailHeight
+; ToolTip, % "Resize: " . intMaxNbCol . " x " . intMaxNbRow . "`n" . intAvailWidth . " x " . intAvailHeight
+
 intCoversPerPagePrevious := intCoversPerPage
 intCoversPerPage := (intMaxNbCol * intMaxNbRow)
 
@@ -263,14 +266,12 @@ loop, %intCoversPerPage%
 {
 	if (intNbCoversCreated < A_Index)
 	{
-		; ###_D(intNbCoversCreated . " < " . A_Index . " intCoversPerPage: " . intCoversPerPage)
-		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicCover%A_Index% gPicCoverClicked ; 0xE ?
-		GuiControlGet, posCover%A_Index%, Pos, picCover%A_Index% ; required? YES
-		; GuiControlGet, hwnd%A_Index%, hwnd, picCover%A_Index% ; required? NO
+		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicCover%A_Index% gPicCoverClicked
+		GuiControlGet, posCover%A_Index%, Pos, picCover%A_Index%
 		Gui, Font, s8 w500, Arial
 		Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
 		Gui, Font, s8 w700, Arial
-		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% vlblNameLabel%A_Index% center vlblNameLabel%A_Index% gNameLabelClicked, %A_Index% C: %intCol% R: %intRow%
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% vlblNameLabel%A_Index% center vlblNameLabel%A_Index% gNameLabelClicked
 		Gui, Font
 		intNbCoversCreated := A_Index
 	}
@@ -278,12 +279,9 @@ loop, %intCoversPerPage%
 	{
 		GuiControl, Move, picCover%A_Index%, x%intXPic% y%intYPic%
 		GuiControl, Show, picCover%A_Index%
-		; Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicCover%A_Index% gPicCoverClicked ; 0xE ?
 		GuiControl, Move, lblCoverLabel%A_Index%, x%intXPic% y%intYPic%
-		; Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
 		GuiControl, Move, lblNameLabel%A_Index%, x%intXPic% y%intYNameLabel%
 		GuiControl, Show, lblNameLabel%A_Index%
-		; Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
 	}
 	
 	if (intCol = intMaxNbCol)
@@ -311,15 +309,11 @@ loop, %intCoversPerPage%
 		ExitApp
 	}
 }
+
 intGuiMiddle := intClipboardWidth + (A_GuiWidth - intClipboardWidth) / 2
 GuiControl, Move, btnPrevious, % "X" . (intGuiMiddle - 120) . " Y" . A_GuiHeight - 55
-; Gui, Add, Button, x150 y+10 vbtnPrevious gButtonPreviousClicked, <-
 GuiControl, Move, lblPage, % "X" . (intGuiMiddle) . " Y" . A_GuiHeight - 55
-; Gui, Add, Button, x+50 yp vlblPage
 GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 105) . " Y" . A_GuiHeight - 55
-; Gui, Add, Button, x+50 yp vbtnNext gButtonNextClicked, ->
-
-ToolTip
 
 Gosub, DisplayCoversPage
 
@@ -358,17 +352,14 @@ ptrObjITunesunesApp := Object(objITunesunesApp)
 ObjRelease(ptrObjITunesunesApp)
 if StrLen(strCoversCacheFolder)
 	FileDelete, %strCoversCacheFolder%\*.*
+
 ExitApp
-return
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
 ClickRadSource:
 ;-----------------------------------------------------------
-; GuiControl, Disable, id
-; GuiControl, Enable, id
-
 Cover_ReleaseSource()
 
 Gui, Submit, NoHide
@@ -382,24 +373,6 @@ if (Cover_InitCoversSource(strSource))
 	Gosub, PopulateDropdownLists
 else
 	Oops(lInitSourceError)
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-ClickRadSourceMP3: ; NOT USED
-;-----------------------------------------------------------
-; GuiControl, Disable, id
-; GuiControl, Enable, id
-
-Cover_ReleaseSource()
-Gui, Submit, NoHide
-Cover_LoadSource()
-
-GuiControl, , lstArtists, %strAlbumArtistDelimiter%
-GuiControl, , lstAlbums, %strAlbumArtistDelimiter%
-
 
 return
 ;-----------------------------------------------------------
@@ -424,7 +397,7 @@ return
 AlbumsDropDownChanged:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
-; ###_D(lstArtists . " / " . lstAlbums)
+
 Gosub, DisplayCovers
 
 return
@@ -435,6 +408,7 @@ return
 ButtonPreviousClicked:
 ;-----------------------------------------------------------
 intPage := intPage - 1
+
 Gosub,	DisplayCoversPage
 
 return
@@ -445,6 +419,7 @@ return
 ButtonNextClicked:
 ;-----------------------------------------------------------
 intPage := intPage + 1
+
 Gosub,	DisplayCoversPage
 
 return
@@ -455,6 +430,7 @@ return
 DisplayCovers:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
+
 intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums) - 1 ; -1 because of the last comma in lists
 if (intNbCovers < 1)
 {
@@ -463,6 +439,7 @@ if (intNbCovers < 1)
 }
 intPage := 1
 intNbPages := Ceil(intNbCovers / intCoversPerPage)
+
 Gosub, DisplayCoversPage
 
 return
@@ -473,8 +450,11 @@ return
 DisplayCoversPage:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
+
 intPosition := 0
 intTrackIndexDisplayedNow := ((intPage - 1) * intCoversPerPage)
+intNbPages := Ceil(intNbCovers / intCoversPerPage) ; can change when resize
+
 loop
 {
 	intTrackIndexDisplayedNow := intTrackIndexDisplayedNow + 1
@@ -491,11 +471,9 @@ loop
 		strCoverTempFilePathName := A_ScriptDir  . "\no_cover-200x200.png" ; if absent, url download from repo ? ###
 	else
 		strCoverTempFilePathName := objCover%intPosition%.CoverTempFilePathName
-	; TrayTip, %strTrackTitle%, %strCoverTempFilePathName%
+
 	ptrBitmapPicCover := Gdip_CreateBitmap(posCover%intPosition%w, posCover%intPosition%h)
-	; ###_D(ptrBitmapPicCover)
 	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
-	; ###_D(ptrGraphicPicCover)
 	Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
 	LoadPicCover(picCover%intPosition%, strCoverTempFilePathName)
 	
@@ -505,16 +483,17 @@ loop
 		. "Index: " . objCover%intPosition%.Index . "`n"
 		. "TrackID: " . objCover%intPosition%.TrackID . "`n"
 		. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID
+
 } until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
+
 intRemainingCovers := intCoversDisplayedPrevious - intPosition
 intCoversDisplayedPrevious := intPosition
+
 loop, %intRemainingCovers%
 {
 	intPosition := intPosition + 1
 	ptrBitmapPicCover := Gdip_CreateBitmap(posCover%intPosition%w, posCover%intPosition%h)
-	; ###_D(ptrBitmapPicCover)
 	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
-	; ###_D(ptrGraphicPicCover)
 	Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
 	LoadPicCover(picCover%intPosition%, A_ScriptDir  . "\fill_cover-200x200.png")
 	
@@ -522,18 +501,6 @@ loop, %intRemainingCovers%
 	GuiControl, , lblCoverLabel%intPosition%
 }
 
-/*
-	if intPage > 1, show btnPrevious, else hide
-	if intTrackIndexDisplayedNow < intNbCovers, show btnNext, else cache
-	
-	check displayedNow vs PositionWithContentNow to calculate intRemainingCovers
-*/
-/*
-###_D(""
-	. "intTrackIndexDisplayedNow: " . intTrackIndexDisplayedNow . "`n"
-	. "intNbCovers: " . intNbCovers . "`n"
-	. "")
-*/
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
 GuiControl, % (intTrackIndexDisplayedNow < intNbCovers ? "Show" : "Hide"), btnNext
 if (intNbPages)
@@ -579,12 +546,11 @@ LoadPicCover(ByRef picCover, strFile)
 ;-----------------------------------------------------------
 
 
-
 ;-----------------------------------------------------------
 PicCoverClicked:
 ;-----------------------------------------------------------
 StringReplace, strThisLabel, A_GuiControl, picCover, lblCoverLabel
-; ###_D("PicCoverClicked, strThisLabel: " . strThisLabel)
+
 GuiControl, Hide, %A_GuiControl%
 GuiControl, Show, %strThisLabel%
 
@@ -596,7 +562,7 @@ return
 CoverLabelClicked:
 ;-----------------------------------------------------------
 StringReplace, strThisPicCover, A_GuiControl, lblCoverLabel, picCover
-; ###_D("CoverLabelClicked, strThisPicCover: " . strThisPicCover)
+
 GuiControl, Hide, %A_GuiControl%
 GuiControl, Show, %strThisPicCover%
 
@@ -620,7 +586,7 @@ return
 
 
 ; ------------------------------------------------
-ButtonCheck4Update: ; ### TESTER
+ButtonCheck4Update: ; ### TEST
 ; ------------------------------------------------
 blnButtonCheck4Update := True
 Gosub, Check4Update
@@ -632,14 +598,14 @@ return
 ; ------------------------------------------------
 ButtonDonate:
 ; ------------------------------------------------
-Run, https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8UWKXDR5ZQNJW ; ### updater
+Run, https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8UWKXDR5ZQNJW ; ### update Paypal code
 
 return
 ; ------------------------------------------------
 
 
 ; ------------------------------------------------
-Check4Update: ; ### TESTER
+Check4Update: ; ### TEST
 ; ------------------------------------------------
 Gui, 1:+OwnDialogs 
 IniRead, strLatestSkipped, %strIniFile%, global, strLatestSkipped, 0.0
@@ -698,7 +664,7 @@ FirstVsSecondIs(strFirstVersion, strSecondVersion)
 
 
 ; ------------------------------------------------
-ChangeButtonNames4Update: ; ### TESTER
+ChangeButtonNames4Update: ; ### TEST
 ; ------------------------------------------------
 IfWinNotExist, % l(lUpdateTitle, lAppName)
     return  ; Keep waiting.
@@ -758,39 +724,6 @@ L(strMessage, objVariables*)
 BACKUP PIECES OF CODE
 
 
-objAlbumsByID := Object()
-objTracksAndAlbumID := Object()
-
-; objTracksAndAlbumID.Insert(objITunesTrack.Index, objAlbumsIndex[strAlbum])
-
-
-s :=
-i := 0
-for strKey, intID in objAlbumsIndex
-{
-	i := i + 1
-	; s := s . "#" . intID . " " . strKey . "`n"
-	objAlbumsByID.Insert(intID, strKey)
-	###_D(i . " " objAlbumsByID[intID])
-	if !Mod(i,100)
-		TrayTip, , % i . " / " . objAlbumsByID.MaxIndex()
-}
-return
-
-
-###_D(s)
-s :=
-for intID, strKey in objAlbumsByID
-{
-	s := s . "#" . intID . " " . strKey . "`n"
-}
-###_D(s)
-
-return
-
-
-
-
 if (objTrack.Artwork.Count)
 {
 	Loop, % objTrack.Artwork.Count
@@ -817,7 +750,6 @@ else
 
 objArtwork.Format
 
-
 ITunesLibArtworkFormatNone = 0,
 ITunesLibArtworkFormatBitmap = 1,
 ITunesLibArtworkFormatJPEG = 2,
@@ -830,11 +762,6 @@ ITunesLibArtworkFormatPICT = 8
 
 
 
-
-
 GDI_SaveBitmap( ClipboardGet_DIB(), "filename.bmp" )
-
-
-
 
 */
