@@ -1,21 +1,17 @@
-/*
-Next:
-- bug Artist -M- donne McGarrigle & Beau d'hommage tandis que McGarrigle & Beau d'hommage donne rien
-- bug Artist (|m&e|) de 16 pièces commence offset de 1 trop tôt et manque le dernier, et ler & est strippé du non
-- pagination
-
-FAIT:
-- commencr All... par un espace _ et terminer pas _ pour qu'il soit toujours en premier
-- striper les espaces au début des artistes et albums
-*/
 ;===============================================
 /*
 	MyTunesCovers
 	Written using AutoHotkey_L v1.1.09.03+ (http://l.autohotkey.net/)
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
-	2014-01-## v0.3 ALPHA
-	* implemented release, save cache and reload cache for iTunes source
+	2014-01-17 v0.3 ALPHA
+	* Reset all albums views when select All artists
+	* Implemented release, save cache and reload cache for iTunes source
+	* Source cache file saved by batch with error handling
+	* Retrieve tracks using GetITObjectByID with TrackID and TrackDatabaseID
+	* GuiResize reposition covers according to Gui size
+	* Covers paging with x of y, previous and next buttons in footer
+	* Loading persistent images (no cover, fill cover) only once at init
 
 	2014-01-08 v0.2 ALPHA
 	* Add properties to Covers class, POC for set image
