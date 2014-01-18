@@ -75,6 +75,7 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 Gosub, InitGDIP
 Gosub, LoadIniFile
 Gosub, Check4Update
+Gosub, InitPersistentCovers
 Gosub, BuildGui
 Gosub, InitSources
 
@@ -125,6 +126,19 @@ IniRead, intPictureSize, %strIniFile%, Global, PictureSize, %intPictureSize%
 
 return
 ;------------------------------------------------------------
+
+
+;-----------------------------------------------------------
+InitPersistentCovers:
+;-----------------------------------------------------------
+ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\no_cover-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\fill_cover-200x200.png") ; if absent, url download from repo ? ###
+
+If !(ptrBitmapNoCover and ptrBitmapFillCover)
+	###_D("Error creating persistent cover images.") ; ###
+
+return
+;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
@@ -467,15 +481,6 @@ loop
 		strTrackTitle := objCover%intPosition%.Name
 	else
 		strTrackTitle := ""
-	if !StrLen(objCover%intPosition%.CoverTempFilePathName)
-		strCoverTempFilePathName := A_ScriptDir  . "\no_cover-200x200.png" ; if absent, url download from repo ? ###
-	else
-		strCoverTempFilePathName := objCover%intPosition%.CoverTempFilePathName
-
-	ptrBitmapPicCover := Gdip_CreateBitmap(posCover%intPosition%w, posCover%intPosition%h)
-	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
-	Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
-	LoadPicCover(picCover%intPosition%, strCoverTempFilePathName)
 	
 	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name
 	GuiControl, , lblCoverLabel%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
@@ -484,6 +489,15 @@ loop
 		. "TrackID: " . objCover%intPosition%.TrackID . "`n"
 		. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID
 
+	ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
+	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
+	; Gdip_SetInterpolationMode(ptrGraphicPicCover, 7) ; using default instead of 7 (highest quality)
+	
+	if StrLen(objCover%intPosition%.CoverTempFilePathName)
+		LoadPicCover(picCover%intPosition%, 1, objCover%intPosition%.CoverTempFilePathName)
+	else
+		LoadPicCover(picCover%intPosition%, 2)
+	
 } until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
 
 intRemainingCovers := intCoversDisplayedPrevious - intPosition
@@ -495,7 +509,7 @@ loop, %intRemainingCovers%
 	ptrBitmapPicCover := Gdip_CreateBitmap(posCover%intPosition%w, posCover%intPosition%h)
 	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
 	Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
-	LoadPicCover(picCover%intPosition%, A_ScriptDir  . "\fill_cover-200x200.png")
+	LoadPicCover(picCover%intPosition%, 3)
 	
 	GuiControl, , lblNameLabel%intPosition%
 	GuiControl, , lblCoverLabel%intPosition%
@@ -511,15 +525,22 @@ return
 
 
 ;-----------------------------------------------------------
-LoadPicCover(ByRef picCover, strFile)
+LoadPicCover(ByRef picCover, intPicType, strFile := "")
+; intPicType = 1 regular cover / 2 no cover / 3 fill cover
 {
-	global ptrBitmapPicCover, ptrGraphicPicCover
+	global ptrBitmapPicCover, ptrGraphicPicCover, ptrBitmapNoCover, ptrBitmapFillCover
 
 	GuiControlGet, posCover, Pos, picCover
 	GuiControlGet, hwnd, hwnd, picCover
-	
-	If !ptrBitmap := Gdip_CreateBitmapFromFile(strFile)
-		return
+
+	if (intPicType = 1)
+		If !ptrBitmap := Gdip_CreateBitmapFromFile(strFile)
+			return
+	if (intPicType = 2)
+		ptrBitmap := ptrBitmapNoCover
+	if (intPicType = 3)
+		ptrBitmap := ptrBitmapFillCover
+
 	intWidth := Gdip_GetImageWidth(ptrBitmap)
 	intHeight := Gdip_GetImageHeight(ptrBitmap)
 	
@@ -541,7 +562,8 @@ LoadPicCover(ByRef picCover, strFile)
 	SetImage(hwnd, hndlBitmap)
 
 	DeleteObject(hndlBitmap)
-	Gdip_DisposeImage(ptrBitmap)
+	if (intPicType = 1)
+		Gdip_DisposeImage(ptrBitmap)
 }
 ;-----------------------------------------------------------
 
