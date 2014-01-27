@@ -1,4 +1,13 @@
-global intTestLimit := 30000
+;===============================================
+/*
+	Library iTunes.ahk
+	Used by MyTunesCovers.ahk
+	By Jean Lalonde (JnLlnd on AHKScript.org forum)
+
+*/
+;===============================================
+
+global intTestLimit := 3000
 global intLinesPerBatch := 5000
 global objITunesunesApp := Object()
 global objITunesTracks := Object()
@@ -23,7 +32,6 @@ iTunes_InitCoversSource()
 
 	intSourceID := objITunesLibrary.sourceID
 	intPlaylistID := objITunesPlaylist.PlaylistID
-	; ###_D("intSourceID / intPlaylistID: " . intSourceID . " / " . intPlaylistID)
 	objITunesSourceIDs.Insert("intSourceID", intSourceID)
 	objITunesSourceIDs.Insert("intPlaylistID", intPlaylistID)
 	
@@ -52,7 +60,7 @@ iTunes_InitArtistsAlbumsIndex()
 		if !StrLen(objArtistsIndex[strArtist])
 			objArtistsIndex.Insert(strArtist, "")
 		objArtistsIndex[strArtist] := objArtistsIndex[strArtist] . strTrackIDs . ","
-		; we will ignore the "," in surplus only if/when we access the value
+		; we will ignore the "," in surplus only if/when we will access the value
 
 		strAlbum := Trim(objITunesTracks.Item(A_Index).Album)
 		if !StrLen(strAlbum)
@@ -61,13 +69,13 @@ iTunes_InitArtistsAlbumsIndex()
 		if !StrLen(objAlbumsIndex[strAlbum])
 			objAlbumsIndex.Insert(strAlbum, "")
 		objAlbumsIndex[strAlbum] := objAlbumsIndex[strAlbum] . strTrackIDs . ","
-		; we will ignore the "," in surplus only if/when we access the value
+		; we will ignore the "," in surplus only if/when we will access the value
 		
 		strArtistAlbum := strArtist . strAlbumArtistDelimiter . strAlbum
 		if !StrLen(objArtistsAlbumsIndex[strArtistAlbum])
 			objArtistsAlbumsIndex.Insert(strArtistAlbum, "")
 		objArtistsAlbumsIndex[strArtistAlbum] := objArtistsAlbumsIndex[strArtistAlbum] . strTrackIDs . ","
-		; we will ignore the "," in surplus only if/when we access the value
+		; we will ignore the "," in surplus only if/when we will access the value
 
 		if !StrLen(objAlbumsOfArtistsIndex[strArtist])
 			objAlbumsOfArtistsIndex.Insert(strArtist, "")
@@ -81,7 +89,7 @@ iTunes_InitArtistsAlbumsIndex()
 			}
 		if (!blnAlbumFound)
 			objAlbumsOfArtistsIndex[strArtist] := objAlbumsOfArtistsIndex[strArtist] . strAlbum . strAlbumArtistDelimiter
-			; we will ignore the strAlbumArtistDelimiter in surplus only if/when we access the value
+			; we will ignore the strAlbumArtistDelimiter in surplus only if/when we will access the value
 
 		if (A_Index = intTestLimit)
 			break
@@ -150,7 +158,7 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 	if (strAlbum = A_Space . lDropDownAllAlbums)
 		strAlbum := ""
 
-; ###_D("objArtistsIndex[" . strArtist . "] : " . objArtistsIndex[strArtist])
+	; ###_D("objArtistsIndex[" . strArtist . "] : " . objArtistsIndex[strArtist])
 	if (StrLen(strArtist) > 0) and (StrLen(strAlbum) > 0)
 		arrTracks := StrSplit(objArtistsAlbumsIndex[strArtist . strAlbumArtistDelimiter . strAlbum], ",")
 	else if StrLen(strArtist)

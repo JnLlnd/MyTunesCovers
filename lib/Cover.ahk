@@ -1,3 +1,12 @@
+;===============================================
+/*
+	Library Cover.ahk
+	Used by MyTunesCovers.ahk
+	By Jean Lalonde (JnLlnd on AHKScript.org forum)
+
+*/
+;===============================================
+
 global objArtistsIndex := Object()
 global objAlbumsIndex := Object()
 global objArtistsAlbumsIndex := Object()
@@ -6,6 +15,7 @@ global strCoverSourceType ; "iTunes" currently implemented, "MP3" coming
 global strSourceCacheFilenameExtension := "SourceCache.csv"
 
 #Include %A_ScriptDir%\lib\iTunes.ahk ; Cover source (INCLUDE MUST BE AFTER GLOBAL DECLARATIONS)
+
 
 ;-----------------------------------------------------------
 class Cover
@@ -24,6 +34,31 @@ class Cover
 	}
 
 	SetCoverProperties(strName, strArtist, strAlbum, intIndex, intTrackID, intTrackDatabaseID)
+	/*
+		IMPLEMENTED
+			Name ; Returns the name of the object. 
+			Index ; Returns the index of the object in internal application order. 
+			TrackID ; Returns the ID that identifies the track within the playlist. 
+			TrackDatabaseID ; Returns the ID that identifies the track, independent of its playlist. 
+
+		NOT IMPLEMENTED:
+			Kind ; Returns the kind of the track. 
+			Playlist ; Returns an IITPlaylist object corresponding to the playlist that contains the track. Use IITFileOrCDTrack::Playlists() or IITURLTrack::Playlists() to get the collection of all playlists that contain the song this track represents. 
+			Album ; Returns the name of the album containing the track. 
+			Artist ; Returns the name of the artist/source of the track. 
+			Comment ; Returns freeform notes about the track. 
+			Compilation ; Returns true if this track is from a compilation album. 
+			KindAsString ; Returns the text description of the track (e.g. "AAC audio file"). 
+			ModificationDate ([out, retval] DATE *dateModified) ; Returns the modification date of the content of the track. 
+			Size ; Returns the size of the track (in bytes). 
+			Time ; Returns the length of the track (in MM:SS format). 
+			TrackCount ; Returns the total number of tracks on the source album. 
+			TrackNumber ; Returns the index of the track on the source album. 
+			Year ; Returns the year the track was recorded/released. 
+			Artwork ; Returns a collection containing the artwork for the track. 
+			Artwork.Count ; Returns the number of pieces of artwork in the collection.
+			Artwork.Item(index) ; Returns an IITArtwork object corresponding to the given index (1-based).
+	*/
 	{
 		this.Name := strName
 		this.Artist := strArtist
@@ -32,27 +67,6 @@ class Cover
 		this.TrackID := intTrackID
 		this.TrackDatabaseID := intTrackDatabaseID
 	}
-/*
-Name ; Returns the name of the object. 
-Index ; Returns the index of the object in internal application order. 
-TrackID ; Returns the ID that identifies the track within the playlist. 
-TrackDatabaseID ; Returns the ID that identifies the track, independent of its playlist. 
-
-Kind ; Returns the kind of the track. 
-Playlist ; Returns an IITPlaylist object corresponding to the playlist that contains the track. Use IITFileOrCDTrack::Playlists() or IITURLTrack::Playlists() to get the collection of all playlists that contain the song this track represents. 
-Album ; Returns the name of the album containing the track. 
-Artist ; Returns the name of the artist/source of the track. 
-Comment ; Returns freeform notes about the track. 
-Compilation ; Returns true if this track is from a compilation album. 
-KindAsString ; Returns the text description of the track (e.g. "AAC audio file"). 
-ModificationDate ([out, retval] DATE *dateModified) ; Returns the modification date of the content of the track. 
-Size ; Returns the size of the track (in bytes). 
-Time ; Returns the length of the track (in MM:SS format). 
-TrackCount ; Returns the total number of tracks on the source album. 
-TrackNumber ; Returns the index of the track on the source album. 
-Year ; Returns the year the track was recorded/released. 
-Artwork ; Returns a collection containing the artwork for the track. 
-*/
 
 	SaveCover(strFilePathName)
 	{
@@ -83,15 +97,15 @@ Cover_InitCoversSource(strSource)
 			{
 				MsgBox, 36, %lAppName%, %lLoadCache% ; ### or if number of tracks changed
 				IfMsgBox, Yes
-					%strCoverSourceType%_LoadSource() ; WANT TO USE CACHE
+					%strCoverSourceType%_LoadSource() ; use cache
 				IfMsgBox, No
 				{
 					FileDelete, %A_ScriptDir%\%strCoverSourceType%_%strSourceCacheFilenameExtension%
-					%strCoverSourceType%_InitArtistsAlbumsIndex() ; WANT TO REFRESH
+					%strCoverSourceType%_InitArtistsAlbumsIndex() ; refresh lists
 				}
 			}
 			else
-				%strCoverSourceType%_InitArtistsAlbumsIndex() ; HAVE TO REFRESH
+				%strCoverSourceType%_InitArtistsAlbumsIndex() ; have to refresh lists
 		}
 		return blnSourceOK
 	}
@@ -133,7 +147,6 @@ Cover_LoadSource() ; NOT USED
 ;-----------------------------------------------------------
 Cover_ReleaseSource()
 {
-	; ###_D("Release: " . strCoverSourceType)
 	if (strCoverSourceType = "MP3")
 		###_D("Save MP3 not implemented") ; %strCoverSourceType%_SaveSource()
 	else

@@ -4,6 +4,9 @@
 	Written using AutoHotkey_L v1.1.09.03+ (http://l.autohotkey.net/)
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
+	2014-01-## v0.4 ALPHA
+	* Display Clipboard (renamed Board) empty images, support resize
+
 	2014-01-17 v0.3 ALPHA
 	* Reset all albums views when select All artists
 	* Implemented release, save cache and reload cache for iTunes source
@@ -25,7 +28,7 @@
 	* Base of iTunesLib as tracks source (a future version could also support MP3 source files in a directory - ie without the use of iTunes)
 	* Base of CoversLib libraries, rudimentary Gui with covers read from iTunes
 	
-*/ 
+*/
 ;===============================================
 
 ; --- COMPILER DIRECTIVES ---
@@ -35,7 +38,7 @@
 
 ;@Ahk2Exe-SetName MyTunesCovers
 ;@Ahk2Exe-SetDescription iTunes Cover Manager. Freeware.
-;@Ahk2Exe-SetVersion 0.3
+;@Ahk2Exe-SetVersion 0.4
 ;@Ahk2Exe-SetOrigFilename MyTunesCovers.exe
 
 
@@ -47,14 +50,13 @@
 #SingleInstance force
 #KeyHistory 0
 ListLines, Off
-Thread, interrupt, 0 ; essai pour GDIP
 
-strCurrentVersion := "0.3 alpha" ; always "." between sub-versions, eg "0.1.2"
+strCurrentVersion := "0.4 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\MyTunesCovers_LANG.ahk
 #Include %A_ScriptDir%\lib\Cover.ahk
-; Cover.ahk is also calling lib\iTunes.ahk
-; Also using Gdip.ahk in \AutoHotkey\Lib default lib folder
+; lib\Cover.ahk is also calling lib\iTunes.ahk
+; Also using Gdip.ahk (v1.45, modified 5/1/2013) in \AutoHotkey\Lib default lib folder
 
 SetWorkingDir, %A_ScriptDir%
 
@@ -68,6 +70,7 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 ; / Piece of code for developement phase only - won't be compiled
 ;@Ahk2Exe-IgnoreEnd
 
+; Keep gosubs in this order
 Gosub, InitGDIP
 Gosub, LoadIniFile
 Gosub, Check4Update
@@ -127,11 +130,12 @@ return
 ;-----------------------------------------------------------
 InitPersistentCovers:
 ;-----------------------------------------------------------
-ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\no_cover-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\fill_cover-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\no_cover-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\fill_cover-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\empty-200x200.png") ; if absent, url download from repo ? ###
 
-If !(ptrBitmapNoCover and ptrBitmapFillCover)
-	###_D("Error creating persistent cover images.") ; ###
+If !(ptrBitmapNoCover and ptrBitmapFillCover and ptrBitmapEmptyBoard)
+	Oops(lPersistentImagesFailed)
 
 return
 ;-----------------------------------------------------------
@@ -142,6 +146,16 @@ BuildGui:
 ;-----------------------------------------------------------
 intCoversPerPage := 0
 intNbCoversCreated := 0
+intNbBoardCreated := 0
+
+intPicWidth := intPictureSize
+intPicHeight := intPictureSize
+intNameLabelHeight := 30
+intColWidth := intPicWidth + 10
+intRowHeight := intPicHeight + intNameLabelHeight + 10
+intBoardWidth := intPicWidth + 20
+intHeaderHeight := 60
+intFooterHeight := 60
 
 Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
 Gui, +Delimiter%strAlbumArtistDelimiter%
@@ -151,14 +165,20 @@ Gui, Font
 Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+30 yp, %lSource%
 Gui, Font
-Gui, Add, Radio, x+10 yp vradSourceITunes gClickRadSource checked, % L(lSourceITunes)
-Gui, Add, Radio, x+10 yp vradSourceMP3 gClickRadSource, % L(lSourceMP3)
+Gui, Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, % L(lSourceITunes)
+Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource, % L(lSourceMP3)
 Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+20 yp, %lArtists%
 Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp, %lAlbums%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
+Gui, Font, s10 w700, Verdana
+Gui, Add, Text, x10 w%intBoardWidth% center, %lBoard%
 Gui, Font
+
+intVerticalLineX := intBoardWidth
+intVerticalLineY := intHeaderHeight + 10
+Gui, Add, Text, x%intVerticalLineX% y%intVerticalLineY% h10 0x11 vlblVerticalLine ; Vertical Line > Etched Gray
 
 Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
 Gui, Add, Text, x+50 yp w60 vlblPage
@@ -170,22 +190,13 @@ SB_SetText(L(lSBEmpty), 1)
 if (A_IsCompiled)
 	SB_SetIcon(A_ScriptFullPath)
 else
-	SB_SetIcon("C:\Dropbox\AutoHotkey\CSVBuddy\build\Ico - Visual Pharm\angel.ico") ; ###
-
-intPicWidth := intPictureSize
-intPicHeight := intPictureSize
-intNameLabelHeight := 30
-intColWidth := intPicWidth + 10
-intRowHeight := intPicHeight + intNameLabelHeight + 10
-intClipboardWidth := intPicWidth + 10
-intHeaderHeight := 60
-intFooterHeight := 60
+	SB_SetIcon("C:\Dropbox\AutoHotkey\MyTunesCovers\small_icons-256-RED.ico")
 
 SysGet, intMonWork, MonitorWorkArea
 intAvailWidth := intMonWorkRight - 50
 intAvailHeight := intMonWorkBottom - 50
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
-intTotalWidth := (intMaxNbCol * intColWidth) + intClipboardWidth + 20
+intTotalWidth := (intMaxNbCol * intColWidth) + intBoardWidth + 20
 intTotalHeight := (intMaxNbRow * intRowHeight) + intHeaderHeight + intFooterHeight
 
 intPage := 1
@@ -252,12 +263,42 @@ intPage := 1 ; always come back to page 1 when resize
 intAvailWidth := A_GuiWidth - 5
 intAvailHeight := A_GuiHeight
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
-; ToolTip, % "Resize: " . intMaxNbCol . " x " . intMaxNbRow . "`n" . intAvailWidth . " x " . intAvailHeight
+
+intVerticalLineH := intMaxNbRow * intRowHeight
+GuiControl, Move, lblVerticalLine, h%intVerticalLineH%
+
+intX := 0
+intY := intHeaderHeight + 5
+intRow := 1
+intXPic := intX + 10
+intYPic := intY + 5
+
+loop, %intNbBoardCreated%
+	GuiControl, Hide, picBoard%A_Index%
+
+loop, %intMaxNbRow%
+{
+	if (intNbBoardCreated < A_Index)
+	{
+		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicBoard%A_Index% gPicBoardClicked
+		GuiControlGet, posBoard%A_Index%, Pos, picBoard%A_Index%
+		if (A_Index > intNbBoardCreated)
+			intNbBoardCreated := A_Index
+	}
+	else
+		GuiControl, Show, picBoard%A_Index%
+	
+	intRow := intRow + 1
+	intY := intY + intRowHeight
+	intYPic := intY + 5
+}
+
+Gosub, DisplayBoard
 
 intCoversPerPagePrevious := intCoversPerPage
 intCoversPerPage := (intMaxNbCol * intMaxNbRow)
 
-intX := intClipboardWidth + 5
+intX := intBoardWidth + 5
 intY := intHeaderHeight + 5
 intCol := 1
 intRow := 1
@@ -307,7 +348,7 @@ loop, %intCoversPerPage%
 		intYNameLabel := intY + intPicHeight + 5
 		
 		intCol := 0
-		intX := 5 - intColWidth + intClipboardWidth
+		intX := 5 - intColWidth + intBoardWidth
 	}
 	
 	intCol := intCol + 1
@@ -320,7 +361,7 @@ loop, %intCoversPerPage%
 	}
 }
 
-intGuiMiddle := intClipboardWidth + (A_GuiWidth - intClipboardWidth) / 2
+intGuiMiddle := intBoardWidth + (A_GuiWidth - intBoardWidth) / 2
 GuiControl, Move, btnPrevious, % "X" . (intGuiMiddle - 120) . " Y" . A_GuiHeight - 55
 GuiControl, Move, lblPage, % "X" . (intGuiMiddle) . " Y" . A_GuiHeight - 55
 GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 105) . " Y" . A_GuiHeight - 55
@@ -334,7 +375,7 @@ return
 ;-----------------------------------------------------------
 CalcMaxRowsAndCols:
 ;-----------------------------------------------------------
-intMaxNbCol := Floor((intAvailWidth - intClipboardWidth) / intColWidth)
+intMaxNbCol := Floor((intAvailWidth - intBoardWidth) / intColWidth)
 intMaxNbRow := Floor((intAvailHeight - intHeaderHeight - intFooterHeight) / intRowHeight)
 
 if (!intMaxNbCol)
@@ -368,7 +409,7 @@ ExitApp
 
 
 ;-----------------------------------------------------------
-ClickRadSource:
+ClickedRadSource:
 ;-----------------------------------------------------------
 Cover_ReleaseSource()
 
@@ -395,8 +436,10 @@ Gui, Submit, NoHide
 if (lstArtists = A_Space . lDropDownAllArtists)
 	Gosub, PopulateAlbumDropdownList
 else
-	GuiControl, , lstAlbums, % strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
+	GuiControl, , lstAlbums, % strAlbumArtistDelimiter . A_Space
+		. lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
 GuiControl, Choose, lstAlbums, 1
+
 Gosub, DisplayCovers
 
 return
@@ -521,10 +564,27 @@ return
 
 
 ;-----------------------------------------------------------
-LoadPicCover(ByRef picCover, intPicType, strFile := "")
-; intPicType = 1 regular cover / 2 no cover / 3 fill cover
+DisplayBoard:
+;-----------------------------------------------------------
+Gui, Submit, NoHide
+
+loop, %intMaxNbRow%
 {
-	global ptrBitmapPicCover, ptrGraphicPicCover, ptrBitmapNoCover, ptrBitmapFillCover
+	ptrBitmapPicCover := Gdip_CreateBitmap(posBoard%A_Index%w, posBoard%A_Index%h)
+	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
+	Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
+	LoadPicCover(picBoard%A_Index%, 4)
+}
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+LoadPicCover(ByRef picCover, intPicType, strFile := "")
+; intPicType = 1 regular cover / 2 no cover / 3 fill cover / 4 empty board
+{
+	global ptrBitmapPicCover, ptrGraphicPicCover, ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard
 
 	GuiControlGet, posCover, Pos, picCover
 	GuiControlGet, hwnd, hwnd, picCover
@@ -536,6 +596,8 @@ LoadPicCover(ByRef picCover, intPicType, strFile := "")
 		ptrBitmap := ptrBitmapNoCover
 	if (intPicType = 3)
 		ptrBitmap := ptrBitmapFillCover
+	if (intPicType = 4)
+		ptrBitmap := ptrBitmapEmptyBoard
 
 	intWidth := Gdip_GetImageWidth(ptrBitmap)
 	intHeight := Gdip_GetImageHeight(ptrBitmap)
@@ -597,6 +659,15 @@ return
 ;-----------------------------------------------------------
 
 
+;-----------------------------------------------------------
+PicBoardClicked:
+;-----------------------------------------------------------
+###_D("PicBoardClicked")
+
+return
+;-----------------------------------------------------------
+
+
 
 ;============================================================
 ; TOOLS
@@ -604,9 +675,9 @@ return
 
 
 ; ------------------------------------------------
-ButtonCheck4Update: ; ### TEST
+ButtonCheck4Update: ; ### NEED TEST
 ; ------------------------------------------------
-blnButtonCheck4Update := True
+blnButtonCheck4Update := True ; ???
 Gosub, Check4Update
 
 return
@@ -623,7 +694,7 @@ return
 
 
 ; ------------------------------------------------
-Check4Update: ; ### TEST
+Check4Update: ; ### NEED TEST
 ; ------------------------------------------------
 Gui, 1:+OwnDialogs 
 IniRead, strLatestSkipped, %strIniFile%, global, strLatestSkipped, 0.0
