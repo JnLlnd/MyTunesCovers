@@ -309,7 +309,7 @@ intYNameLabel := intY + intPicHeight + 5
 loop, %intCoversPerPagePrevious%
 {
 	GuiControl, Hide, picCover%A_Index%
-	GuiControl, Hide, lblCoverLabel%A_Index%
+	GuiControl, Hide, lnkCoverLabel%A_Index%
 	GuiControl, Hide, lblNameLabel%A_Index%
 }
 
@@ -320,7 +320,7 @@ loop, %intCoversPerPage%
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicCover%A_Index% gPicCoverClicked
 		GuiControlGet, posCover%A_Index%, Pos, picCover%A_Index%
 		Gui, Font, s8 w500, Arial
-		Gui, Add, Text, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlblCoverLabel%A_Index% gCoverLabelClicked border hidden
+		Gui, Add, Link, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlnkCoverLabel%A_Index% gCoverLabelClicked border hidden
 		Gui, Font, s8 w700, Arial
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% vlblNameLabel%A_Index% center vlblNameLabel%A_Index% gNameLabelClicked
 		Gui, Font
@@ -330,7 +330,7 @@ loop, %intCoversPerPage%
 	{
 		GuiControl, Move, picCover%A_Index%, x%intXPic% y%intYPic%
 		GuiControl, Show, picCover%A_Index%
-		GuiControl, Move, lblCoverLabel%A_Index%, x%intXPic% y%intYPic%
+		GuiControl, Move, lnkCoverLabel%A_Index%, x%intXPic% y%intYPic%
 		GuiControl, Move, lblNameLabel%A_Index%, x%intXPic% y%intYNameLabel%
 		GuiControl, Show, lblNameLabel%A_Index%
 	}
@@ -522,11 +522,14 @@ loop
 		strTrackTitle := ""
 	
 	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name
-	GuiControl, , lblCoverLabel%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
+	GuiControl, , lnkCoverLabel%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
 		. lAlbum . ": " . objCover%intPosition%.Album . "`n"
 		. "Index: " . objCover%intPosition%.Index . "`n"
 		. "TrackID: " . objCover%intPosition%.TrackID . "`n"
-		. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID
+		. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID . "`n"
+		. "`n"
+		. "<A ID=""ShowPic" . intPosition . """>Show Pic</A>" . "`n"
+		. "<A ID=""Clip" . intPosition . """>Clip to Board</A>" . "`n"
 
 	ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
 	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
@@ -551,7 +554,7 @@ loop, %intRemainingCovers%
 	LoadPicCover(picCover%intPosition%, 3)
 	
 	GuiControl, , lblNameLabel%intPosition%
-	GuiControl, , lblCoverLabel%intPosition%
+	GuiControl, , lnkCoverLabel%intPosition%
 }
 
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
@@ -629,10 +632,12 @@ LoadPicCover(ByRef picCover, intPicType, strFile := "")
 ;-----------------------------------------------------------
 PicCoverClicked:
 ;-----------------------------------------------------------
-StringReplace, strThisLabel, A_GuiControl, picCover, lblCoverLabel
+StringReplace, intPosition, A_GuiControl, picCover
+
+; objCover%intPosition%.Name
 
 GuiControl, Hide, %A_GuiControl%
-GuiControl, Show, %strThisLabel%
+GuiControl, Show, lnkCoverLabel%intPosition%
 
 return
 ;-----------------------------------------------------------
@@ -641,10 +646,20 @@ return
 ;-----------------------------------------------------------
 CoverLabelClicked:
 ;-----------------------------------------------------------
-StringReplace, strThisPicCover, A_GuiControl, lblCoverLabel, picCover
+strCommand := ErrorLevel
+StringReplace, intPosition, A_GuiControl, lnkCoverLabel
+StringReplace, strCommand, strCommand, %intPosition%
+; objCover%intPosition%.Name
 
-GuiControl, Hide, %A_GuiControl%
-GuiControl, Show, %strThisPicCover%
+if (strCommand = "ShowPic")
+{
+	GuiControl, Hide, %A_GuiControl%
+	GuiControl, Show, picCover%intPosition%
+}
+else if (strCommand = "Clip")
+{
+	###_D(objCover%intPosition%.Name . "`n" . objCover%intPosition%.CoverTempFilePathName)
+}
 
 return
 ;-----------------------------------------------------------
