@@ -78,6 +78,8 @@ Gosub, InitPersistentCovers
 Gosub, BuildGui
 Gosub, InitSources
 
+arrBoardPicFiles := Object() ; ### where should it be initialized?
+
 OnExit, CleanUpBeforeQuit
 return
 
@@ -179,6 +181,8 @@ Gui, Font
 intVerticalLineX := intBoardWidth
 intVerticalLineY := intHeaderHeight + 10
 Gui, Add, Text, x%intVerticalLineX% y%intVerticalLineY% h10 0x11 vlblVerticalLine ; Vertical Line > Etched Gray
+intHorizontalLineY := intHeaderHeight + intPicHeight + intNameLabelHeight
+Gui, Add, Text, x10 y%intHorizontalLineY% w%intPicWidth% 0x10 vlblHorizontalBoardLine ; Horizontal Line > Etched Gray
 
 Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
 Gui, Add, Text, x+50 yp w60 vlblPage
@@ -195,6 +199,7 @@ else
 SysGet, intMonWork, MonitorWorkArea
 intAvailWidth := intMonWorkRight - 50
 intAvailHeight := intMonWorkBottom - 50
+
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
 intTotalWidth := (intMaxNbCol * intColWidth) + intBoardWidth + 20
 intTotalHeight := (intMaxNbRow * intRowHeight) + intHeaderHeight + intFooterHeight
@@ -272,6 +277,7 @@ intY := intHeaderHeight + 5
 intRow := 1
 intXPic := intX + 10
 intYPic := intY + 5
+intYNameLabel := intY + intPicHeight + 5
 
 loop, %intNbBoardCreated%
 	GuiControl, Hide, picBoard%A_Index%
@@ -281,6 +287,11 @@ loop, %intMaxNbRow%
 	if (intNbBoardCreated < A_Index)
 	{
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicBoard%A_Index% gPicBoardClicked
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblBoardNameLabel%A_Index%
+		if (A_Index = 1)
+			GuiControl, , lblBoardNameLabel%A_Index%, MASTER COVER
+		else
+			GuiControl, , lblBoardNameLabel%A_Index%, Backup Cover #%A_Index%
 		GuiControlGet, posBoard%A_Index%, Pos, picBoard%A_Index%
 		if (A_Index > intNbBoardCreated)
 			intNbBoardCreated := A_Index
@@ -291,6 +302,7 @@ loop, %intMaxNbRow%
 	intRow := intRow + 1
 	intY := intY + intRowHeight
 	intYPic := intY + 5
+	intYNameLabel := intY + intPicHeight + 5
 }
 
 Gosub, DisplayBoard
@@ -322,7 +334,7 @@ loop, %intCoversPerPage%
 		Gui, Font, s8 w500, Arial
 		Gui, Add, Link, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlnkCoverLabel%A_Index% gCoverLabelClicked border hidden
 		Gui, Font, s8 w700, Arial
-		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% vlblNameLabel%A_Index% center vlblNameLabel%A_Index% gNameLabelClicked
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
 		Gui, Font
 		intNbCoversCreated := A_Index
 	}
@@ -521,6 +533,9 @@ loop
 	else
 		strTrackTitle := ""
 	
+	GuiControl, Hide, lnkCoverLabel%intPosition%
+	GuiControl, Show, picCover%intPosition%
+	
 	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name
 	GuiControl, , lnkCoverLabel%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
 		. lAlbum . ": " . objCover%intPosition%.Album . "`n"
@@ -555,6 +570,8 @@ loop, %intRemainingCovers%
 	
 	GuiControl, , lblNameLabel%intPosition%
 	GuiControl, , lnkCoverLabel%intPosition%
+	GuiControl, Hide, lnkCoverLabel%intPosition%
+	GuiControl, Show, picCover%intPosition%
 }
 
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
@@ -636,8 +653,11 @@ StringReplace, intPosition, A_GuiControl, picCover
 
 ; objCover%intPosition%.Name
 
-GuiControl, Hide, %A_GuiControl%
-GuiControl, Show, lnkCoverLabel%intPosition%
+if (intPosition <= intCoversDisplayedPrevious)
+{
+	GuiControl, Hide, %A_GuiControl%
+	GuiControl, Show, lnkCoverLabel%intPosition%
+}
 
 return
 ;-----------------------------------------------------------
@@ -658,7 +678,10 @@ if (strCommand = "ShowPic")
 }
 else if (strCommand = "Clip")
 {
-	###_D(objCover%intPosition%.Name . "`n" . objCover%intPosition%.CoverTempFilePathName)
+	if StrLen(objCover%intPosition%.CoverTempFilePathName)
+		arrBoardPicFiles.Insert(1, objCover%intPosition%.CoverTempFilePathName)
+	loop, %intMaxNbRow%
+		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
 }
 
 return
