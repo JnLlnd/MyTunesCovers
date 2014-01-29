@@ -287,11 +287,19 @@ loop, %intMaxNbRow%
 	if (intNbBoardCreated < A_Index)
 	{
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicBoard%A_Index% gPicBoardClicked
+		Gui, Font, s8 w500, Arial
+		Gui, Add, Link, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlnkBoardLink%A_Index% gBoardLinkClicked border hidden
+		Gui, Font, s8 w700, Arial
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblBoardNameLabel%A_Index%
 		if (A_Index = 1)
-			GuiControl, , lblBoardNameLabel%A_Index%, MASTER COVER
+			GuiControl, , lblBoardNameLabel%A_Index%, %lBoardMasterCover%
 		else
-			GuiControl, , lblBoardNameLabel%A_Index%, Backup Cover #%A_Index%
+			GuiControl, , lblBoardNameLabel%A_Index%, %lBoardBackupCover% #%A_Index%
+
+		GuiControl, , lnkBoardLink%A_Index%, % ""
+			. "<A ID=""ShowPic" . intPosition . """>Show Pic</A>" . "`n"
+			. "<A ID=""Remove" . intPosition . """>Remove</A>" . "`n"
+
 		GuiControlGet, posBoard%A_Index%, Pos, picBoard%A_Index%
 		if (A_Index > intNbBoardCreated)
 			intNbBoardCreated := A_Index
@@ -321,7 +329,7 @@ intYNameLabel := intY + intPicHeight + 5
 loop, %intCoversPerPagePrevious%
 {
 	GuiControl, Hide, picCover%A_Index%
-	GuiControl, Hide, lnkCoverLabel%A_Index%
+	GuiControl, Hide, lnkCoverLink%A_Index%
 	GuiControl, Hide, lblNameLabel%A_Index%
 }
 
@@ -332,7 +340,7 @@ loop, %intCoversPerPage%
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicCover%A_Index% gPicCoverClicked
 		GuiControlGet, posCover%A_Index%, Pos, picCover%A_Index%
 		Gui, Font, s8 w500, Arial
-		Gui, Add, Link, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlnkCoverLabel%A_Index% gCoverLabelClicked border hidden
+		Gui, Add, Link, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlnkCoverLink%A_Index% gCoverLinkClicked border hidden
 		Gui, Font, s8 w700, Arial
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
 		Gui, Font
@@ -342,7 +350,7 @@ loop, %intCoversPerPage%
 	{
 		GuiControl, Move, picCover%A_Index%, x%intXPic% y%intYPic%
 		GuiControl, Show, picCover%A_Index%
-		GuiControl, Move, lnkCoverLabel%A_Index%, x%intXPic% y%intYPic%
+		GuiControl, Move, lnkCoverLink%A_Index%, x%intXPic% y%intYPic%
 		GuiControl, Move, lblNameLabel%A_Index%, x%intXPic% y%intYNameLabel%
 		GuiControl, Show, lblNameLabel%A_Index%
 	}
@@ -533,11 +541,11 @@ loop
 	else
 		strTrackTitle := ""
 	
-	GuiControl, Hide, lnkCoverLabel%intPosition%
+	GuiControl, Hide, lnkCoverLink%intPosition%
 	GuiControl, Show, picCover%intPosition%
 	
 	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name
-	GuiControl, , lnkCoverLabel%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
+	GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
 		. lAlbum . ": " . objCover%intPosition%.Album . "`n"
 		. "Index: " . objCover%intPosition%.Index . "`n"
 		. "TrackID: " . objCover%intPosition%.TrackID . "`n"
@@ -569,8 +577,8 @@ loop, %intRemainingCovers%
 	LoadPicCover(picCover%intPosition%, 3)
 	
 	GuiControl, , lblNameLabel%intPosition%
-	GuiControl, , lnkCoverLabel%intPosition%
-	GuiControl, Hide, lnkCoverLabel%intPosition%
+	GuiControl, , lnkCoverLink%intPosition%
+	GuiControl, Hide, lnkCoverLink%intPosition%
 	GuiControl, Show, picCover%intPosition%
 }
 
@@ -656,7 +664,7 @@ StringReplace, intPosition, A_GuiControl, picCover
 if (intPosition <= intCoversDisplayedPrevious)
 {
 	GuiControl, Hide, %A_GuiControl%
-	GuiControl, Show, lnkCoverLabel%intPosition%
+	GuiControl, Show, lnkCoverLink%intPosition%
 }
 
 return
@@ -664,10 +672,10 @@ return
 
 
 ;-----------------------------------------------------------
-CoverLabelClicked:
+CoverLinkClicked:
 ;-----------------------------------------------------------
 strCommand := ErrorLevel
-StringReplace, intPosition, A_GuiControl, lnkCoverLabel
+StringReplace, intPosition, A_GuiControl, lnkCoverLink
 StringReplace, strCommand, strCommand, %intPosition%
 ; objCover%intPosition%.Name
 
@@ -700,7 +708,41 @@ return
 ;-----------------------------------------------------------
 PicBoardClicked:
 ;-----------------------------------------------------------
-###_D("PicBoardClicked")
+StringReplace, intPosition, A_GuiControl, picBoard
+
+if (intPosition <= arrBoardPicFiles.MaxIndex())
+{
+	GuiControl, Hide, %A_GuiControl%
+	GuiControl, Show, lnkBoardLink%intPosition%
+}
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+BoardLinkClicked:
+;-----------------------------------------------------------
+strCommand := ErrorLevel
+StringReplace, intPosition, A_GuiControl, lnkBoardLink
+StringReplace, strCommand, strCommand, %intPosition%
+
+if (strCommand = "ShowPic")
+{
+	GuiControl, Hide, %A_GuiControl%
+	GuiControl, Show, picBoard%intPosition%
+}
+else if (strCommand = "Remove")
+{
+	arrBoardPicFiles.Remove(intPosition)
+	loop, %intMaxNbRow%
+		if (A_Index <= arrBoardPicFiles.MaxIndex())
+			LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
+		else
+			LoadPicCover(picBoard%A_Index%, 4)
+	GuiControl, Hide, lnkBoardLink%intPosition%
+	GuiControl, Show, picBoard%intPosition%
+}
 
 return
 ;-----------------------------------------------------------
