@@ -296,9 +296,14 @@ loop, %intMaxNbRow%
 		else
 			GuiControl, , lblBoardNameLabel%A_Index%, %lBoardBackupCover% #%A_Index%
 
-		GuiControl, , lnkBoardLink%A_Index%, % ""
-			. "<A ID=""ShowPic" . intPosition . """>Show Pic</A>" . "`n"
-			. "<A ID=""Remove" . intPosition . """>Remove</A>" . "`n"
+		strBoardLink := ""
+			. "<A ID=""ShowPic" . intPosition . """>" . lBoardShowPic . "</A>" . "`n"
+			. "<A ID=""Remove" . intPosition . """>" . lBoardRemove . "</A>" . "`n"
+		if (A_Index > 1)
+			strBoardLink := strBoardLink
+			. "<A ID=""MakeMaster" . intPosition . """>" . lBoardMakeMaster . "</A>" . "`n"
+
+		GuiControl, , lnkBoardLink%A_Index%, %strBoardLink%
 
 		GuiControlGet, posBoard%A_Index%, Pos, picBoard%A_Index%
 		if (A_Index > intNbBoardCreated)
@@ -551,8 +556,8 @@ loop
 		. "TrackID: " . objCover%intPosition%.TrackID . "`n"
 		. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID . "`n"
 		. "`n"
-		. "<A ID=""ShowPic" . intPosition . """>Show Pic</A>" . "`n"
-		. "<A ID=""Clip" . intPosition . """>Clip to Board</A>" . "`n"
+		. "<A ID=""ShowPic" . intPosition . """>" . lCoverShowPic . "</A>" . "`n"
+		. "<A ID=""Clip" . intPosition . """>" . lCoverClip . "</A>" . "`n"
 
 	ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
 	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
@@ -742,6 +747,17 @@ else if (strCommand = "Remove")
 			LoadPicCover(picBoard%A_Index%, 4)
 	GuiControl, Hide, lnkBoardLink%intPosition%
 	GuiControl, Show, picBoard%intPosition%
+}
+else if (strCommand = "MakeMaster")
+{
+	arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
+	arrBoardPicFiles.Remove(intPosition + 1)
+	loop, %intMaxNbRow%
+	{
+		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
+		GuiControl, Hide, lnkBoardLink%A_Index%
+		GuiControl, Show, picBoard%A_Index%
+	}
 }
 
 return
