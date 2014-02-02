@@ -1,11 +1,14 @@
+; ### si pas de cover faut enlever celui qui était là
+; ### si on clique pendant un affichage, ça mélange tout
+
 ;===============================================
 /*
 	MyTunesCovers
 	Written using AutoHotkey_L v1.1.09.03+ (http://l.autohotkey.net/)
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
-	2014-01-## v0.4 ALPHA
-	* Display Clipboard (renamed Board) empty images, support resize
+	2014-02-## v0.4 ALPHA
+	* Display Board with empty images, support resize
 
 	2014-01-17 v0.3 ALPHA
 	* Reset all albums views when select All artists
@@ -555,6 +558,7 @@ loop
 		. "Index: " . objCover%intPosition%.Index . "`n"
 		. "TrackID: " . objCover%intPosition%.TrackID . "`n"
 		. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID . "`n"
+		. "ArtworkCount: " . objCover%intPosition%.ArtworkCount . "`n"
 		. "`n"
 		. "<A ID=""ShowPic" . intPosition . """>" . lCoverShowPic . "</A>" . "`n"
 		. "<A ID=""Clip" . intPosition . """>" . lCoverClip . "</A>" . "`n"

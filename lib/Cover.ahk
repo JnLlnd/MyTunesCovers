@@ -33,13 +33,14 @@ class Cover
 		this.CoverTempFilePathName := strFilePathName
 	}
 
-	SetCoverProperties(strName, strArtist, strAlbum, intIndex, intTrackID, intTrackDatabaseID)
+	SetCoverProperties(strArtist, strAlbum, strName, intIndex, intTrackID, intTrackDatabaseID, intArtworkCount)
 	/*
 		IMPLEMENTED
 			Name ; Returns the name of the object. 
 			Index ; Returns the index of the object in internal application order. 
 			TrackID ; Returns the ID that identifies the track within the playlist. 
 			TrackDatabaseID ; Returns the ID that identifies the track, independent of its playlist. 
+			Artwork.Count ; Returns the number of pieces of artwork in the collection.
 
 		NOT IMPLEMENTED:
 			Kind ; Returns the kind of the track. 
@@ -56,7 +57,6 @@ class Cover
 			TrackNumber ; Returns the index of the track on the source album. 
 			Year ; Returns the year the track was recorded/released. 
 			Artwork ; Returns a collection containing the artwork for the track. 
-			Artwork.Count ; Returns the number of pieces of artwork in the collection.
 			Artwork.Item(index) ; Returns an IITArtwork object corresponding to the given index (1-based).
 	*/
 	{
@@ -66,6 +66,7 @@ class Cover
 		this.Index := intIndex
 		this.TrackID := intTrackID
 		this.TrackDatabaseID := intTrackDatabaseID
+		this.ArtworkCount := intArtworkCount
 	}
 
 	SaveCover(strFilePathName)

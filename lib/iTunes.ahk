@@ -191,16 +191,17 @@ iTunes_GetCover(ByRef objThisCover, intTrackIndex)
 	; objTrack := objITunesTracks.Item(arrTracks[intTrackIndex])
 
 	arrTrackIDs := StrSplit(arrTracks[intTrackIndex], ";") ; "TrackID ; DatabaseID"
-	; ###_D(arrTrackIDs[1] . " `; " . arrTrackIDs[2])
+	; ###_D(intSourceID . " " . intPlaylistID . " " . arrTrackIDs[1] . " " . arrTrackIDs[2])
 	objTrack := objITunesunesApp.GetITObjectByID(intSourceID, intPlaylistID, arrTrackIDs[1], arrTrackIDs[2]) ; intTrackID, intDatabaseID
-	; ###_D("objTrack.Name: " . objTrack.Name)
+	if !StrLen(objTrack.Name)
+		###_D("objTrack.Name empty. Need to recache the library?")
 
 	strCoverFile := iTunes_GetTempImageFile(objTrack, objThisCover.GUID)
 	objThisCover.SetCoverTempFile(strCoverFile)
 	; ###_D("objThisCover.CoverTempFilePathName: " . objThisCover.CoverTempFilePathName)
 
 	; ###_D("objTrack.Index: " . objTrack.Index)
-	objThisCover.SetCoverProperties(objTrack.Name, objTrack.Artist, objTrack.Album, objTrack.Index, objTrack.TrackID, objTrack.TrackDatabaseID)
+	objThisCover.SetCoverProperties(objTrack.Artist, objTrack.Album, objTrack.Name, objTrack.Index, objTrack.TrackID, objTrack.TrackDatabaseID, objTrack.Artwork.Count)
 	; ###_D("objThisCover.Index: " . objThisCover.Index)
 
 	return true
@@ -301,6 +302,7 @@ iTunes_GetTempImageFile(objTrack, strNameNoext)
 {
 	global strCoversCacheFolder
 	
+	; ###_D("objTrack.Artwork.Count: " . objTrack.Artwork.Count)
 	if !(objTrack.Artwork.Count)
 		return
 	else
