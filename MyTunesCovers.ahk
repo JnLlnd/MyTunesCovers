@@ -753,42 +753,17 @@ if (strCommand = "ShowPic")
 	return
 }
 else if (strCommand = "Remove")
-{
 	arrBoardPicFiles.Remove(intPosition)
-/*
-	loop, %intMaxNbRow%
-		if (A_Index <= arrBoardPicFiles.MaxIndex())
-			LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
-		else
-			LoadPicCover(picBoard%A_Index%, 4)
-	GuiControl, Hide, lnkBoardLink%intPosition%
-	GuiControl, Show, picBoard%intPosition%
-*/
-}
 else if (strCommand = "MakeMaster")
 {
 	arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
 	arrBoardPicFiles.Remove(intPosition + 1)
-/*
-	loop, %intMaxNbRow%
-	{
-		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
-		GuiControl, Hide, lnkBoardLink%A_Index%
-		GuiControl, Show, picBoard%A_Index%
-	}
-*/
 }
 else if (strCommand = "LoadFromFile")
 {
 	FileSelectFile, strLoadMasterFilename, , , %lBoardLoadFromFilePrompt%, % lImageFiles . " (*.jpg; *.jpeg; *.png; *.bmp; *.gif; *.tiff; *.tif)"
 	if StrLen(strLoadMasterFilename)
 		arrBoardPicFiles.Insert(1, strLoadMasterFilename)
-/*
-	loop, %intMaxNbRow%
-		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
-	GuiControl, Hide, lnkBoardLink1
-	GuiControl, Show, picBoard1
-*/
 }
 else if (strCommand = "LoadFromClipboard")
 {
@@ -805,12 +780,6 @@ else if (strCommand = "LoadFromClipboard")
 
 	if StrLen(strLoadClipboardFilename)
 		arrBoardPicFiles.Insert(1, strLoadClipboardFilename)
-/*
-	loop, %intMaxNbRow%
-		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
-	GuiControl, Hide, lnkBoardLink1
-	GuiControl, Show, picBoard1
-*/
 }
 
 loop, %intMaxNbRow%
