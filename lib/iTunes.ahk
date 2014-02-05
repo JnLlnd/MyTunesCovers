@@ -138,7 +138,7 @@ iTunes_LoadSource()
 			objAlbumsOfArtistsIndex := Object()
 		}
 		if !Mod(A_Index, intLinesPerBatch)
-			TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), % L(lliTunesSavingSourceIndexProgress, A_Index)
+			TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), % L(liTunesSavingSourceIndexProgress, A_Index)
 		arrRecord := StrSplit(A_LoopReadLine, "`t")
 		strObjName := arrRecord[1]
 		%strObjName%.Insert(arrRecord[2], arrRecord[3])

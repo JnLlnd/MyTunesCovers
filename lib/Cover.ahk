@@ -20,8 +20,7 @@ global strSourceCacheFilenameExtension := "SourceCache.csv"
 ;-----------------------------------------------------------
 class Cover
 {
-    GUID := GenerateGUID()
-    ; not used: static GUID3 := GenerateGUID()
+    GUID := Cover_GenerateGUID()
 
 	__New(strFilePathName)
 	{
@@ -159,7 +158,7 @@ Cover_ReleaseSource()
 
 
 ;-----------------------------------------------------------
-GenerateGUID()         ; 32 hex digits = 128-bit Globally Unique ID
+Cover_GenerateGUID()         ; 32 hex digits = 128-bit Globally Unique ID
 ; Source: Laszlo in http://www.autohotkey.com/board/topic/5362-more-secure-random-numbers/
 {
    format = %A_FormatInteger%       ; save original integer format

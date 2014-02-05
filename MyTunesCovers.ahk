@@ -1,6 +1,3 @@
-; ### si pas de cover faut enlever celui qui était là
-; ### si on clique pendant un affichage, ça mélange tout
-
 ;===============================================
 /*
 	MyTunesCovers
@@ -302,6 +299,12 @@ loop, %intMaxNbRow%
 		strBoardLink := ""
 			. "<A ID=""ShowPic" . intPosition . """>" . lBoardShowPic . "</A>" . "`n"
 			. "<A ID=""Remove" . intPosition . """>" . lBoardRemove . "</A>" . "`n"
+		if (A_Index = 1)
+			strBoardLink := strBoardLink
+			. "<A ID=""LoadFromFile" . intPosition . """>" . lBoardLoadFromFile . "</A>" . "`n"
+			. "<A ID=""LoadFromClipboard" . intPosition . """>" . lBoardLoadFromClipboard . "</A>" . "`n"
+			
+			
 		if (A_Index > 1)
 			strBoardLink := strBoardLink
 			. "<A ID=""MakeMaster" . intPosition . """>" . lBoardMakeMaster . "</A>" . "`n"
@@ -536,6 +539,7 @@ intPosition := 0
 intTrackIndexDisplayedNow := ((intPage - 1) * intCoversPerPage)
 intNbPages := Ceil(intNbCovers / intCoversPerPage) ; can change when resize
 
+Hotkey, LButton, DoNothing, On ; protect display cover from user clicks
 loop
 {
 	intTrackIndexDisplayedNow := intTrackIndexDisplayedNow + 1
@@ -590,12 +594,21 @@ loop, %intRemainingCovers%
 	GuiControl, Hide, lnkCoverLink%intPosition%
 	GuiControl, Show, picCover%intPosition%
 }
+; BlockInput, Off
+Hotkey, LButton, , Off
 
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
 GuiControl, % (intTrackIndexDisplayedNow < intNbCovers ? "Show" : "Hide"), btnNext
 if (intNbPages)
 	GuiControl, , lblPage, % L(lPageFooter, intPage, intNbPages)
 
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+DoNothing:
+;-----------------------------------------------------------
 return
 ;-----------------------------------------------------------
 
@@ -719,11 +732,8 @@ PicBoardClicked:
 ;-----------------------------------------------------------
 StringReplace, intPosition, A_GuiControl, picBoard
 
-if (intPosition <= arrBoardPicFiles.MaxIndex())
-{
-	GuiControl, Hide, %A_GuiControl%
-	GuiControl, Show, lnkBoardLink%intPosition%
-}
+GuiControl, Hide, %A_GuiControl%
+GuiControl, Show, lnkBoardLink%intPosition%
 
 return
 ;-----------------------------------------------------------
@@ -740,10 +750,12 @@ if (strCommand = "ShowPic")
 {
 	GuiControl, Hide, %A_GuiControl%
 	GuiControl, Show, picBoard%intPosition%
+	return
 }
 else if (strCommand = "Remove")
 {
 	arrBoardPicFiles.Remove(intPosition)
+/*
 	loop, %intMaxNbRow%
 		if (A_Index <= arrBoardPicFiles.MaxIndex())
 			LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
@@ -751,18 +763,74 @@ else if (strCommand = "Remove")
 			LoadPicCover(picBoard%A_Index%, 4)
 	GuiControl, Hide, lnkBoardLink%intPosition%
 	GuiControl, Show, picBoard%intPosition%
+*/
 }
 else if (strCommand = "MakeMaster")
 {
 	arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
 	arrBoardPicFiles.Remove(intPosition + 1)
+/*
 	loop, %intMaxNbRow%
 	{
 		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
 		GuiControl, Hide, lnkBoardLink%A_Index%
 		GuiControl, Show, picBoard%A_Index%
 	}
+*/
 }
+else if (strCommand = "LoadFromFile")
+{
+	FileSelectFile, strLoadMasterFilename, , , %lBoardLoadFromFilePrompt%, % lImageFiles . " (*.jpg; *.jpeg; *.png; *.bmp; *.gif; *.tiff; *.tif)"
+	if StrLen(strLoadMasterFilename)
+		arrBoardPicFiles.Insert(1, strLoadMasterFilename)
+/*
+	loop, %intMaxNbRow%
+		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
+	GuiControl, Hide, lnkBoardLink1
+	GuiControl, Show, picBoard1
+*/
+}
+else if (strCommand = "LoadFromClipboard")
+{
+	ptrBitmapClipbpard := Gdip_CreateBitmapFromClipboard()
+	if (ptrBitmapClipbpard < 0)
+	{
+		DllCall("CloseClipboard")
+		Oops(lInvalidClipboardContent)
+		return
+	}
+	strLoadClipboardFilename := strCoversCacheFolder . Cover_GenerateGUID() . ".jpg"
+	Gdip_SaveBitmapToFile(ptrBitmapClipbpard, strLoadClipboardFilename, 95)
+	ptrBitmapClipbpard :=
+
+	if StrLen(strLoadClipboardFilename)
+		arrBoardPicFiles.Insert(1, strLoadClipboardFilename)
+/*
+	loop, %intMaxNbRow%
+		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
+	GuiControl, Hide, lnkBoardLink1
+	GuiControl, Show, picBoard1
+*/
+}
+
+loop, %intMaxNbRow%
+{
+	if (A_Index <= arrBoardPicFiles.MaxIndex())
+		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
+	else
+		LoadPicCover(picBoard%A_Index%, 4)
+	GuiControl, Hide, lnkBoardLink%A_Index%
+	GuiControl, Show, picBoard%A_Index%
+}
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+SaveClipboardToImageFile:
+;-----------------------------------------------------------
+
 
 return
 ;-----------------------------------------------------------
