@@ -11,11 +11,8 @@ global intTestLimit := 3000
 global intLinesPerBatch := 5000
 global objITunesunesApp := Object()
 global objITunesTracks := Object()
-global objITunesSourceIDs := Object()
 global arrTracks
 global intTracksArrayIndex := 0
-global intSourceID := -1
-global intPlaylistID := -1
 global strITunesCacheFilename := "iTunes_" . strSourceCacheFilenameExtension
 
 
@@ -30,11 +27,6 @@ iTunes_InitCoversSource()
 	; iTunes main playlist (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - playlist #1 is the library
 	objITunesTracks := objITunesPlaylist.Tracks
 
-	intSourceID := objITunesLibrary.sourceID
-	intPlaylistID := objITunesPlaylist.PlaylistID
-	objITunesSourceIDs.Insert("intSourceID", intSourceID)
-	objITunesSourceIDs.Insert("intPlaylistID", intPlaylistID)
-	
 	return objITunesTracks.Count
 }
 ;-----------------------------------------------------------
@@ -51,7 +43,9 @@ iTunes_InitArtistsAlbumsIndex()
 		if !Mod(A_Index,100)
 			TrayTip, , % A_Index . " / " . objITunesTracks.Count
 
-		strTrackIDs := objITunesTrack.TrackID . ";" . objITunesTrack.TrackDatabaseID
+		intIDHigh := objITunesunesApp.ITObjectPersistentIDHigh(objITunesTrack)
+		intIDLow := objITunesunesApp.ITObjectPersistentIDLow(objITunesTrack)
+		strTrackIDs := intIDHigh . ";" . intIDLow
 
 		strArtist := Trim(objITunesTracks.Item(A_Index).Artist)
 		if !StrLen(strArtist)
@@ -190,9 +184,9 @@ iTunes_GetCover(ByRef objThisCover, intTrackIndex)
 	; ###_D("arrTracks[" . intTrackIndex . "]: " . arrTracks[intTrackIndex])
 	; objTrack := objITunesTracks.Item(arrTracks[intTrackIndex])
 
-	arrTrackIDs := StrSplit(arrTracks[intTrackIndex], ";") ; "TrackID ; DatabaseID"
-	; ###_D(intSourceID . " " . intPlaylistID . " " . arrTrackIDs[1] . " " . arrTrackIDs[2])
-	objTrack := objITunesunesApp.GetITObjectByID(intSourceID, intPlaylistID, arrTrackIDs[1], arrTrackIDs[2]) ; intTrackID, intDatabaseID
+	arrTrackIDs := StrSplit(arrTracks[intTrackIndex], ";") ; "intIDHigh ; intIDLow"
+	objTrack := objITunesTracks.ItemByPersistentID(arrTrackIDs[1], arrTrackIDs[2])
+
 	if !StrLen(objTrack.Name)
 		###_D("objTrack.Name empty. Need to recache the library?")
 
@@ -223,9 +217,6 @@ iTunes_SaveSource()
 	intLines := 0
 	
 	strData := "Index`tKey`tValue`n"
-	for strIDType, strIDValue in objITunesSourceIDs
-		strData := strData . "objITunesSourceIDs`t" . strIDType . "`t" . strIDValue . "`n"
-
 	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex1%
 	for strArtist, strTracks in objArtistsIndex
 	{
