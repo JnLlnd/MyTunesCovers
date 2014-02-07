@@ -174,6 +174,8 @@ Gui, Add, Text, x+20 yp, %lArtists%
 Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp, %lAlbums%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
+Gui, Font
+Gui, Add, Checkbox, x+50 yp vblnOnlyNoCover gOnlyNoCoverClicked, %lOnlyNoCover%
 Gui, Font, s10 w700, Verdana
 Gui, Add, Text, x10 w%intBoardWidth% center, %lBoard%
 Gui, Font
@@ -489,6 +491,16 @@ return
 
 
 ;-----------------------------------------------------------
+OnlyNoCoverClicked:
+;-----------------------------------------------------------
+
+Gosub, DisplayCovers
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 ButtonPreviousClicked:
 ;-----------------------------------------------------------
 intPage := intPage - 1
@@ -515,12 +527,14 @@ DisplayCovers:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 
-intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums) - 1 ; -1 because of the last comma in lists
-if (intNbCovers < 1)
+intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover) - 1 ; -1 because of the last comma in lists
+
+if (intNbCovers < 0)
 {
-	###_D("Oops ###")
+	###_D("Oops ### : " . intNbCovers)
 	return
 }
+
 intPage := 1
 intNbPages := Ceil(intNbCovers / intCoversPerPage)
 
@@ -540,38 +554,39 @@ intPosition := 0
 intTrackIndexDisplayedNow := ((intPage - 1) * intCoversPerPage)
 intNbPages := Ceil(intNbCovers / intCoversPerPage) ; can change when resize
 
-loop
-{
-	intTrackIndexDisplayedNow := intTrackIndexDisplayedNow + 1
-	if !Cover_GetCover(objThisCover, intTrackIndexDisplayedNow)
-		break
-	intPosition := intPosition + 1
-	objCover%intPosition% := objThisCover
-	
-	GuiControl, Hide, lnkCoverLink%intPosition%
-	GuiControl, Show, picCover%intPosition%
-	
-	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name . (objCover%intPosition%.ArtworkCount > 1 ? " (" . objCover%intPosition%.ArtworkCount . ")" : "")
-	GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
-		. lAlbum . ": " . objCover%intPosition%.Album . "`n"
-		. "Index: " . objCover%intPosition%.Index . "`n"
-		. "TrackID: " . objCover%intPosition%.TrackID . "`n"
-		. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID . "`n"
-		. "ArtworkCount: " . objCover%intPosition%.ArtworkCount . "`n"
-		. "`n"
-		. "<A ID=""ShowPic" . intPosition . """>" . lCoverShowPic . "</A>" . "`n"
-		. "<A ID=""Clip" . intPosition . """>" . lCoverClip . "</A>" . "`n"
+if (intNbCovers)
+	loop
+	{
+		intTrackIndexDisplayedNow := intTrackIndexDisplayedNow + 1
+		if !Cover_GetCover(objThisCover, intTrackIndexDisplayedNow)
+			break
+		intPosition := intPosition + 1
+		objCover%intPosition% := objThisCover
+		
+		GuiControl, Hide, lnkCoverLink%intPosition%
+		GuiControl, Show, picCover%intPosition%
+		
+		GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name . (objCover%intPosition%.ArtworkCount > 1 ? " (" . objCover%intPosition%.ArtworkCount . ")" : "")
+		GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
+			. lAlbum . ": " . objCover%intPosition%.Album . "`n"
+			. "Index: " . objCover%intPosition%.Index . "`n"
+			. "TrackID: " . objCover%intPosition%.TrackID . "`n"
+			. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID . "`n"
+			. "ArtworkCount: " . objCover%intPosition%.ArtworkCount . "`n"
+			. "`n"
+			. "<A ID=""ShowPic" . intPosition . """>" . lCoverShowPic . "</A>" . "`n"
+			. "<A ID=""Clip" . intPosition . """>" . lCoverClip . "</A>" . "`n"
 
-	ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
-	ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
-	; Gdip_SetInterpolationMode(ptrGraphicPicCover, 7) ; using default instead of 7 (highest quality)
-	
-	if StrLen(objCover%intPosition%.CoverTempFilePathName)
-		LoadPicCover(picCover%intPosition%, 1, objCover%intPosition%.CoverTempFilePathName)
-	else
-		LoadPicCover(picCover%intPosition%, 2)
-	
-} until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
+		ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
+		ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
+		; Gdip_SetInterpolationMode(ptrGraphicPicCover, 7) ; using default instead of 7 (highest quality)
+		
+		if StrLen(objCover%intPosition%.CoverTempFilePathName)
+			LoadPicCover(picCover%intPosition%, 1, objCover%intPosition%.CoverTempFilePathName)
+		else
+			LoadPicCover(picCover%intPosition%, 2)
+		
+	} until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
 
 intRemainingCovers := intCoversDisplayedPrevious - intPosition
 intCoversDisplayedPrevious := intPosition

@@ -114,10 +114,10 @@ Cover_InitCoversSource(strSource)
 
 
 ;-----------------------------------------------------------
-Cover_InitCoverScan(lstArtists, lstAlbums)
+Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover)
 {
 	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_InitCoverScan(lstArtists, lstAlbums)
+		return %strCoverSourceType%_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover)
 	else
 		return false
 }

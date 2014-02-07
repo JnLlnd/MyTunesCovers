@@ -88,7 +88,7 @@ iTunes_InitArtistsAlbumsIndex()
 		if (A_Index = intTestLimit)
 			break
 	}
-	
+
 	/*
 	for strArtist, strTracks in objArtistsIndex
 	{
@@ -143,7 +143,7 @@ iTunes_LoadSource()
 
 
 ;-----------------------------------------------------------
-iTunes_InitCoverScan(strArtist := "", strAlbum := "")
+iTunes_InitCoverScan(strArtist := "", strAlbum := "", blnOnlyNoCover := false)
 {
 	global strAlbumArtistDelimiter
 
@@ -161,6 +161,20 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "")
 		arrTracks := StrSplit(objAlbumsIndex[strAlbum], ",")
 	else
 		return 0
+
+	if (blnOnlyNoCover)
+	{
+		intCurrentTrackIndex := 1
+		loop, % arrTracks.MaxIndex() - 1 ; last item always empty
+		{
+			arrTrackIDs := StrSplit(arrTracks[intCurrentTrackIndex], ";") ; "intIDHigh ; intIDLow"
+			objTrack := objITunesTracks.ItemByPersistentID(arrTrackIDs[1], arrTrackIDs[2])
+			if (objTrack.Artwork.Count)
+				arrTracks.Remove(intCurrentTrackIndex)
+			else
+				intCurrentTrackIndex := intCurrentTrackIndex + 1
+		}
+	}
 
 	intTracksArrayIndex := 0
 	/*
@@ -180,7 +194,6 @@ iTunes_GetCover(ByRef objThisCover, intTrackIndex)
 		or intTracksArrayIndex => arrTracks.MaxIndex()) ; the last item if the array is always empty
 		return false
 
-	objThisCover := New Cover()
 	; ###_D("arrTracks[" . intTrackIndex . "]: " . arrTracks[intTrackIndex])
 	; objTrack := objITunesTracks.Item(arrTracks[intTrackIndex])
 
@@ -190,6 +203,8 @@ iTunes_GetCover(ByRef objThisCover, intTrackIndex)
 	if !StrLen(objTrack.Name)
 		###_D("objTrack.Name empty. Need to recache the library?")
 
+	objThisCover := New Cover()
+	
 	strCoverFile := iTunes_GetTempImageFile(objTrack, objThisCover.GUID)
 	objThisCover.SetCoverTempFile(strCoverFile)
 	; ###_D("objThisCover.CoverTempFilePathName: " . objThisCover.CoverTempFilePathName)
