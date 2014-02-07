@@ -534,12 +534,12 @@ return
 DisplayCoversPage:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
+Gui, +Disabled ; protect display cover from user clicks
 
 intPosition := 0
 intTrackIndexDisplayedNow := ((intPage - 1) * intCoversPerPage)
 intNbPages := Ceil(intNbCovers / intCoversPerPage) ; can change when resize
 
-Hotkey, LButton, DoNothing, On ; protect display cover from user clicks
 loop
 {
 	intTrackIndexDisplayedNow := intTrackIndexDisplayedNow + 1
@@ -548,15 +548,10 @@ loop
 	intPosition := intPosition + 1
 	objCover%intPosition% := objThisCover
 	
-	if (objCover%intPosition%)
-		strTrackTitle := objCover%intPosition%.Name
-	else
-		strTrackTitle := ""
-	
 	GuiControl, Hide, lnkCoverLink%intPosition%
 	GuiControl, Show, picCover%intPosition%
 	
-	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name
+	GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name . (objCover%intPosition%.ArtworkCount > 1 ? " (" . objCover%intPosition%.ArtworkCount . ")" : "")
 	GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
 		. lAlbum . ": " . objCover%intPosition%.Album . "`n"
 		. "Index: " . objCover%intPosition%.Index . "`n"
@@ -594,21 +589,14 @@ loop, %intRemainingCovers%
 	GuiControl, Hide, lnkCoverLink%intPosition%
 	GuiControl, Show, picCover%intPosition%
 }
-; BlockInput, Off
-Hotkey, LButton, , Off
 
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
 GuiControl, % (intTrackIndexDisplayedNow < intNbCovers ? "Show" : "Hide"), btnNext
 if (intNbPages)
 	GuiControl, , lblPage, % L(lPageFooter, intPage, intNbPages)
 
-return
-;-----------------------------------------------------------
+Gui, -Disabled
 
-
-;-----------------------------------------------------------
-DoNothing:
-;-----------------------------------------------------------
 return
 ;-----------------------------------------------------------
 
