@@ -6,7 +6,14 @@
 
 	2014-02-## v0.4 ALPHA
 	* Display Board with empty images, support resize
-
+	* Links inside covers to display cover, clip cover to board
+	* Display artwork count in cover
+	* Move backup board cover to board top, load master from file or clipboard
+	* Use iTunes persistent IDs
+	* Checkbox to display only covers without artwork
+	* Copy master to cover, delete cover
+	* Update only file track, handle error message for other kinds
+	
 	2014-01-17 v0.3 ALPHA
 	* Reset all albums views when select All artists
 	* Implemented release, save cache and reload cache for iTunes source
@@ -138,8 +145,10 @@ InitPersistentCovers:
 ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\no_cover-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\fill_cover-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\empty-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\copy_here-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapButtonClip := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\clip-200x200.png") ; if absent, url download from repo ? ###
 
-If !(ptrBitmapNoCover and ptrBitmapFillCover and ptrBitmapEmptyBoard)
+If !(ptrBitmapNoCover and ptrBitmapFillCover and ptrBitmapEmptyBoard and ptrBitmapCopyHere)
 	Oops(lPersistentImagesFailed)
 
 return
@@ -153,12 +162,11 @@ intCoversPerPage := 0
 intNbCoversCreated := 0
 intNbBoardCreated := 0
 
-intPicWidth := intPictureSize
-intPicHeight := intPictureSize
+intButtonSize := intPictureSize // 4
 intNameLabelHeight := 30
-intColWidth := intPicWidth + 10
-intRowHeight := intPicHeight + intNameLabelHeight + 10
-intBoardWidth := intPicWidth + 20
+intColWidth := intPictureSize + intButtonSize + 10
+intRowHeight := intPictureSize + intNameLabelHeight + 10
+intBoardWidth := intPictureSize + 20
 intHeaderHeight := 60
 intFooterHeight := 60
 
@@ -186,8 +194,8 @@ Gui, Font
 intVerticalLineX := intBoardWidth
 intVerticalLineY := intHeaderHeight + 10
 Gui, Add, Text, x%intVerticalLineX% y%intVerticalLineY% h10 0x11 vlblVerticalLine ; Vertical Line > Etched Gray
-intHorizontalLineY := intHeaderHeight + intPicHeight + intNameLabelHeight
-Gui, Add, Text, x10 y%intHorizontalLineY% w%intPicWidth% 0x10 vlblHorizontalBoardLine ; Horizontal Line > Etched Gray
+intHorizontalLineY := intHeaderHeight + intPictureSize + intNameLabelHeight
+Gui, Add, Text, x10 y%intHorizontalLineY% w%intPictureSize% 0x10 vlblHorizontalBoardLine ; Horizontal Line > Etched Gray
 
 Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
 Gui, Add, Text, x+50 yp w60 vlblPage
@@ -282,7 +290,7 @@ intY := intHeaderHeight + 5
 intRow := 1
 intXPic := intX + 10
 intYPic := intY + 5
-intYNameLabel := intY + intPicHeight + 5
+intYNameLabel := intY + intPictureSize + 5
 
 loop, %intNbBoardCreated%
 	GuiControl, Hide, picBoard%A_Index%
@@ -291,11 +299,11 @@ loop, %intMaxNbRow%
 {
 	if (intNbBoardCreated < A_Index)
 	{
-		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicBoard%A_Index% gPicBoardClicked
+		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% 0xE vpicBoard%A_Index% gPicBoardClicked
 		Gui, Font, s8 w500, Arial
-		Gui, Add, Link, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlnkBoardLink%A_Index% gBoardLinkClicked border hidden
+		Gui, Add, Link, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% vlnkBoardLink%A_Index% gBoardLinkClicked border hidden
 		Gui, Font, s8 w700, Arial
-		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblBoardNameLabel%A_Index%
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblBoardNameLabel%A_Index%
 		if (A_Index = 1)
 			GuiControl, , lblBoardNameLabel%A_Index%, %lBoardMasterCover%
 		else
@@ -327,7 +335,7 @@ loop, %intMaxNbRow%
 	intRow := intRow + 1
 	intY := intY + intRowHeight
 	intYPic := intY + 5
-	intYNameLabel := intY + intPicHeight + 5
+	intYNameLabel := intY + intPictureSize + 5
 }
 
 Gosub, DisplayBoard
@@ -341,7 +349,7 @@ intCol := 1
 intRow := 1
 intXPic := intX + 5
 intYPic := intY + 5
-intYNameLabel := intY + intPicHeight + 5
+intYNameLabel := intY + intPictureSize + 5
 
 loop, %intCoversPerPagePrevious%
 {
@@ -354,12 +362,19 @@ loop, %intCoversPerPage%
 {
 	if (intNbCoversCreated < A_Index)
 	{
-		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% 0xE vpicCover%A_Index% gPicCoverClicked
+		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% 0xE vpicCover%A_Index% gPicCoverClicked
 		GuiControlGet, posCover%A_Index%, Pos, picCover%A_Index%
 		Gui, Font, s8 w500, Arial
-		Gui, Add, Link, x%intXPic% y%intYPic% w%intPicWidth% h%intPicHeight% vlnkCoverLink%A_Index% gCoverLinkClicked border hidden
+		Gui, Add, Link, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% vlnkCoverLink%A_Index% gCoverLinkClicked border hidden
+/*
+		Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . intYPic . " w" . intButtonSize . " h" . intButtonSize . " vpicButtonClip" . A_Index . " gCoverButtonClicked"
+		LoadPicCover(picButtonClip%A_Index%, 5)
+		Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + intButtonSize) . " w" . intButtonSize . " h" . intButtonSize . " vCoverButtonTwo" . A_Index . " gCoverButtonClicked border"
+		Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * 2)) . " w" . intButtonSize . " h" . intButtonSize . " vpicButtonThree" . A_Index . " gCoverButtonClicked border"
+		Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * 3)) . " w" . intButtonSize . " h" . intButtonSize . " vpicButtonFour" . A_Index . " gCoverButtonClicked border"
+*/
 		Gui, Font, s8 w700, Arial
-		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPicWidth% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
 		Gui, Font
 		intNbCoversCreated := A_Index
 	}
@@ -382,7 +397,7 @@ loop, %intCoversPerPage%
 		intRow := intRow + 1
 		intY := intY + intRowHeight
 		intYPic := intY + 5
-		intYNameLabel := intY + intPicHeight + 5
+		intYNameLabel := intY + intPictureSize + 5
 		
 		intCol := 0
 		intX := 5 - intColWidth + intBoardWidth
@@ -639,9 +654,9 @@ return
 
 ;-----------------------------------------------------------
 LoadPicCover(ByRef picCover, intPicType, strFile := "")
-; intPicType = 1 regular cover / 2 no cover / 3 fill cover / 4 empty board
+; intPicType = 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 clip button
 {
-	global ptrBitmapPicCover, ptrGraphicPicCover, ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard
+	global ptrBitmapPicCover, ptrGraphicPicCover, ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapButtonClip
 
 	GuiControlGet, posCover, Pos, picCover
 	GuiControlGet, hwnd, hwnd, picCover
@@ -655,6 +670,8 @@ LoadPicCover(ByRef picCover, intPicType, strFile := "")
 		ptrBitmap := ptrBitmapFillCover
 	if (intPicType = 4)
 		ptrBitmap := ptrBitmapEmptyBoard
+	if (intPicType = 5)
+		ptrBitmap := ptrBitmapButtonClip
 
 	intWidth := Gdip_GetImageWidth(ptrBitmap)
 	intHeight := Gdip_GetImageHeight(ptrBitmap)
@@ -695,6 +712,14 @@ if (intPosition <= intCoversDisplayedPrevious)
 	GuiControl, Hide, %A_GuiControl%
 	GuiControl, Show, lnkCoverLink%intPosition%
 }
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+CoverButtonClicked:
+;-----------------------------------------------------------
 
 return
 ;-----------------------------------------------------------
