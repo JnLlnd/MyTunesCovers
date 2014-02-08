@@ -7,7 +7,7 @@
 */
 ;===============================================
 
-global intTestLimit := 3000
+global intTestLimit := 30000
 global intLinesPerBatch := 5000
 global objITunesunesApp := Object()
 global objITunesTracks := Object()
@@ -209,8 +209,8 @@ iTunes_GetCover(ByRef objThisCover, intTrackIndex)
 	objThisCover.SetCoverTempFile(strCoverFile)
 	; ###_D("objThisCover.CoverTempFilePathName: " . objThisCover.CoverTempFilePathName)
 
-	; ###_D("objTrack.Index: " . objTrack.Index)
-	objThisCover.SetCoverProperties(objTrack.Artist, objTrack.Album, objTrack.Name, objTrack.Index, objTrack.TrackID, objTrack.TrackDatabaseID, objTrack.Artwork.Count)
+	###_D("objTrack.Kind: " . , objTrack.Kind)
+	objThisCover.SetCoverProperties(objTrack.Artist, objTrack.Album, objTrack.Name, objTrack.Index, arrTrackIDs[1], arrTrackIDs[2], objTrack.Artwork.Count, objTrack.Kind)
 	; ###_D("objThisCover.Index: " . objThisCover.Index)
 
 	return true
@@ -341,15 +341,35 @@ iTunes_GetTempImageFile(objTrack, strNameNoext)
 
 
 ;-----------------------------------------------------------
-iTunes_SetImageFile(intIndex, strFile)
+iTunes_SaveCoverToTune(ByRef objThisCover, strFile, blnReplace)
 {
-	; ###_D("SetImageFile index: " . intIndex . "`nCount" . objITunesTracks.Count)
-	objTrack := objITunesTracks.Item(intIndex)
-	; ###_D("Name: " . objTrack.Name)
-	
-	objArtwork := objTrack.Artwork.Item(1)
-	strResult := objArtwork.SetArtworkFromFile(strFile)   
+	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
+	if (objTrack.Artwork.Count and blnReplace)
+	{
+		###_D(objTrack.Artwork.Count .  " replace 1")
+		objArtwork := objTrack.Artwork.Item(1)
+		strResult := objArtwork.SetArtworkFromFile(strFile)
+	}
+	else
+	{
+		###_D(objTrack.Artwork.Count .  " fonctionne!")
+		objArtwork := objTrack.AddArtworkFromFile(strFile)
+	}	
+	return true
+}
+;-----------------------------------------------------------
 
-	return %strResult%
+
+;-----------------------------------------------------------
+iTunes_DeleteCoverFromTune(ByRef objThisCover)
+{
+	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
+	if (objTrack.Artwork.Count)
+	{
+		###_D(objTrack.Artwork.Count .  " delete 1")
+		objArtwork := objTrack.Artwork.Item(1)
+		strResult := objArtwork.Delete()
+	}
+	return true
 }
 ;-----------------------------------------------------------

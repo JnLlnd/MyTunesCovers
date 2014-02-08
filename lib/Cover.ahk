@@ -32,17 +32,19 @@ class Cover
 		this.CoverTempFilePathName := strFilePathName
 	}
 
-	SetCoverProperties(strArtist, strAlbum, strName, intIndex, intTrackID, intTrackDatabaseID, intArtworkCount)
+	SetCoverProperties(strArtist, strAlbum, strName, intIndex, intTrackIDHigh, intTrackIDLow, intArtworkCount, intKind)
 	/*
 		IMPLEMENTED
-			Name ; Returns the name of the object. 
+			Artist ; Returns the Artist name.
+			Album ; Returns the Album name.
+			Name ; Returns the name (track title) of the object. 
 			Index ; Returns the index of the object in internal application order. 
-			TrackID ; Returns the ID that identifies the track within the playlist. 
-			TrackDatabaseID ; Returns the ID that identifies the track, independent of its playlist. 
+			TrackIDHigh ; Returns high part of the persistent ID of the track
+			TrackIDLow ; Returns low part of the persistent ID of the track
 			Artwork.Count ; Returns the number of pieces of artwork in the collection.
+			Kind ; Returns the kind of the track. 
 
 		NOT IMPLEMENTED:
-			Kind ; Returns the kind of the track. 
 			Playlist ; Returns an IITPlaylist object corresponding to the playlist that contains the track. Use IITFileOrCDTrack::Playlists() or IITURLTrack::Playlists() to get the collection of all playlists that contain the song this track represents. 
 			Album ; Returns the name of the album containing the track. 
 			Artist ; Returns the name of the artist/source of the track. 
@@ -53,6 +55,8 @@ class Cover
 			Size ; Returns the size of the track (in bytes). 
 			Time ; Returns the length of the track (in MM:SS format). 
 			TrackCount ; Returns the total number of tracks on the source album. 
+			TrackID ; Returns the ID that identifies the track within the playlist. 
+			TrackDatabaseID ; Returns the ID that identifies the track, independent of its playlist. 
 			TrackNumber ; Returns the index of the track on the source album. 
 			Year ; Returns the year the track was recorded/released. 
 			Artwork ; Returns a collection containing the artwork for the track. 
@@ -63,9 +67,10 @@ class Cover
 		this.Artist := strArtist
 		this.Album := strAlbum
 		this.Index := intIndex
-		this.TrackID := intTrackID
-		this.TrackDatabaseID := intTrackDatabaseID
+		this.TrackIDHigh := intTrackIDHigh
+		this.TrackIDLow := intTrackIDLow
 		this.ArtworkCount := intArtworkCount
+		this.Kind := intKind
 	}
 
 	SaveCover(strFilePathName)
@@ -154,6 +159,28 @@ Cover_ReleaseSource()
 			%strCoverSourceType%_SaveSource()
 }
 
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_SaveCoverToTune(ByRef objCover, strFile, blnReplace)
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_SaveCoverToTune(objCover, strFile, blnReplace)
+	else
+		return false
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_DeleteCoverFromTune(ByRef objCover)
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_DeleteCoverFromTune(objCover)
+	else
+		return false
+}
 ;-----------------------------------------------------------
 
 

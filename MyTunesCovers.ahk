@@ -60,6 +60,9 @@ strCurrentVersion := "0.4 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 SetWorkingDir, %A_ScriptDir%
 
+strTrackKinds := "File track,CD track,URL track,Device track,Shared library or Cloud track"
+StringSplit, arrTrackKinds, strTrackKinds, `,
+
 strIniFile := A_ScriptDir . "\" . lAppName . ".ini"
 ;@Ahk2Exe-IgnoreBegin
 ; Piece of code for developement phase only - won't be compiled
@@ -301,6 +304,7 @@ loop, %intMaxNbRow%
 		strBoardLink := ""
 			. "<A ID=""ShowPic" . intPosition . """>" . lBoardShowPic . "</A>" . "`n"
 			. "<A ID=""Remove" . intPosition . """>" . lBoardRemove . "</A>" . "`n"
+
 		if (A_Index = 1)
 			strBoardLink := strBoardLink
 			. "<A ID=""LoadFromFile" . intPosition . """>" . lBoardLoadFromFile . "</A>" . "`n"
@@ -569,13 +573,13 @@ if (intNbCovers)
 		GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name . (objCover%intPosition%.ArtworkCount > 1 ? " (" . objCover%intPosition%.ArtworkCount . ")" : "")
 		GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
 			. lAlbum . ": " . objCover%intPosition%.Album . "`n"
-			. "Index: " . objCover%intPosition%.Index . "`n"
-			. "TrackID: " . objCover%intPosition%.TrackID . "`n"
-			. "TrackDatabaseID: " . objCover%intPosition%.TrackDatabaseID . "`n"
-			. "ArtworkCount: " . objCover%intPosition%.ArtworkCount . "`n"
+			. "TrackID: " . objCover%intPosition%.TrackIDHigh . "/" . objCover%intPosition%.TrackIDLow . "`n"
+			. "ArtworkCount/Kind: " . objCover%intPosition%.ArtworkCount . " / Kind: " . objCover%intPosition%.Kind . "`n"
 			. "`n"
 			. "<A ID=""ShowPic" . intPosition . """>" . lCoverShowPic . "</A>" . "`n"
 			. "<A ID=""Clip" . intPosition . """>" . lCoverClip . "</A>" . "`n"
+			. "<A ID=""PasteMasterCover" . intPosition . """>" . lBoardPasteMasterCover . "</A>" . "`n"
+			. "<A ID=""DeleteCover" . intPosition . """>" . lBoardDeleteCover . "</A>" . "`n"
 
 		ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
 		ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
@@ -704,18 +708,53 @@ StringReplace, intPosition, A_GuiControl, lnkCoverLink
 StringReplace, strCommand, strCommand, %intPosition%
 ; objCover%intPosition%.Name
 
+; These firsts commands can be executed on any kind of track
 if (strCommand = "ShowPic")
 {
 	GuiControl, Hide, %A_GuiControl%
 	GuiControl, Show, picCover%intPosition%
+	return
 }
 else if (strCommand = "Clip")
 {
 	if StrLen(objCover%intPosition%.CoverTempFilePathName)
 		arrBoardPicFiles.Insert(1, objCover%intPosition%.CoverTempFilePathName)
-	loop, %intMaxNbRow%
-		LoadPicCover(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
+	Gosub, RefreshBoard
+	return
 }
+
+; The following commands can only be executed on file track
+if !(objCover%intPosition%.Kind)
+{
+	Oops(lCoverUnknownTrackKind, lAppName)
+	return
+}
+if (objCover%intPosition%.Kind > 1)
+{
+	intKind := objCover%intPosition%.Kind
+	Oops(lCoverUnsupportedTrackKind, arrTrackKinds%intKind%, lAppName)
+	return
+}
+
+; Now, we know kind is 1 (File track)
+if (strCommand = "PasteMasterCover")
+{
+	blnGo := !(objCover%intPosition%.ArtworkCount)
+	if !(blnGo)
+		blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), L(lCoverOverwrite)) = "Yes")
+	if (blnGo)
+		Cover_SaveCoverToTune(objCover%intPosition%, arrBoardPicFiles[1], true)
+}
+else if (strCommand = "DeleteCover")
+{
+	blnGo := !(objCover%intPosition%.ArtworkCount)
+	if !(blnGo)
+		blnGo := (YesNoCancel(False, L(lCoverDeleteTitle, lAppName), L(lCoverDeletePrompt)) = "Yes")
+	if (blnGo)
+		Cover_DeleteCoverFromTune(objCover%intPosition%)
+}
+
+Gosub, DisplayCoversPage
 
 return
 ;-----------------------------------------------------------
@@ -755,7 +794,8 @@ if (strCommand = "ShowPic")
 	GuiControl, Show, picBoard%intPosition%
 	return
 }
-else if (strCommand = "Remove")
+
+if (strCommand = "Remove")
 	arrBoardPicFiles.Remove(intPosition)
 else if (strCommand = "MakeMaster")
 {
@@ -785,6 +825,15 @@ else if (strCommand = "LoadFromClipboard")
 		arrBoardPicFiles.Insert(1, strLoadClipboardFilename)
 }
 
+Gosub, RefreshBoard
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+RefreshBoard:
+;-----------------------------------------------------------
 loop, %intMaxNbRow%
 {
 	if (A_Index <= arrBoardPicFiles.MaxIndex())
@@ -920,6 +969,21 @@ Url2Var(strUrl)
 
 
 ; ------------------------------------------------
+YesNoCancel(blnWithCancel, strTitle, strPrompt)
+; ------------------------------------------------
+{
+	MsgBox, % 4 - blnWithCancel, %strTitle%, %strPrompt%
+	IfMsgBox, Yes
+		return "Yes"
+	IfMsgBox, No
+		return "No"
+	IfMsgBox, Cancel ; Remind me
+		return "Cancel"
+}
+; ------------------------------------------------
+
+
+; ------------------------------------------------
 Oops(strMessage, objVariables*)
 ; ------------------------------------------------
 {
@@ -937,7 +1001,7 @@ L(strMessage, objVariables*)
 	Loop
 	{
 		if InStr(strMessage, "~" . A_Index . "~")
-			StringReplace, strMessage, strMessage, ~%A_Index%~, % objVariables[A_Index]
+			StringReplace, strMessage, strMessage, ~%A_Index%~, % objVariables[A_Index], All
  		else
 			break
 	}
