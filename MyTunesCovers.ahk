@@ -216,7 +216,7 @@ SysGet, intMonWork, MonitorWorkArea
 intAvailWidth := intMonWorkRight - 50
 intAvailHeight := intMonWorkBottom - 50
 
-Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
+Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol and intMaxNbRow
 intTotalWidth := (intMaxNbCol * intColWidth) + intBoardWidth + 20
 intTotalHeight := (intMaxNbRow * intRowHeight) + intHeaderHeight + intFooterHeight
 
@@ -236,7 +236,7 @@ intPage := 1 ; always come back to page 1 when resize
 
 intAvailWidth := A_GuiWidth - 5
 intAvailHeight := A_GuiHeight
-Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol x intMaxNbRow
+Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol and intMaxNbRow
 
 intVerticalLineH := intMaxNbRow * intRowHeight
 GuiControl, Move, lblVerticalLine, h%intVerticalLineH%
@@ -249,7 +249,10 @@ intYPic := intY + 5
 intYNameLabel := intY + intPictureSize + 5
 
 loop, %intNbBoardCreated%
+{
 	GuiControl, Hide, picBoard%A_Index%
+	GuiControl, Hide, lblBoardNameLabel%A_Index%
+}
 
 loop, %intMaxNbRow%
 {
@@ -294,8 +297,6 @@ loop, %intMaxNbRow%
 	intYNameLabel := intY + intPictureSize + 5
 }
 
-Gosub, DisplayBoard
-
 intCoversPerPagePrevious := intCoversPerPage
 intCoversPerPage := (intMaxNbCol * intMaxNbRow)
 
@@ -312,6 +313,9 @@ loop, %intCoversPerPagePrevious%
 	GuiControl, Hide, picCover%A_Index%
 	GuiControl, Hide, lnkCoverLink%A_Index%
 	GuiControl, Hide, lblNameLabel%A_Index%
+	intIndex := A_Index
+	loop, 4
+		GuiControl, Hide, picButton%A_Index%%intIndex%
 }
 
 loop, %intCoversPerPage%
@@ -350,6 +354,12 @@ loop, %intCoversPerPage%
 		GuiControl, Move, lnkCoverLink%A_Index%, x%intXPic% y%intYPic%
 		GuiControl, Move, lblNameLabel%A_Index%, x%intXPic% y%intYNameLabel%
 		GuiControl, Show, lblNameLabel%A_Index%
+		intIndex := A_Index
+		loop, 4
+		{
+			GuiControl, Show, picButton%A_Index%%intIndex%
+			GuiControl, Move, picButton%A_Index%%intIndex%, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1)))
+		}
 	}
 	
 	if (intCol = intMaxNbCol)
@@ -384,6 +394,7 @@ GuiControl, Move, lblPage, % "X" . (intGuiMiddle) . " Y" . A_GuiHeight - 55
 GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 105) . " Y" . A_GuiHeight - 55
 
 blnResizeInProgress := True
+Gosub, RefreshBoard
 Gosub, DisplayCoversPage
 blnResizeInProgress := False
 
@@ -886,6 +897,7 @@ loop, %intMaxNbRow%
 		LoadPicControl(picBoard%A_Index%, 4)
 	GuiControl, Hide, lnkBoardLink%A_Index%
 	GuiControl, Show, picBoard%A_Index%
+	GuiControl, Show, lblBoardNameLabel%A_Index%
 }
 
 return
