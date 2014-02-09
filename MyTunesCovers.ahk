@@ -169,13 +169,15 @@ ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\no_cover-2
 ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\fill_cover-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\empty-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\copy_here-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\clip-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\select-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\paste-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\delete-200x200.png") ; if absent, url download from repo ? ###
-
-If !(ptrBitmapNoCover and ptrBitmapFillCover and ptrBitmapEmptyBoard and ptrBitmapCopyHere)
-	Oops(lPersistentImagesFailed)
+ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\clip-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\select-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\paste_here-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\delete-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton0 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\paste_to_selected-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\make_master-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\load_clipboard-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\load_file-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\remove-200x200.png") ; if absent, url download from repo ? ###
 
 return
 ;-----------------------------------------------------------
@@ -192,7 +194,7 @@ intButtonSize := intPictureSize // 4
 intNameLabelHeight := 30
 intColWidth := intPictureSize + intButtonSize + 10
 intRowHeight := intPictureSize + intNameLabelHeight + 10
-intBoardWidth := intPictureSize + 20
+intBoardWidth := intPictureSize + intButtonSize + 20
 intHeaderHeight := 60
 intFooterHeight := 60
 
@@ -276,6 +278,8 @@ loop, %intNbBoardCreated%
 {
 	GuiControl, Hide, picBoard%A_Index%
 	GuiControl, Hide, lblBoardNameLabel%A_Index%
+	loop, 4
+		GuiControl, Hide, picBoardButton%A_Index%%intIndex%
 }
 
 loop, %intMaxNbRow%
@@ -285,6 +289,15 @@ loop, %intMaxNbRow%
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% 0xE vpicBoard%A_Index% gPicBoardClicked
 		Gui, Font, s8 w500, Arial
 		Gui, Add, Link, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% vlnkBoardLink%A_Index% gBoardLinkClicked border hidden
+		intIndex := A_Index
+		loop, 4
+		{
+			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicBoardButton" . A_Index . intIndex . " gBoardButtonClicked hidden"
+			if (A_Index = 1) and (intIndex = 1)
+				LoadPicControl(picBoardButton11, 14)
+			else
+				LoadPicControl(picBoardButton%A_Index%%intIndex%, (A_Index + 9))
+		}
 		Gui, Font, s8 w700, Arial
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblBoardNameLabel%A_Index%
 		if (A_Index = 1)
@@ -339,7 +352,7 @@ loop, %intCoversPerPagePrevious%
 	GuiControl, Hide, lblNameLabel%A_Index%
 	intIndex := A_Index
 	loop, 4
-		GuiControl, Hide, picButton%A_Index%%intIndex%
+		GuiControl, Hide, picCoverButton%A_Index%%intIndex%
 }
 
 loop, %intCoversPerPage%
@@ -353,8 +366,8 @@ loop, %intCoversPerPage%
 		intIndex := A_Index
 		loop, 4
 		{
-			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicButton" . A_Index . intIndex . " gCoverButtonClicked hidden"
-			LoadPicControl(picButton%A_Index%%intIndex%, (A_Index + 5))
+			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicCoverButton" . A_Index . intIndex . " gCoverButtonClicked hidden"
+			LoadPicControl(picCoverButton%A_Index%%intIndex%, (A_Index + 5))
 		}
 		Gui, Font, s8 w700, Arial
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
@@ -370,7 +383,7 @@ loop, %intCoversPerPage%
 		GuiControl, Show, lblNameLabel%A_Index%
 		intIndex := A_Index
 		loop, 4
-			GuiControl, Move, picButton%A_Index%%intIndex%, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1)))
+			GuiControl, Move, picCoverButton%A_Index%%intIndex%, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1)))
 	}
 	
 	if (intCol = intMaxNbCol)
@@ -651,13 +664,13 @@ if (intNbCovers)
 
 		if (objCover%intPosition%.Kind <> 1)
 		{
-			GuiControl, Show, picButton1%intPosition%
+			GuiControl, Show, picCoverButton1%intPosition%
 			loop, 3
-				GuiControl, Hide, % "picButton" . (A_Index + 1) . intPosition
+				GuiControl, Hide, % "picCoverButton" . (A_Index + 1) . intPosition
 		}
 		else
 			loop, 4
-				GuiControl, Show, picButton%A_Index%%intPosition%
+				GuiControl, Show, picCoverButton%A_Index%%intPosition%
 
 		
 	} until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
@@ -678,7 +691,7 @@ loop, %intRemainingCovers%
 	GuiControl, Hide, lnkCoverLink%intPosition%
 	GuiControl, Show, picCover%intPosition%
 	loop, 4
-		GuiControl, Hide, picButton%A_Index%%intPosition%
+		GuiControl, Hide, picCoverButton%A_Index%%intPosition%
 }
 
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
@@ -719,9 +732,14 @@ return
 
 ;-----------------------------------------------------------
 LoadPicControl(ByRef picControl, intPicType, strFile := "")
-; intPicType = 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 copy here / 6 clip button / 7 select button / 8 paste button / 9 delete button
+; intPicType =
+; 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 copy here
+; 6 clip cover button / 7 select cover button / 8 paste cover button / 9 delete cover button
+; 10 make master board button / 11 load clipboard board button / 12 load file board button / 13 remove board button / 14 paste to selected board button 1
 {
-	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapCopyHere, ptrBitmapButton1, ptrBitmapButton2, ptrBitmapButton3, ptrBitmapButton4
+	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapCopyHere
+		, ptrBitmapCoverButton1, ptrBitmapCoverButton2, ptrBitmapCoverButton3, ptrBitmapCoverButton4
+		, ptrBitmapBoardButton0, ptrBitmapBoardButton1, ptrBitmapBoardButton2, ptrBitmapBoardButton3, ptrBitmapBoardButton4
 
 	GuiControlGet, posControl, Pos, picControl
 	GuiControlGet, hwnd, hwnd, picControl
@@ -738,13 +756,23 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 	if (intPicType = 5)
 		ptrBitmap := ptrBitmapCopyHere
 	if (intPicType = 6)
-		ptrBitmap := ptrBitmapButton1
+		ptrBitmap := ptrBitmapCoverButton1
 	if (intPicType = 7)
-		ptrBitmap := ptrBitmapButton2
+		ptrBitmap := ptrBitmapCoverButton2
 	if (intPicType = 8)
-		ptrBitmap := ptrBitmapButton3
+		ptrBitmap := ptrBitmapCoverButton3
 	if (intPicType = 9)
-		ptrBitmap := ptrBitmapButton4
+		ptrBitmap := ptrBitmapCoverButton4
+	if (intPicType = 10)
+		ptrBitmap := ptrBitmapBoardButton1
+	if (intPicType = 11)
+		ptrBitmap := ptrBitmapBoardButton2
+	if (intPicType = 12)
+		ptrBitmap := ptrBitmapBoardButton3
+	if (intPicType = 13)
+		ptrBitmap := ptrBitmapBoardButton4
+	if (intPicType = 14)
+		ptrBitmap := ptrBitmapBoardButton0
 	
 	intWidth := Gdip_GetImageWidth(ptrBitmap)
 	intHeight := Gdip_GetImageHeight(ptrBitmap)
@@ -795,10 +823,33 @@ return
 
 
 ;-----------------------------------------------------------
+BoardButtonClicked:
+;-----------------------------------------------------------
+
+StringReplace, strControl, A_GuiControl, picBoardButton
+intCommand := SubStr(strControl, 1, 1)
+intPosition := SubStr(strControl, 2)
+
+if (intCommand = 1)
+	a := a
+else if (intCommand = 2)
+	a := a
+else if (intCommand = 3)
+	a := a
+else if (intCommand = 4)
+	a := a
+
+Gosub, RefreshBoard ; ### display only current Board
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 CoverButtonClicked:
 ;-----------------------------------------------------------
 
-StringReplace, strControl, A_GuiControl, picButton
+StringReplace, strControl, A_GuiControl, picCoverButton
 intCommand := SubStr(strControl, 1, 1)
 intPosition := SubStr(strControl, 2)
 
@@ -951,7 +1002,12 @@ RefreshBoard:
 loop, %intMaxNbRow%
 {
 	if (A_Index <= arrBoardPicFiles.MaxIndex())
+	{
 		LoadPicControl(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
+		intPosition := A_Index
+		loop, 4
+			GuiControl, Show, % "picBoardButton" . A_Index . intPosition
+	}
 	else
 		LoadPicControl(picBoard%A_Index%, 4)
 	GuiControl, Hide, lnkBoardLink%A_Index%
