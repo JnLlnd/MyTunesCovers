@@ -80,6 +80,8 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 ; / Piece of code for developement phase only - won't be compiled
 ;@Ahk2Exe-IgnoreEnd
 
+arrBoardPicFiles := Object()
+
 ; Keep gosubs in this order
 Gosub, InitGDIP
 Gosub, LoadIniFile
@@ -88,7 +90,7 @@ Gosub, InitPersistentCovers
 Gosub, BuildGui
 Gosub, InitSources
 
-arrBoardPicFiles := Object() ; ### where should it be initialized?
+WinActivate, % "ahk_id " . strWinId
 
 OnExit, CleanUpBeforeQuit
 return
@@ -184,9 +186,9 @@ Gui, Font
 Gui, Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, % L(lSourceITunes)
 Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource, % L(lSourceMP3)
 Gui, Font, s10 w500, Verdana
-Gui, Add, Text, x+20 yp, %lArtists%
+Gui, Add, Text, x+20 yp, %lArtistsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
-Gui, Add, Text, x+20 yp, %lAlbums%
+Gui, Add, Text, x+20 yp, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
 Gui, Add, Checkbox, x+50 yp vblnOnlyNoCover gOnlyNoCoverClicked, %lOnlyNoCover%
@@ -223,6 +225,7 @@ intTotalHeight := (intMaxNbRow * intRowHeight) + intHeaderHeight + intFooterHeig
 intPage := 1
 
 Gui, Show, w%intTotalWidth% h%intTotalHeight%
+strWinId := WinExist("A")
 
 return
 ;-----------------------------------------------------------
@@ -603,6 +606,10 @@ if (intNbCovers)
 			. lAlbum . ": " . objCover%intPosition%.Album . "`n"
 			. "TrackID: " . objCover%intPosition%.TrackIDHigh . "/" . objCover%intPosition%.TrackIDLow . "`n"
 			. "ArtworkCount/Kind: " . objCover%intPosition%.ArtworkCount . " / Kind: " . objCover%intPosition%.Kind . "`n"
+			. "`n"
+			. "<A ID=""ShowPic"">" . lCoverShowPic . "</A>   <A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "`n"
+			. "`n"
+			. "<A ID=""Listen"">" . lCoverListen . "</A>" . "`n"
 
 		; ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
 		; ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
@@ -615,8 +622,15 @@ if (intNbCovers)
 		else 
 			LoadPicControl(picCover%intPosition%, 2) ; No cover
 
-		loop, 4
-			GuiControl, Show, picButton%A_Index%%intPosition%
+		if (objCover%intPosition%.Kind <> 1)
+		{
+			GuiControl, Show, picButton1%intPosition%
+			loop, 3
+				GuiControl, Hide, % "picButton" . (A_Index + 1) . intPosition
+		}
+		else
+			loop, 4
+				GuiControl, Show, picButton%A_Index%%intPosition%
 
 		
 	} until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
@@ -647,6 +661,7 @@ if (intNbPages)
 
 if !(blnResizeInProgress)
 	Gui, -Disabled
+GuiControl, Focus, lstArtists
 
 return
 ;-----------------------------------------------------------
@@ -805,8 +820,22 @@ return
 ;-----------------------------------------------------------
 CoverLinkClicked:
 ;-----------------------------------------------------------
+strCommand := ErrorLevel
 
-; ### large display?
+if (strCommand = "ShowPic")
+{
+	GuiControl, Hide, %A_GuiControl%
+	GuiControl, Show, picCover%intPosition%
+} else if (strCommand = "ViewPic")
+{
+	strFilename := objCover%intPosition%.CoverTempFilePathName
+	if FileExist(strFilename)
+		Run, %strFilename%
+}
+else if (strCommand = "Listen")
+{
+	Cover_PLay(objCover%intPosition%)
+}
 
 return
 ;-----------------------------------------------------------

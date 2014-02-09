@@ -187,6 +187,17 @@ Cover_DeleteCoverFromTune(ByRef objCover)
 
 
 ;-----------------------------------------------------------
+Cover_Play(objCover)
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_Play(objCover)
+	else
+		return false
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 Cover_GenerateGUID()         ; 32 hex digits = 128-bit Globally Unique ID
 ; Source: Laszlo in http://www.autohotkey.com/board/topic/5362-more-secure-random-numbers/
 {

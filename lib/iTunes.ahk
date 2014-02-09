@@ -373,3 +373,16 @@ iTunes_DeleteCoverFromTune(ByRef objThisCover)
 	return true
 }
 ;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+iTunes_Play(objThisCover)
+{
+	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
+	objTrack.Play
+	
+	return true
+}
+;-----------------------------------------------------------
+
+
