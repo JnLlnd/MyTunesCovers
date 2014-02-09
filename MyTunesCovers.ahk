@@ -65,6 +65,25 @@ strCurrentVersion := "0.4 alpha" ; always "." between sub-versions, eg "0.1.2"
 ; lib\Cover.ahk is also calling lib\iTunes.ahk
 ; Also using Gdip.ahk (v1.45, modified 5/1/2013) in \AutoHotkey\Lib default lib folder
 
+; Keep gosubs in this order
+Gosub, Init
+Gosub, InitGDIP
+Gosub, LoadIniFile
+Gosub, Check4Update
+Gosub, InitPersistentCovers
+Gosub, BuildGui
+Gosub, InitSources
+
+WinActivate, % "ahk_id " . strWinId
+
+OnExit, CleanUpBeforeQuit
+return
+
+
+;-----------------------------------------------------------
+Init:
+;-----------------------------------------------------------
+
 SetWorkingDir, %A_ScriptDir%
 
 strTrackKinds := "File track,CD track,URL track,Device track,Shared library or Cloud track"
@@ -82,18 +101,20 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 
 arrBoardPicFiles := Object()
 
-; Keep gosubs in this order
-Gosub, InitGDIP
-Gosub, LoadIniFile
-Gosub, Check4Update
-Gosub, InitPersistentCovers
-Gosub, BuildGui
-Gosub, InitSources
+Hotkey, Up, DoNothing, Off
+Hotkey, Down, DoNothing, Off
+Hotkey, Left, DoNothing, Off
+Hotkey, Right, DoNothing, Off
 
-WinActivate, % "ahk_id " . strWinId
-
-OnExit, CleanUpBeforeQuit
 return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+DoNothing:
+;-----------------------------------------------------------
+return
+;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
@@ -583,7 +604,13 @@ DisplayCoversPage:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 if !(blnResizeInProgress)
+{
+	Hotkey, Up, , On
+	Hotkey, Down, , On
+	Hotkey, Left, , On
+	Hotkey, Right, , On
 	Gui, +Disabled ; protect display cover from user clicks
+}
 
 intPosition := 0
 intTrackIndexDisplayedNow := ((intPage - 1) * intCoversPerPage)
@@ -660,7 +687,13 @@ if (intNbPages)
 	GuiControl, , lblPage, % L(lPageFooter, intPage, intNbPages)
 
 if !(blnResizeInProgress)
+{
 	Gui, -Disabled
+	Hotkey, Up, , Off
+	Hotkey, Down, , Off
+	Hotkey, Left, , Off
+	Hotkey, Right, , Off
+}
 GuiControl, Focus, lstArtists
 
 return
