@@ -229,53 +229,6 @@ return
 
 
 ;-----------------------------------------------------------
-InitSources:
-;-----------------------------------------------------------
-Gui, Submit, NoHide
-
-if (radSourceITunes)
-	strSource := "iTunes"
-else
-	strSource := "MP3"
-
-if (Cover_InitCoversSource(strSource))
-	Gosub, PopulateDropdownLists
-else
-	Oops(lInitSourceError)
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-PopulateDropdownLists:
-;-----------------------------------------------------------
-strArtistsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllArtists
-for strArtist, strTracks in objArtistsIndex
-	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
-GuiControl, , lstArtists, %strArtistsDropDownList%
-GuiControl, Choose, lstArtists, 1
-
-Gosub, PopulateAlbumDropdownList
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-PopulateAlbumDropdownList:
-;-----------------------------------------------------------
-strAlbumsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums
-for strAlbum, strTracks in objAlbumsIndex
-	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
-GuiControl, , lstAlbums, %strAlbumsDropDownList%
-GuiControl, Choose, lstAlbums, 1
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
 GuiSize:
 ;-----------------------------------------------------------
 
@@ -448,6 +401,53 @@ if (!intMaxNbCol)
 	intMaxNbCol := 1
 if (!intMaxNbRow)
 	intMaxNbRow := 1
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+InitSources:
+;-----------------------------------------------------------
+Gui, Submit, NoHide
+
+if (radSourceITunes)
+	strSource := "iTunes"
+else
+	strSource := "MP3"
+
+if (Cover_InitCoversSource(strSource))
+	Gosub, PopulateDropdownLists
+else
+	Oops(lInitSourceError)
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+PopulateDropdownLists:
+;-----------------------------------------------------------
+strArtistsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllArtists
+for strArtist, strTracks in objArtistsIndex
+	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
+GuiControl, , lstArtists, %strArtistsDropDownList%
+GuiControl, Choose, lstArtists, 1
+
+Gosub, PopulateAlbumDropdownList
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+PopulateAlbumDropdownList:
+;-----------------------------------------------------------
+strAlbumsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums
+for strAlbum, strTracks in objAlbumsIndex
+	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
+GuiControl, , lstAlbums, %strAlbumsDropDownList%
+GuiControl, Choose, lstAlbums, 1
 
 return
 ;-----------------------------------------------------------
