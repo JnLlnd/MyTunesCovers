@@ -22,9 +22,9 @@ class Cover
 {
     GUID := Cover_GenerateGUID()
 
-	__New(strFilePathName)
+	__New()
 	{
-		this.FileNamePath := strFilePathName
+		this.Selected := False
 	}
 
 	SetCoverTempFile(strFilePathName)
@@ -73,11 +73,13 @@ class Cover
 		this.Kind := intKind
 	}
 
+/*
 	SaveCover(strFilePathName)
 	{
 		strResult := %strCoverSourceType%_SetImageFile(this.Index, strFilePathName)
 		return strResult
 	}
+*/
 
 }
 ;-----------------------------------------------------------

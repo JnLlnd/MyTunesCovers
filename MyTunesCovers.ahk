@@ -329,19 +329,9 @@ loop, %intCoversPerPage%
 		intIndex := A_Index
 		loop, 4
 		{
-			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicButton" . A_Index . intIndex . " gCoverButtonClicked"
-			LoadPicControl(picButton%A_Index%%intIndex%, (A_Index + 4))
+			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicButton" . A_Index . intIndex . " gCoverButtonClicked hidden"
+			LoadPicControl(picButton%A_Index%%intIndex%, (A_Index + 5))
 		}
-/*
-		Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . intYPic . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicButton1" . A_Index . " gCoverButtonClicked"
-		LoadPicControl(picButton1%A_Index%, 5)
-		Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + intButtonSize) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicButton2" . A_Index . " gCoverButtonClicked"
-		LoadPicControl(picButton2%A_Index%, 6)
-		Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * 2)) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicButton3" . A_Index . " gCoverButtonClicked"
-		LoadPicControl(picButton3%A_Index%, 7)
-		Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * 3)) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicButton4" . A_Index . " gCoverButtonClicked"
-		LoadPicControl(picButton4%A_Index%, 8)
-*/
 		Gui, Font, s8 w700, Arial
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
 		Gui, Font
@@ -356,10 +346,7 @@ loop, %intCoversPerPage%
 		GuiControl, Show, lblNameLabel%A_Index%
 		intIndex := A_Index
 		loop, 4
-		{
-			GuiControl, Show, picButton%A_Index%%intIndex%
 			GuiControl, Move, picButton%A_Index%%intIndex%, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1)))
-		}
 	}
 	
 	if (intCol = intMaxNbCol)
@@ -621,10 +608,16 @@ if (intNbCovers)
 		; ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
 		; Gdip_SetInterpolationMode(ptrGraphicPicCover, 7) ; using default instead of 7 (highest quality)
 		
-		if StrLen(objCover%intPosition%.CoverTempFilePathName)
+		if (arrPositionSelected%intPosition%)
+			LoadPicControl(picCover%intPosition%, 5) ; Copy here
+		else if StrLen(objCover%intPosition%.CoverTempFilePathName)
 			LoadPicControl(picCover%intPosition%, 1, objCover%intPosition%.CoverTempFilePathName)
-		else
-			LoadPicControl(picCover%intPosition%, 2)
+		else 
+			LoadPicControl(picCover%intPosition%, 2) ; No cover
+
+		loop, 4
+			GuiControl, Show, picButton%A_Index%%intPosition%
+
 		
 	} until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
 
@@ -643,6 +636,8 @@ loop, %intRemainingCovers%
 	GuiControl, , lnkCoverLink%intPosition%
 	GuiControl, Hide, lnkCoverLink%intPosition%
 	GuiControl, Show, picCover%intPosition%
+	loop, 4
+		GuiControl, Hide, picButton%A_Index%%intPosition%
 }
 
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
@@ -650,7 +645,8 @@ GuiControl, % (intTrackIndexDisplayedNow < intNbCovers ? "Show" : "Hide"), btnNe
 if (intNbPages)
 	GuiControl, , lblPage, % L(lPageFooter, intPage, intNbPages)
 
-Gui, -Disabled
+if !(blnResizeInProgress)
+	Gui, -Disabled
 
 return
 ;-----------------------------------------------------------
@@ -675,9 +671,9 @@ return
 
 ;-----------------------------------------------------------
 LoadPicControl(ByRef picControl, intPicType, strFile := "")
-; intPicType = 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 clip button / 6 select button / 7 paste button / 8 delete button
+; intPicType = 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 copy here / 6 clip button / 7 select button / 8 paste button / 9 delete button
 {
-	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapButton1, ptrBitmapButton2, ptrBitmapButton3, ptrBitmapButton4
+	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapCopyHere, ptrBitmapButton1, ptrBitmapButton2, ptrBitmapButton3, ptrBitmapButton4
 
 	GuiControlGet, posControl, Pos, picControl
 	GuiControlGet, hwnd, hwnd, picControl
@@ -692,12 +688,14 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 	if (intPicType = 4)
 		ptrBitmap := ptrBitmapEmptyBoard
 	if (intPicType = 5)
-		ptrBitmap := ptrBitmapButton1
+		ptrBitmap := ptrBitmapCopyHere
 	if (intPicType = 6)
-		ptrBitmap := ptrBitmapButton2
+		ptrBitmap := ptrBitmapButton1
 	if (intPicType = 7)
-		ptrBitmap := ptrBitmapButton3
+		ptrBitmap := ptrBitmapButton2
 	if (intPicType = 8)
+		ptrBitmap := ptrBitmapButton3
+	if (intPicType = 9)
 		ptrBitmap := ptrBitmapButton4
 	
 	intWidth := Gdip_GetImageWidth(ptrBitmap)
@@ -780,8 +778,7 @@ if (objCover%intPosition%.Kind > 1)
 
 ; Now, we know kind is 1 (File track)
 if (intCommand = 2) ; Select
-{
-}
+	arrPositionSelected%intPosition% := !arrPositionSelected%intPosition%
 else if (intCommand = 3) ; Paste
 {
 	blnGo := !(objCover%intPosition%.ArtworkCount)
@@ -799,7 +796,7 @@ else if (intCommand = 4) ; Delete
 		Cover_DeleteCoverFromTune(objCover%intPosition%)
 }
 
-Gosub, DisplayCoversPage
+Gosub, DisplayCoversPage ; ### display only current cover
 
 return
 ;-----------------------------------------------------------
