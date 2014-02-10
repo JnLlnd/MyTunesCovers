@@ -223,7 +223,8 @@ intVerticalLineX := intBoardWidth
 intVerticalLineY := intHeaderHeight + 10
 Gui, Add, Text, x%intVerticalLineX% y%intVerticalLineY% h10 0x11 vlblVerticalLine ; Vertical Line > Etched Gray
 intHorizontalLineY := intHeaderHeight + intPictureSize + intNameLabelHeight
-Gui, Add, Text, x10 y%intHorizontalLineY% w%intPictureSize% 0x10 vlblHorizontalBoardLine ; Horizontal Line > Etched Gray
+intHorizontalLineW := intPictureSize + intButtonSize
+Gui, Add, Text, x10 y%intHorizontalLineY% w%intHorizontalLineW% 0x10 vlblHorizontalBoardLine ; Horizontal Line > Etched Gray
 
 Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
 Gui, Add, Text, x+50 yp w60 vlblPage
@@ -304,22 +305,6 @@ loop, %intMaxNbRow%
 			GuiControl, , lblBoardNameLabel%A_Index%, %lBoardMasterCover%
 		else
 			GuiControl, , lblBoardNameLabel%A_Index%, %lBoardBackupCover% #%A_Index%
-
-		strBoardLink := ""
-			. "<A ID=""ShowPic" . intPosition . """>" . lBoardShowPic . "</A>" . "`n"
-			. "<A ID=""Remove" . intPosition . """>" . lBoardRemove . "</A>" . "`n"
-
-		if (A_Index = 1)
-			strBoardLink := strBoardLink
-			. "<A ID=""LoadFromFile" . intPosition . """>" . lBoardLoadFromFile . "</A>" . "`n"
-			. "<A ID=""LoadFromClipboard" . intPosition . """>" . lBoardLoadFromClipboard . "</A>" . "`n"
-			
-			
-		if (A_Index > 1)
-			strBoardLink := strBoardLink
-			. "<A ID=""MakeMaster" . intPosition . """>" . lBoardMakeMaster . "</A>" . "`n"
-
-		GuiControl, , lnkBoardLink%A_Index%, %strBoardLink%
 
 		GuiControlGet, posBoard%A_Index%, Pos, picBoard%A_Index%
 		if (A_Index > intNbBoardCreated)
@@ -823,29 +808,6 @@ return
 
 
 ;-----------------------------------------------------------
-BoardButtonClicked:
-;-----------------------------------------------------------
-
-StringReplace, strControl, A_GuiControl, picBoardButton
-intCommand := SubStr(strControl, 1, 1)
-intPosition := SubStr(strControl, 2)
-
-if (intCommand = 1)
-	a := a
-else if (intCommand = 2)
-	a := a
-else if (intCommand = 3)
-	a := a
-else if (intCommand = 4)
-	a := a
-
-Gosub, RefreshBoard ; ### display only current Board
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
 CoverButtonClicked:
 ;-----------------------------------------------------------
 
@@ -910,16 +872,17 @@ if (strCommand = "ShowPic")
 {
 	GuiControl, Hide, %A_GuiControl%
 	GuiControl, Show, picCover%intPosition%
-} else if (strCommand = "ViewPic")
+}
+else if (strCommand = "ViewPic")
 {
 	strFilename := objCover%intPosition%.CoverTempFilePathName
 	if FileExist(strFilename)
 		Run, %strFilename%
+	else
+		Oops(lCoverFileNotFound, strFilename)
 }
 else if (strCommand = "Listen")
-{
 	Cover_PLay(objCover%intPosition%)
-}
 
 return
 ;-----------------------------------------------------------
@@ -947,33 +910,22 @@ return
 
 
 ;-----------------------------------------------------------
-BoardLinkClicked:
+BoardButtonClicked:
 ;-----------------------------------------------------------
-strCommand := ErrorLevel
-StringReplace, intPosition, A_GuiControl, lnkBoardLink
-StringReplace, strCommand, strCommand, %intPosition%
 
-if (strCommand = "ShowPic")
-{
-	GuiControl, Hide, %A_GuiControl%
-	GuiControl, Show, picBoard%intPosition%
-	return
-}
+StringReplace, strControl, A_GuiControl, picBoardButton
+intCommand := SubStr(strControl, 1, 1)
+intPosition := SubStr(strControl, 2)
 
-if (strCommand = "Remove")
-	arrBoardPicFiles.Remove(intPosition)
-else if (strCommand = "MakeMaster")
-{
-	arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
-	arrBoardPicFiles.Remove(intPosition + 1)
-}
-else if (strCommand = "LoadFromFile")
-{
-	FileSelectFile, strLoadMasterFilename, , , %lBoardLoadFromFilePrompt%, % lImageFiles . " (*.jpg; *.jpeg; *.png; *.bmp; *.gif; *.tiff; *.tif)"
-	if StrLen(strLoadMasterFilename)
-		arrBoardPicFiles.Insert(1, strLoadMasterFilename)
-}
-else if (strCommand = "LoadFromClipboard")
+if (intCommand = 1)
+	if (intPosition = 1) ; paste to selected
+		Oops("Not implemented yet")
+	else ; make master
+	{
+		arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
+		arrBoardPicFiles.Remove(intPosition + 1)
+	}
+else if (intCommand = 2) ; load clipboard
 {
 	ptrBitmapClipbpard := Gdip_CreateBitmapFromClipboard()
 	if (ptrBitmapClipbpard < 0)
@@ -987,7 +939,51 @@ else if (strCommand = "LoadFromClipboard")
 	ptrBitmapClipbpard :=
 
 	if StrLen(strLoadClipboardFilename)
-		arrBoardPicFiles.Insert(1, strLoadClipboardFilename)
+		arrBoardPicFiles.Insert(intPosition, strLoadClipboardFilename)
+}
+else if (intCommand = 3) ; load file
+{
+	FileSelectFile, strLoadMasterFilename, , , %lBoardLoadFromFilePrompt%, % lImageFiles . " (*.jpg; *.jpeg; *.png; *.bmp; *.gif; *.tiff; *.tif; *.mp3; *.m4a)"
+	SplitPath, strLoadMasterFilename, , , strExtension
+	if StrLen(strLoadMasterFilename)
+		if InStr("mp3 m4a", strExtension)
+			Oops(lBoardTuneFilesNotSupported)
+		else
+			arrBoardPicFiles.Insert(intPosition, strLoadMasterFilename)
+}
+else if (intCommand = 4) ; remove
+	arrBoardPicFiles.Remove(intPosition)
+
+
+Gosub, RefreshBoard ; ### display only current Board
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+BoardLinkClicked:
+;-----------------------------------------------------------
+strCommand := ErrorLevel
+StringReplace, intPosition, A_GuiControl, lnkBoardLink
+StringReplace, strCommand, strCommand, %intPosition%
+
+if (strCommand = "ShowPic")
+{
+	GuiControl, Hide, %A_GuiControl%
+	GuiControl, Show, picBoard%intPosition%
+	return
+}
+else if (strCommand = "ViewPic")
+{
+	strFilename := arrBoardPicFiles[intPosition]
+	if StrLen(strFilename)
+		if FileExist(strFilename)
+			Run, %strFilename%
+		else
+			Oops(lCoverFileNotFound, strFilename)
+	else
+		Oops(lBoardNoCoverToView)
 }
 
 Gosub, RefreshBoard
@@ -1007,6 +1003,11 @@ loop, %intMaxNbRow%
 		intPosition := A_Index
 		loop, 4
 			GuiControl, Show, % "picBoardButton" . A_Index . intPosition
+		strBoardLink := ""
+			. "<A ID=""ViewPic" . A_Index . """>" . arrBoardPicFiles[A_Index] . "</A>" . "`n"
+			. "`n"
+			. "<A ID=""ShowPic" . A_Index . """>" . lBoardShowPic . "</A>" . "`n"
+		GuiControl, , lnkBoardLink%A_Index%, %strBoardLink%
 	}
 	else
 		LoadPicControl(picBoard%A_Index%, 4)

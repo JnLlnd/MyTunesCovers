@@ -346,13 +346,13 @@ iTunes_SaveCoverToTune(ByRef objThisCover, strFile, blnReplace)
 	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
 	if (objTrack.Artwork.Count and blnReplace)
 	{
-		###_D(objTrack.Artwork.Count .  " replace 1")
+		; ###_D(objTrack.Artwork.Count .  " replace 1")
 		objArtwork := objTrack.Artwork.Item(1)
 		strResult := objArtwork.SetArtworkFromFile(strFile)
 	}
 	else
 	{
-		###_D(objTrack.Artwork.Count .  " fonctionne!")
+		; ###_D(objTrack.Artwork.Count .  " fonctionne!")
 		objArtwork := objTrack.AddArtworkFromFile(strFile)
 	}	
 	return true
@@ -366,7 +366,7 @@ iTunes_DeleteCoverFromTune(ByRef objThisCover)
 	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
 	if (objTrack.Artwork.Count)
 	{
-		###_D(objTrack.Artwork.Count .  " delete 1")
+		; ###_D(objTrack.Artwork.Count .  " delete 1")
 		objArtwork := objTrack.Artwork.Item(1)
 		strResult := objArtwork.Delete()
 	}
