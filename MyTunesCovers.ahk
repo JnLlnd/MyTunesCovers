@@ -583,13 +583,13 @@ Gui, Submit, NoHide
 intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover) - 1 ; -1 because of the last comma in lists
 
 if (intNbCovers < 0)
-{
-	###_D("Oops ### : " . intNbCovers)
 	return
-}
 
 intPage := 1
 intNbPages := Ceil(intNbCovers / intCoversPerPage)
+
+arrTrackSelected := Object() ; create array or release previous selections
+arrTrackPosition := Object() ; create array or release previous selections
 
 Gosub, DisplayCoversPage
 
@@ -601,6 +601,7 @@ return
 DisplayCoversPage:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
+
 if !(blnResizeInProgress)
 {
 	Hotkey, Up, , On
@@ -639,8 +640,17 @@ if (intNbCovers)
 		; ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
 		; ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
 		; Gdip_SetInterpolationMode(ptrGraphicPicCover, 7) ; using default instead of 7 (highest quality)
-		
-		if (arrPositionSelected%intPosition%)
+
+		arrTrackPosition.Insert(intTrackIndexDisplayedNow, intPosition)
+/*
+###_D(""
+	. "intPosition = " . intPosition . "`n"
+	. "intTrackIndexDisplayedNow = " . intTrackIndexDisplayedNow . "`n"
+	. "arrTrackSelected[intTrackIndexDisplayedNow] = " . arrTrackSelected[intTrackIndexDisplayedNow] . "`n"
+	. "arrTrackPosition[intTrackIndexDisplayedNow] = " . arrTrackPosition[intTrackIndexDisplayedNow] . "`n"
+	. "")
+*/
+		if (arrTrackSelected[intTrackIndexDisplayedNow])
 			LoadPicControl(picCover%intPosition%, 5) ; Copy here
 		else if StrLen(objCover%intPosition%.CoverTempFilePathName)
 			LoadPicControl(picCover%intPosition%, 1, objCover%intPosition%.CoverTempFilePathName)
@@ -814,6 +824,7 @@ CoverButtonClicked:
 StringReplace, strControl, A_GuiControl, picCoverButton
 intCommand := SubStr(strControl, 1, 1)
 intPosition := SubStr(strControl, 2)
+intTrack := ((intPage - 1) * intCoversPerPage) + intPosition
 
 ; The first command can be executed on any kind of track
 if (intCommand = 1) ; Clip
@@ -839,7 +850,7 @@ if (objCover%intPosition%.Kind > 1)
 
 ; Now, we know kind is 1 (File track)
 if (intCommand = 2) ; Select
-	arrPositionSelected%intPosition% := !arrPositionSelected%intPosition%
+	arrTrackSelected[intTrack] := !arrTrackSelected[intTrack]
 else if (intCommand = 3) ; Paste
 {
 	blnGo := !(objCover%intPosition%.ArtworkCount)
@@ -919,7 +930,20 @@ intPosition := SubStr(strControl, 2)
 
 if (intCommand = 1)
 	if (intPosition = 1) ; paste to selected
-		Oops("Not implemented yet")
+	{
+		for intTrack, blnSelected in arrTrackSelected
+		{
+			intPosition := arrTrackPosition[intTrack]
+			###_D("intTrack = " . intTrack . " / " . blnSelected . "`n"
+				. "intPosition = " . intPosition)
+		}
+		return
+		blnGo := !(objCover%intPosition%.ArtworkCount)
+		if !(blnGo)
+			blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), L(lCoverOverwrite)) = "Yes")
+		if (blnGo)
+			Cover_SaveCoverToTune(objCover%intPosition%, arrBoardPicFiles[1], true)
+	}
 	else ; make master
 	{
 		arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
