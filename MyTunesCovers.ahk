@@ -105,6 +105,10 @@ Hotkey, Up, DoNothing, Off
 Hotkey, Down, DoNothing, Off
 Hotkey, Left, DoNothing, Off
 Hotkey, Right, DoNothing, Off
+Hotkey, PgUp, DoNothing, Off
+Hotkey, PgDn, DoNothing, Off
+Hotkey, Home, DoNothing, Off
+Hotkey, End, DoNothing, Off
 
 return
 ;-----------------------------------------------------------
@@ -608,6 +612,10 @@ if !(blnResizeInProgress)
 	Hotkey, Down, , On
 	Hotkey, Left, , On
 	Hotkey, Right, , On
+	Hotkey, PgUp, , On
+	Hotkey, PgDn, , On
+	Hotkey, Home, , On
+	Hotkey, End, , On
 	Gui, +Disabled ; protect display cover from user clicks
 }
 
@@ -701,6 +709,10 @@ if !(blnResizeInProgress)
 	Hotkey, Down, , Off
 	Hotkey, Left, , Off
 	Hotkey, Right, , Off
+	Hotkey, PgUp, , Off
+	Hotkey, PgDn, , Off
+	Hotkey, Home, , Off
+	Hotkey, End, , Off
 }
 GuiControl, Focus, lstArtists
 
