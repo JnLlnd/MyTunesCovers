@@ -188,7 +188,7 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "", blnOnlyNoCover := false)
 
 
 ;-----------------------------------------------------------
-iTunes_GetCover(ByRef objThisCover, intTrackIndex)
+iTunes_GetCover(intTrackIndex)
 {
 	if (arrTracks.MaxIndex() = "" ; if arrTracks has no items, it returns an empty string
 		or intTracksArrayIndex => arrTracks.MaxIndex()) ; the last item if the array is always empty
@@ -213,7 +213,7 @@ iTunes_GetCover(ByRef objThisCover, intTrackIndex)
 	objThisCover.SetCoverProperties(objTrack.Artist, objTrack.Album, objTrack.Name, objTrack.Index, arrTrackIDs[1], arrTrackIDs[2], objTrack.Artwork.Count, objTrack.Kind)
 	; ###_D("objThisCover.Index: " . objThisCover.Index)
 
-	return true
+	return objThisCover
 }
 ;-----------------------------------------------------------
 
