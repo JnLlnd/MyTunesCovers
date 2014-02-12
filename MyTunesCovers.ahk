@@ -359,7 +359,7 @@ loop, %intCoversPerPage%
 			LoadPicControl(picCoverButton%A_Index%%intIndex%, (A_Index + 5))
 		}
 		Gui, Font, s8 w700, Arial
-		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index% gNameLabelClicked
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index%
 		Gui, Font
 		intNbCoversCreated := A_Index
 	}
@@ -407,7 +407,7 @@ GuiControl, Move, lblPage, % "X" . (intGuiMiddle) . " Y" . A_GuiHeight - 55
 GuiControl, Move, btnNext, % "X" . (intGuiMiddle + 105) . " Y" . A_GuiHeight - 55
 
 blnResizeInProgress := True
-Gosub, RefreshBoard
+Gosub, DisplayBoard
 Gosub, DisplayCoversPage
 blnResizeInProgress := False
 
@@ -582,6 +582,8 @@ return
 ;-----------------------------------------------------------
 DisplayCovers:
 ;-----------------------------------------------------------
+objCovers := Object()
+
 Gui, Submit, NoHide
 
 intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover) - 1 ; -1 because of the last comma in lists
@@ -589,13 +591,17 @@ intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover) - 1 ; 
 if (intNbCovers < 0)
 	return
 
+Gosub, DisableGui ; protect display cover from user clicks
+; ### progress bar and hourglass cursor (http://www.autohotkey.com/board/topic/32608-changing-the-system-cursor/)
+loop, %intNbCovers%
+	objCovers.Insert(A_Index, Cover_GetCover(A_Index))
+
 intPage := 1
 intNbPages := Ceil(intNbCovers / intCoversPerPage)
 
 arrTrackSelected := Object() ; create array or release previous selections
-arrTrackPosition := Object() ; create array or release previous selections
 
-Gosub, DisplayCoversPage
+Gosub, DisplayCoversPage ; will re-enable the Gui
 
 return
 ;-----------------------------------------------------------
@@ -606,66 +612,43 @@ DisplayCoversPage:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 
+GuiControlGet, strLstFocused, Focus
 if !(blnResizeInProgress)
-{
-	Hotkey, Up, , On
-	Hotkey, Down, , On
-	Hotkey, Left, , On
-	Hotkey, Right, , On
-	Hotkey, PgUp, , On
-	Hotkey, PgDn, , On
-	Hotkey, Home, , On
-	Hotkey, End, , On
-	Gui, +Disabled ; protect display cover from user clicks
-}
+	Gosub, DisableGui ; protect display cover from user clicks
 
 intPosition := 0
-intTrackIndexDisplayedNow := ((intPage - 1) * intCoversPerPage)
+intTrack := TrackAtPosition(intPosition)
 intNbPages := Ceil(intNbCovers / intCoversPerPage) ; can change when resize
 
 if (intNbCovers)
 	loop
 	{
-		intTrackIndexDisplayedNow := intTrackIndexDisplayedNow + 1
-		if !Cover_GetCover(objThisCover, intTrackIndexDisplayedNow)
-			break
 		intPosition := intPosition + 1
-		objCover%intPosition% := objThisCover
+		intTrack := intTrack + 1
 		
 		GuiControl, Hide, lnkCoverLink%intPosition%
 		GuiControl, Show, picCover%intPosition%
 		
-		GuiControl, , lblNameLabel%intPosition%, % objCover%intPosition%.Name . (objCover%intPosition%.ArtworkCount > 1 ? " (" . objCover%intPosition%.ArtworkCount . ")" : "")
-		GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCover%intPosition%.Artist . "`n"
-			. lAlbum . ": " . objCover%intPosition%.Album . "`n"
-			. "TrackID: " . objCover%intPosition%.TrackIDHigh . "/" . objCover%intPosition%.TrackIDLow . "`n"
-			. "ArtworkCount/Kind: " . objCover%intPosition%.ArtworkCount . " / Kind: " . objCover%intPosition%.Kind . "`n"
+		GuiControl, , lblNameLabel%intPosition%, % objCovers[intTrack].Name
+			. (objCovers[intTrack].ArtworkCount > 1 ? " (" . objCovers[intTrack].ArtworkCount . ")" : "")
+		GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCovers[intTrack].Artist . "`n"
+			. lAlbum . ": " . objCovers[intTrack].Album . "`n"
+			. "TrackID: " . objCovers[intTrack].TrackIDHigh . "/" . objCovers[intTrack].TrackIDLow . "`n"
+			. "ArtworkCount/Kind: " . objCovers[intTrack].ArtworkCount . " / Kind: " . objCovers[intTrack].Kind . "`n"
 			. "`n"
-			. "<A ID=""ShowPic"">" . lCoverShowPic . "</A>   <A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "`n"
+			. "<A ID=""ShowPic"">" . lCoverShowPic . "</A>" . "`n"
+			. "<A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "`n"
 			. "`n"
 			. "<A ID=""Listen"">" . lCoverListen . "</A>" . "`n"
 
-		; ptrBitmapPicCover := Gdip_CreateBitmap(intPictureSize, intPictureSize) ; (posCover%intPosition%w, posCover%intPosition%h)
-		; ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
-		; Gdip_SetInterpolationMode(ptrGraphicPicCover, 7) ; using default instead of 7 (highest quality)
-
-		arrTrackPosition.Insert(intTrackIndexDisplayedNow, intPosition)
-/*
-###_D(""
-	. "intPosition = " . intPosition . "`n"
-	. "intTrackIndexDisplayedNow = " . intTrackIndexDisplayedNow . "`n"
-	. "arrTrackSelected[intTrackIndexDisplayedNow] = " . arrTrackSelected[intTrackIndexDisplayedNow] . "`n"
-	. "arrTrackPosition[intTrackIndexDisplayedNow] = " . arrTrackPosition[intTrackIndexDisplayedNow] . "`n"
-	. "")
-*/
-		if (arrTrackSelected[intTrackIndexDisplayedNow])
+		if (arrTrackSelected[intTrack])
 			LoadPicControl(picCover%intPosition%, 5) ; Copy here
-		else if StrLen(objCover%intPosition%.CoverTempFilePathName)
-			LoadPicControl(picCover%intPosition%, 1, objCover%intPosition%.CoverTempFilePathName)
+		else if StrLen(objCovers[intTrack].CoverTempFilePathName)
+			LoadPicControl(picCover%intPosition%, 1, objCovers[intTrack].CoverTempFilePathName)
 		else 
 			LoadPicControl(picCover%intPosition%, 2) ; No cover
 
-		if (objCover%intPosition%.Kind <> 1)
+		if (objCovers[intTrack].Kind <> 1)
 		{
 			GuiControl, Show, picCoverButton1%intPosition%
 			loop, 3
@@ -676,7 +659,7 @@ if (intNbCovers)
 				GuiControl, Show, picCoverButton%A_Index%%intPosition%
 
 		
-	} until (A_Index = intCoversPerPage) or (intTrackIndexDisplayedNow = intNbCovers)
+	} until (A_Index = intCoversPerPage) or (intTrack = intNbCovers)
 
 intRemainingCovers := intCoversDisplayedPrevious - intPosition
 intCoversDisplayedPrevious := intPosition
@@ -684,9 +667,6 @@ intCoversDisplayedPrevious := intPosition
 loop, %intRemainingCovers%
 {
 	intPosition := intPosition + 1
-	; ptrBitmapPicCover := Gdip_CreateBitmap(posCover%intPosition%w, posCover%intPosition%h)
-	; ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
-	; Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
 	LoadPicControl(picCover%intPosition%, 3)
 	
 	GuiControl, , lblNameLabel%intPosition%
@@ -698,40 +678,53 @@ loop, %intRemainingCovers%
 }
 
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
-GuiControl, % (intTrackIndexDisplayedNow < intNbCovers ? "Show" : "Hide"), btnNext
+GuiControl, % (intTrack < intNbCovers ? "Show" : "Hide"), btnNext
 if (intNbPages)
 	GuiControl, , lblPage, % L(lPageFooter, intPage, intNbPages)
 
 if !(blnResizeInProgress)
-{
-	Gui, -Disabled
-	Hotkey, Up, , Off
-	Hotkey, Down, , Off
-	Hotkey, Left, , Off
-	Hotkey, Right, , Off
-	Hotkey, PgUp, , Off
-	Hotkey, PgDn, , Off
-	Hotkey, Home, , Off
-	Hotkey, End, , Off
-}
-GuiControl, Focus, lstArtists
+	Gosub, EnableGui
+if InStr(strLstFocused, "ComboBox")
+	GuiControl, Focus, %strLstFocused%
+else
+	GuiControl, Focus, lstArtists
 
 return
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
-DisplayBoard:
+DisableGui:
 ;-----------------------------------------------------------
-Gui, Submit, NoHide
+Hotkey, Up, , On
+Hotkey, Down, , On
+Hotkey, Left, , On
+Hotkey, Right, , On
+Hotkey, PgUp, , On
+Hotkey, PgDn, , On
+Hotkey, Home, , On
+Hotkey, End, , On
 
-loop, %intMaxNbRow%
-{
-	; ptrBitmapPicCover := Gdip_CreateBitmap(posBoard%A_Index%w, posBoard%A_Index%h)
-	; ptrGraphicPicCover := Gdip_GraphicsFromImage(ptrBitmapPicCover)
-	; Gdip_SetInterpolationMode(ptrGraphicPicCover, 7)
-	LoadPicControl(picBoard%A_Index%, 4)
-}
+Gui, +Disabled
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+EnableGui:
+;-----------------------------------------------------------
+Gui, -Disabled
+
+Hotkey, Up, , Off
+Hotkey, Down, , Off
+Hotkey, Left, , Off
+Hotkey, Right, , Off
+Hotkey, PgUp, , Off
+Hotkey, PgDn, , Off
+Hotkey, Home, , Off
+Hotkey, End, , Off
+
 
 return
 ;-----------------------------------------------------------
@@ -746,7 +739,8 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 {
 	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapCopyHere
 		, ptrBitmapCoverButton1, ptrBitmapCoverButton2, ptrBitmapCoverButton3, ptrBitmapCoverButton4
-		, ptrBitmapBoardButton0, ptrBitmapBoardButton1, ptrBitmapBoardButton2, ptrBitmapBoardButton3, ptrBitmapBoardButton4
+		, ptrBitmapBoardButton1, ptrBitmapBoardButton2, ptrBitmapBoardButton3, ptrBitmapBoardButton4
+		, ptrBitmapBoardButton0
 
 	GuiControlGet, posControl, Pos, picControl
 	GuiControlGet, hwnd, hwnd, picControl
@@ -815,14 +809,12 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 ;-----------------------------------------------------------
 PicCoverClicked:
 ;-----------------------------------------------------------
-StringReplace, intPosition, A_GuiControl, picCover
+StringReplace, intThisPosition, A_GuiControl, picCover
 
-; objCover%intPosition%.Name
-
-if (intPosition <= intCoversDisplayedPrevious)
+if (intThisPosition <= intCoversDisplayedPrevious)
 {
 	GuiControl, Hide, %A_GuiControl%
-	GuiControl, Show, lnkCoverLink%intPosition%
+	GuiControl, Show, lnkCoverLink%intThisPosition%
 }
 
 return
@@ -835,49 +827,51 @@ CoverButtonClicked:
 
 StringReplace, strControl, A_GuiControl, picCoverButton
 intCommand := SubStr(strControl, 1, 1)
-intPosition := SubStr(strControl, 2)
-intTrack := ((intPage - 1) * intCoversPerPage) + intPosition
+intThisPosition := SubStr(strControl, 2)
+intThisTrack := TrackAtPosition(intThisPosition)
 
 ; The first command can be executed on any kind of track
 if (intCommand = 1) ; Clip
 {
-	if StrLen(objCover%intPosition%.CoverTempFilePathName)
-		arrBoardPicFiles.Insert(1, objCover%intPosition%.CoverTempFilePathName)
-	Gosub, RefreshBoard
+	if StrLen(objCovers[intThisTrack].CoverTempFilePathName)
+	{
+		arrBoardPicFiles.Insert(1, objCovers[intThisTrack].CoverTempFilePathName)
+		Gosub, DisplayBoard
+	}
 	return
 }
 
 ; The following commands can only be executed on file track
-if !(objCover%intPosition%.Kind)
+if !(objCovers[intThisTrack].Kind)
 {
 	Oops(lCoverUnknownTrackKind, lAppName)
 	return
 }
-if (objCover%intPosition%.Kind > 1)
+if (objCovers[intThisTrack].Kind > 1)
 {
-	intKind := objCover%intPosition%.Kind
+	intKind := objCovers[intThisTrack].Kind
 	Oops(lCoverUnsupportedTrackKind, arrTrackKinds%intKind%, lAppName)
 	return
 }
 
 ; Now, we know kind is 1 (File track)
 if (intCommand = 2) ; Select
-	arrTrackSelected[intTrack] := !arrTrackSelected[intTrack]
+	arrTrackSelected[intThisTrack] := !arrTrackSelected[intThisTrack]
 else if (intCommand = 3) ; Paste
 {
-	blnGo := !(objCover%intPosition%.ArtworkCount)
+	blnGo := !(objCovers[intThisTrack].ArtworkCount)
 	if !(blnGo)
 		blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), L(lCoverOverwrite)) = "Yes")
 	if (blnGo)
-		Cover_SaveCoverToTune(objCover%intPosition%, arrBoardPicFiles[1], true)
+		Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1], true)
 }
 else if (intCommand = 4) ; Delete
 {
-	blnGo := !(objCover%intPosition%.ArtworkCount)
+	blnGo := !(objCovers[intThisTrack].ArtworkCount)
 	if !(blnGo)
 		blnGo := (YesNoCancel(False, L(lCoverDeleteTitle, lAppName), L(lCoverDeletePrompt)) = "Yes")
 	if (blnGo)
-		Cover_DeleteCoverFromTune(objCover%intPosition%)
+		Cover_DeleteCoverFromTune(objCovers[intThisTrack])
 }
 
 Gosub, DisplayCoversPage ; ### display only current cover
@@ -890,31 +884,23 @@ return
 CoverLinkClicked:
 ;-----------------------------------------------------------
 strCommand := ErrorLevel
+StringReplace, intThisPosition, A_GuiControl, lnkCoverLink
 
 if (strCommand = "ShowPic")
 {
 	GuiControl, Hide, %A_GuiControl%
-	GuiControl, Show, picCover%intPosition%
+	GuiControl, Show, picCover%intThisPosition%
 }
 else if (strCommand = "ViewPic")
 {
-	strFilename := objCover%intPosition%.CoverTempFilePathName
+	strFilename := objCovers[intThisTrack].CoverTempFilePathName
 	if FileExist(strFilename)
 		Run, %strFilename%
 	else
 		Oops(lCoverFileNotFound, strFilename)
 }
 else if (strCommand = "Listen")
-	Cover_PLay(objCover%intPosition%)
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-NameLabelClicked:
-;-----------------------------------------------------------
-###_D("NameLabelClicked")
+	Cover_PLay(objCovers[intThisTrack])
 
 return
 ;-----------------------------------------------------------
@@ -923,10 +909,10 @@ return
 ;-----------------------------------------------------------
 PicBoardClicked:
 ;-----------------------------------------------------------
-StringReplace, intPosition, A_GuiControl, picBoard
+StringReplace, intThisPosition, A_GuiControl, picBoard
 
 GuiControl, Hide, %A_GuiControl%
-GuiControl, Show, lnkBoardLink%intPosition%
+GuiControl, Show, lnkBoardLink%intThisPosition%
 
 return
 ;-----------------------------------------------------------
@@ -938,28 +924,28 @@ BoardButtonClicked:
 
 StringReplace, strControl, A_GuiControl, picBoardButton
 intCommand := SubStr(strControl, 1, 1)
-intPosition := SubStr(strControl, 2)
+intThisPosition := SubStr(strControl, 2)
 
 if (intCommand = 1)
-	if (intPosition = 1) ; paste to selected
+	if (intThisPosition = 1) ; paste to selected
 	{
-		for intTrack, blnSelected in arrTrackSelected
+		for intThisTrack, blnSelected in arrTrackSelected
 		{
-			intPosition := arrTrackPosition[intTrack]
-			###_D("intTrack = " . intTrack . " / " . blnSelected . "`n"
-				. "intPosition = " . intPosition)
+			intThisPosition := PositionOfTrack(intThisTrack)
+			###_D("intThisTrack = " . intThisTrack . " / " . blnSelected . "`n"
+				. "intThisPosition = " . intThisPosition)
 		}
 		return
-		blnGo := !(objCover%intPosition%.ArtworkCount)
+		blnGo := !(objCovers[intThisTrack].ArtworkCount)
 		if !(blnGo)
 			blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), L(lCoverOverwrite)) = "Yes")
 		if (blnGo)
-			Cover_SaveCoverToTune(objCover%intPosition%, arrBoardPicFiles[1], true)
+			Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1], true)
 	}
 	else ; make master
 	{
-		arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
-		arrBoardPicFiles.Remove(intPosition + 1)
+		arrBoardPicFiles.Insert(1, arrBoardPicFiles[intThisPosition])
+		arrBoardPicFiles.Remove(intThisPosition + 1)
 	}
 else if (intCommand = 2) ; load clipboard
 {
@@ -970,12 +956,12 @@ else if (intCommand = 2) ; load clipboard
 		Oops(lInvalidClipboardContent)
 		return
 	}
-	strLoadClipboardFilename := strCoversCacheFolder . Cover_GenerateGUID() . ".jpg"
-	Gdip_SaveBitmapToFile(ptrBitmapClipbpard, strLoadClipboardFilename, 95)
+	strLoadClipboardFilename := strCoversCacheFolder . Cover_GenerateGUID() . ".jpg" ; ### jpg best format? make it option?
+	Gdip_SaveBitmapToFile(ptrBitmapClipbpard, strLoadClipboardFilename, 95) ; 95 = quality
 	ptrBitmapClipbpard :=
 
 	if StrLen(strLoadClipboardFilename)
-		arrBoardPicFiles.Insert(intPosition, strLoadClipboardFilename)
+		arrBoardPicFiles.Insert(intThisPosition, strLoadClipboardFilename)
 }
 else if (intCommand = 3) ; load file
 {
@@ -983,15 +969,15 @@ else if (intCommand = 3) ; load file
 	SplitPath, strLoadMasterFilename, , , strExtension
 	if StrLen(strLoadMasterFilename)
 		if InStr("mp3 m4a", strExtension)
-			Oops(lBoardTuneFilesNotSupported)
+			Oops(lBoardTuneFilesNotSupported) ; ###
 		else
-			arrBoardPicFiles.Insert(intPosition, strLoadMasterFilename)
+			arrBoardPicFiles.Insert(intThisPosition, strLoadMasterFilename)
 }
 else if (intCommand = 4) ; remove
-	arrBoardPicFiles.Remove(intPosition)
+	arrBoardPicFiles.Remove(intThisPosition)
 
 
-Gosub, RefreshBoard ; ### display only current Board
+Gosub, DisplayBoard ; ### display only current Board
 
 return
 ;-----------------------------------------------------------
@@ -1001,18 +987,18 @@ return
 BoardLinkClicked:
 ;-----------------------------------------------------------
 strCommand := ErrorLevel
-StringReplace, intPosition, A_GuiControl, lnkBoardLink
-StringReplace, strCommand, strCommand, %intPosition%
+StringReplace, intThisPosition, A_GuiControl, lnkBoardLink
+StringReplace, strCommand, strCommand, %intThisPosition%
 
 if (strCommand = "ShowPic")
 {
 	GuiControl, Hide, %A_GuiControl%
-	GuiControl, Show, picBoard%intPosition%
+	GuiControl, Show, picBoard%intThisPosition%
 	return
 }
 else if (strCommand = "ViewPic")
 {
-	strFilename := arrBoardPicFiles[intPosition]
+	strFilename := arrBoardPicFiles[intThisPosition]
 	if StrLen(strFilename)
 		if FileExist(strFilename)
 			Run, %strFilename%
@@ -1022,23 +1008,23 @@ else if (strCommand = "ViewPic")
 		Oops(lBoardNoCoverToView)
 }
 
-Gosub, RefreshBoard
+Gosub, DisplayBoard
 
 return
 ;-----------------------------------------------------------
 
 
 ;-----------------------------------------------------------
-RefreshBoard:
+DisplayBoard:
 ;-----------------------------------------------------------
 loop, %intMaxNbRow%
 {
 	if (A_Index <= arrBoardPicFiles.MaxIndex())
 	{
 		LoadPicControl(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
-		intPosition := A_Index
+		intThisPosition := A_Index
 		loop, 4
-			GuiControl, Show, % "picBoardButton" . A_Index . intPosition
+			GuiControl, Show, % "picBoardButton" . A_Index . intThisPosition
 		strBoardLink := ""
 			. "<A ID=""ViewPic" . A_Index . """>" . arrBoardPicFiles[A_Index] . "</A>" . "`n"
 			. "`n"
@@ -1057,11 +1043,27 @@ return
 
 
 ;-----------------------------------------------------------
-SaveClipboardToImageFile:
+TrackAtPosition(intThisPosition)
+{
+	global intPage, intCoversPerPage
+	
+	return ((intPage - 1) * intCoversPerPage) + intThisPosition
+}
 ;-----------------------------------------------------------
 
 
-return
+;-----------------------------------------------------------
+PositionOfTrack(intThisTrack)
+{
+	global intCoversPerPage
+
+	intThisPosition := Mod(intThisTrack, intCoversPerPage)
+	
+	if intThisPosition
+		return intThisPosition
+	else
+		return intCoversPerPage
+}
 ;-----------------------------------------------------------
 
 
@@ -1219,50 +1221,3 @@ L(strMessage, objVariables*)
 ; ------------------------------------------------
 
 
-
-/*
-
-BACKUP PIECES OF CODE
-
-
-if (objTrack.Artwork.Count)
-{
-	Loop, % objTrack.Artwork.Count
-	{
-		objArtwork := objTrack.Artwork.Item(A_Index)
-		TrayTip
-		###_D("Track: " . objTrack.index . "`n"
-			. "Artist: " . objTrack.Artist . "`n"
-			. "Album: " . objTrack.Album . "`n"
-			. "Name: " . objTrack.Name . "`n"
-			. "Artwork: " . A_Index . "/" . objTrack.Artwork.Count . "`n"
-			. "Format: " . objArtwork.Format  . "`n"
-			. "IsDownloadedArtwork: " . objArtwork.IsDownloadedArtwork  . "`n"
-			. "Description: " . objArtwork.Description . "`n"
-			. "")
-		strFilename := objTrack.index . "-" .  A_Index . ".jpg"
-		###_D(strFilename)
-		objArtwork.SaveArtworkToFile(strFilename)
-	}
-}
-else
-	if (!Mod(A_Index, 100))
-		TrayTip, , % A_Index . " / " . objTracks.Count
-
-objArtwork.Format
-
-ITunesLibArtworkFormatNone = 0,
-ITunesLibArtworkFormatBitmap = 1,
-ITunesLibArtworkFormatJPEG = 2,
-ITunesLibArtworkFormatJPEG2000 = 3,
-ITunesLibArtworkFormatGIF = 4,
-ITunesLibArtworkFormatPNG = 5,
-ITunesLibArtworkFormatBMP = 6,
-ITunesLibArtworkFormatTIFF = 7,
-ITunesLibArtworkFormatPICT = 8
-
-
-
-GDI_SaveBitmap( ClipboardGet_DIB(), "filename.bmp" )
-
-*/
