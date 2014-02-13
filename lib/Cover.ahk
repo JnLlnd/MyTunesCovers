@@ -143,6 +143,17 @@ Cover_GetCover(intTrackIndex)
 
 
 ;-----------------------------------------------------------
+Cover_GetImage(objThisCover)
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_GetImage(objThisCover)
+	else
+		return false
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 Cover_LoadSource() ; NOT USED
 {
 	###_D("Load: " . strCoverSourceType)
@@ -165,7 +176,7 @@ Cover_ReleaseSource()
 
 
 ;-----------------------------------------------------------
-Cover_SaveCoverToTune(ByRef objCover, strFile, blnReplace)
+Cover_SaveCoverToTune(ByRef objCover, strFile)
 {
 	if StrLen(strCoverSourceType)
 		return %strCoverSourceType%_SaveCoverToTune(objCover, strFile, blnReplace)

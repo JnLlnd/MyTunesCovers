@@ -640,7 +640,10 @@ if (intNbCovers)
 			. "<A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "`n"
 			. "`n"
 			. "<A ID=""Listen"">" . lCoverListen . "</A>" . "`n"
-
+			
+		if !StrLen(objCovers[intTrack].CoverTempFilePathName) or !FileExist(objCovers[intTrack].CoverTempFilePathName)
+			Cover_GetImage(objCovers[intTrack])
+		
 		if (arrTrackSelected[intTrack])
 			LoadPicControl(picCover%intPosition%, 5) ; Copy here
 		else if StrLen(objCovers[intTrack].CoverTempFilePathName)
@@ -857,23 +860,25 @@ if (objCovers[intThisTrack].Kind > 1)
 ; Now, we know kind is 1 (File track)
 if (intCommand = 2) ; Select
 	arrTrackSelected[intThisTrack] := !arrTrackSelected[intThisTrack]
-else if (intCommand = 3) ; Paste
+else if (intCommand = 3) ; Paste here
 {
 	blnGo := !(objCovers[intThisTrack].ArtworkCount)
 	if !(blnGo)
-		blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), L(lCoverOverwrite)) = "Yes")
+		blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), lCoverOverwrite) = "Yes")
 	if (blnGo)
-		Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1], true)
+		Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1])
 }
 else if (intCommand = 4) ; Delete
 {
 	blnGo := !(objCovers[intThisTrack].ArtworkCount)
 	if !(blnGo)
-		blnGo := (YesNoCancel(False, L(lCoverDeleteTitle, lAppName), L(lCoverDeletePrompt)) = "Yes")
+		blnGo := (YesNoCancel(False, L(lCoverDeleteTitle, lAppName), lCoverDeletePrompt) = "Yes")
 	if (blnGo)
 		Cover_DeleteCoverFromTune(objCovers[intThisTrack])
 }
 
+if (intCommand >= 3)
+	FileDelete, % objCovers[intThisTrack].CoverTempFilePathName
 Gosub, DisplayCoversPage ; ### display only current cover
 
 return
@@ -907,6 +912,34 @@ return
 
 
 ;-----------------------------------------------------------
+DisplayBoard:
+;-----------------------------------------------------------
+loop, %intMaxNbRow%
+{
+	if (A_Index <= arrBoardPicFiles.MaxIndex())
+	{
+		LoadPicControl(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
+		intThisPosition := A_Index
+		loop, 4
+			GuiControl, Show, % "picBoardButton" . A_Index . intThisPosition
+		strBoardLink := ""
+			. "<A ID=""ViewPic" . A_Index . """>" . arrBoardPicFiles[A_Index] . "</A>" . "`n"
+			. "`n"
+			. "<A ID=""ShowPic" . A_Index . """>" . lBoardShowPic . "</A>" . "`n"
+		GuiControl, , lnkBoardLink%A_Index%, %strBoardLink%
+	}
+	else
+		LoadPicControl(picBoard%A_Index%, 4)
+	GuiControl, Hide, lnkBoardLink%A_Index%
+	GuiControl, Show, picBoard%A_Index%
+	GuiControl, Show, lblBoardNameLabel%A_Index%
+}
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 PicBoardClicked:
 ;-----------------------------------------------------------
 StringReplace, intThisPosition, A_GuiControl, picBoard
@@ -927,26 +960,44 @@ intCommand := SubStr(strControl, 1, 1)
 intThisPosition := SubStr(strControl, 2)
 
 if (intCommand = 1)
-	if (intThisPosition = 1) ; paste to selected
+{
+	if (intThisPosition = 1) ; paste to selected covers
 	{
+		blnOnOtherPages := false
+		for intThisTrack, blnSelected in arrTrackSelected
+			if PageOfTrack(intThisTrack) <> intPage
+			{
+				blnOnOtherPages := true
+				break
+			}
+
+		if (blnOnOtherPages)
+		{
+			strAnswer := YesNoCancel(True, L(lBoardPastingSelected, lAppName), lBoardPasteAllPagesPrompt)
+			if (strAnswer = "Cancel")
+				return
+			else
+				blnOnOtherPages := (strAnswer = "Yes")
+		}
+
+		blnOverwrite := false
 		for intThisTrack, blnSelected in arrTrackSelected
 		{
-			intThisPosition := PositionOfTrack(intThisTrack)
-			###_D("intThisTrack = " . intThisTrack . " / " . blnSelected . "`n"
-				. "intThisPosition = " . intThisPosition)
+			if (PageOfTrack(intThisTrack) = intPage or blnOnOtherPages)
+			{
+				if (objCovers[intThisTrack].ArtworkCount and !blnOverwrite)
+					blnOverwrite := (YesNoCancel(False, L(lBoardPastingSelected, lAppName), lCoverOverwrite) = "Yes")
+				if (!objCovers[intThisTrack].ArtworkCount or blnOverwrite)
+				{
+					Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1])
+					FileDelete, % objCovers[intThisTrack].CoverTempFilePathName
+					arrTrackSelected[intThisTrack] := false
+				}
+			}
 		}
-		return
-		blnGo := !(objCovers[intThisTrack].ArtworkCount)
-		if !(blnGo)
-			blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), L(lCoverOverwrite)) = "Yes")
-		if (blnGo)
-			Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1], true)
+		Gosub, DisplayCoversPage ; ### display only current Board
 	}
-	else ; make master
-	{
-		arrBoardPicFiles.Insert(1, arrBoardPicFiles[intThisPosition])
-		arrBoardPicFiles.Remove(intThisPosition + 1)
-	}
+}
 else if (intCommand = 2) ; load clipboard
 {
 	ptrBitmapClipbpard := Gdip_CreateBitmapFromClipboard()
@@ -1015,34 +1066,6 @@ return
 
 
 ;-----------------------------------------------------------
-DisplayBoard:
-;-----------------------------------------------------------
-loop, %intMaxNbRow%
-{
-	if (A_Index <= arrBoardPicFiles.MaxIndex())
-	{
-		LoadPicControl(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
-		intThisPosition := A_Index
-		loop, 4
-			GuiControl, Show, % "picBoardButton" . A_Index . intThisPosition
-		strBoardLink := ""
-			. "<A ID=""ViewPic" . A_Index . """>" . arrBoardPicFiles[A_Index] . "</A>" . "`n"
-			. "`n"
-			. "<A ID=""ShowPic" . A_Index . """>" . lBoardShowPic . "</A>" . "`n"
-		GuiControl, , lnkBoardLink%A_Index%, %strBoardLink%
-	}
-	else
-		LoadPicControl(picBoard%A_Index%, 4)
-	GuiControl, Hide, lnkBoardLink%A_Index%
-	GuiControl, Show, picBoard%A_Index%
-	GuiControl, Show, lblBoardNameLabel%A_Index%
-}
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
 TrackAtPosition(intThisPosition)
 {
 	global intPage, intCoversPerPage
@@ -1063,6 +1086,17 @@ PositionOfTrack(intThisTrack)
 		return intThisPosition
 	else
 		return intCoversPerPage
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+PageOfTrack(intThisTrack)
+{
+	global intCoversPerPage
+
+	return Ceil(intThisTrack / intCoversPerPage)
+	
 }
 ;-----------------------------------------------------------
 

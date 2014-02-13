@@ -205,15 +205,25 @@ iTunes_GetCover(intTrackIndex)
 
 	objThisCover := New Cover()
 	
-	strCoverFile := iTunes_GetTempImageFile(objTrack, objThisCover.GUID)
-	objThisCover.SetCoverTempFile(strCoverFile)
-	; ###_D("objThisCover.CoverTempFilePathName: " . objThisCover.CoverTempFilePathName)
-
-	###_D("objTrack.Kind: " . , objTrack.Kind)
+	; ###_D("objTrack.Kind: " . , objTrack.Kind)
 	objThisCover.SetCoverProperties(objTrack.Artist, objTrack.Album, objTrack.Name, objTrack.Index, arrTrackIDs[1], arrTrackIDs[2], objTrack.Artwork.Count, objTrack.Kind)
 	; ###_D("objThisCover.Index: " . objThisCover.Index)
 
 	return objThisCover
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+iTunes_GetImage(objThisCover)
+{
+	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
+
+	strCoverFile := iTunes_GetTempImageFile(objTrack, objThisCover.GUID)
+	objThisCover.SetCoverTempFile(strCoverFile)
+	; ###_D("objThisCover.CoverTempFilePathName: " . objThisCover.CoverTempFilePathName)
+
+	return strCoverFile
 }
 ;-----------------------------------------------------------
 
@@ -341,20 +351,17 @@ iTunes_GetTempImageFile(objTrack, strNameNoext)
 
 
 ;-----------------------------------------------------------
-iTunes_SaveCoverToTune(ByRef objThisCover, strFile, blnReplace)
+iTunes_SaveCoverToTune(ByRef objThisCover, strFile)
 {
 	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
-	if (objTrack.Artwork.Count and blnReplace)
+	if (objTrack.Artwork.Count)
 	{
-		; ###_D(objTrack.Artwork.Count .  " replace 1")
 		objArtwork := objTrack.Artwork.Item(1)
 		strResult := objArtwork.SetArtworkFromFile(strFile)
 	}
 	else
-	{
-		; ###_D(objTrack.Artwork.Count .  " fonctionne!")
 		objArtwork := objTrack.AddArtworkFromFile(strFile)
-	}	
+	
 	return true
 }
 ;-----------------------------------------------------------
