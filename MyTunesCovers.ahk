@@ -219,6 +219,8 @@ Gui, Add, Text, x+20 yp, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
 Gui, Add, Checkbox, x+50 yp vblnOnlyNoCover gOnlyNoCoverClicked, %lOnlyNoCover%
+Gui, Add, Button, x+50 yp vbtnSelectAll gButtonSelectAllClicked, %lSelectAll%
+Gui, Add, Button, x+10 yp vbtnUnSelectAll gButtonUnSelectAllClicked, %lUnSelectAll%
 Gui, Font, s10 w700, Verdana
 Gui, Add, Text, x10 w%intBoardWidth% center, %lBoard%
 Gui, Font
@@ -297,7 +299,9 @@ loop, %intMaxNbRow%
 		intIndex := A_Index
 		loop, 4
 		{
-			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicBoardButton" . A_Index . intIndex . " gBoardButtonClicked hidden"
+			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1)))
+				. " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicBoardButton" . A_Index . intIndex . " gBoardButtonClicked "
+				. (intIndex = 1 ? "" : "hidden")
 			if (A_Index = 1) and (intIndex = 1)
 				LoadPicControl(picBoardButton11, 14)
 			else
@@ -558,6 +562,38 @@ return
 
 
 ;-----------------------------------------------------------
+ButtonSelectAllClicked:
+;-----------------------------------------------------------
+
+if (intNbPages > 1)
+{
+	strAnswer := YesNoCancel(True, L(lSelectAllCoversTitle, lAppName), lSelectAllCoversAllPagesPrompt)
+	if (strAnswer = "Cancel")
+		return
+}
+
+Loop, %intNbTracks%
+	if (strAnswer = "Yes") or (PageOfTrack(A_Index) = intPage)
+		arrTrackSelected[A_Index] := true
+
+Gosub, DisplayCoversPage
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+ButtonUnSelectAllClicked:
+;-----------------------------------------------------------
+
+arrTrackSelected := Object() ; create array or release previous selections
+Gosub, DisplayCoversPage
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 ButtonPreviousClicked:
 ;-----------------------------------------------------------
 intPage := intPage - 1
@@ -586,22 +622,20 @@ objCovers := Object()
 
 Gui, Submit, NoHide
 
-intNbCovers := Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover) - 1 ; -1 because of the last comma in lists
+intNbTracks := Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover) - 1 ; -1 because of the last comma in lists
 
-if (intNbCovers < 0)
-	return
+; if (intNbTracks < 0)
+;	return
 
-Gosub, DisableGui ; protect display cover from user clicks
-; ### progress bar and hourglass cursor (http://www.autohotkey.com/board/topic/32608-changing-the-system-cursor/)
-loop, %intNbCovers%
+loop, %intNbTracks%
 	objCovers.Insert(A_Index, Cover_GetCover(A_Index))
 
 intPage := 1
-intNbPages := Ceil(intNbCovers / intCoversPerPage)
+intNbPages := Ceil(intNbTracks / intCoversPerPage)
 
 arrTrackSelected := Object() ; create array or release previous selections
 
-Gosub, DisplayCoversPage ; will re-enable the Gui
+Gosub, DisplayCoversPage
 
 return
 ;-----------------------------------------------------------
@@ -618,9 +652,9 @@ if !(blnResizeInProgress)
 
 intPosition := 0
 intTrack := TrackAtPosition(intPosition)
-intNbPages := Ceil(intNbCovers / intCoversPerPage) ; can change when resize
+intNbPages := Ceil(intNbTracks / intCoversPerPage) ; can change when resize
 
-if (intNbCovers)
+if (intNbTracks > 0) ; do not check for boolean because intNbTracks can be -1
 	loop
 	{
 		intPosition := intPosition + 1
@@ -662,7 +696,7 @@ if (intNbCovers)
 				GuiControl, Show, picCoverButton%A_Index%%intPosition%
 
 		
-	} until (A_Index = intCoversPerPage) or (intTrack = intNbCovers)
+	} until (A_Index = intCoversPerPage) or (intTrack = intNbTracks)
 
 intRemainingCovers := intCoversDisplayedPrevious - intPosition
 intCoversDisplayedPrevious := intPosition
@@ -681,7 +715,7 @@ loop, %intRemainingCovers%
 }
 
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
-GuiControl, % (intTrack < intNbCovers ? "Show" : "Hide"), btnNext
+GuiControl, % (intTrack < intNbTracks ? "Show" : "Hide"), btnNext
 if (intNbPages)
 	GuiControl, , lblPage, % L(lPageFooter, intPage, intNbPages)
 
@@ -930,6 +964,7 @@ loop, %intMaxNbRow%
 	}
 	else
 		LoadPicControl(picBoard%A_Index%, 4)
+	
 	GuiControl, Hide, lnkBoardLink%A_Index%
 	GuiControl, Show, picBoard%A_Index%
 	GuiControl, Show, lblBoardNameLabel%A_Index%
@@ -961,14 +996,20 @@ intThisPosition := SubStr(strControl, 2)
 
 if (intCommand = 1)
 {
-	if (intThisPosition = 1) ; paste to selected covers
+	if (intThisPosition = 1) ; paste to selected
 	{
+		if !StrLen(arrBoardPicFiles[1])
+			return
+		
 		blnOnOtherPages := false
+		blnExistingArtwork := false
 		for intThisTrack, blnSelected in arrTrackSelected
-			if PageOfTrack(intThisTrack) <> intPage
+			if (blnSelected)
 			{
-				blnOnOtherPages := true
-				break
+				if PageOfTrack(intThisTrack) <> intPage
+					blnOnOtherPages := true
+				if (objCovers[intThisTrack].ArtworkCount)
+					blnExistingArtwork := true
 			}
 
 		if (blnOnOtherPages)
@@ -979,23 +1020,27 @@ if (intCommand = 1)
 			else
 				blnOnOtherPages := (strAnswer = "Yes")
 		}
-
-		blnOverwrite := false
+		
+		blnWriteOK := !(blnExistingArtwork)
+			or (YesNoCancel(False, L(lBoardPastingSelected, lAppName), lBoardOverwrite) = "Yes")
+	
 		for intThisTrack, blnSelected in arrTrackSelected
-		{
-			if (PageOfTrack(intThisTrack) = intPage or blnOnOtherPages)
+			if (blnSelected)
 			{
-				if (objCovers[intThisTrack].ArtworkCount and !blnOverwrite)
-					blnOverwrite := (YesNoCancel(False, L(lBoardPastingSelected, lAppName), lCoverOverwrite) = "Yes")
-				if (!objCovers[intThisTrack].ArtworkCount or blnOverwrite)
-				{
-					Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1])
-					FileDelete, % objCovers[intThisTrack].CoverTempFilePathName
-					arrTrackSelected[intThisTrack] := false
-				}
+				if (PageOfTrack(intThisTrack) = intPage or blnOnOtherPages)
+					if (!objCovers[intThisTrack].ArtworkCount or blnWriteOK)
+					{
+						Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1])
+						FileDelete, % objCovers[intThisTrack].CoverTempFilePathName
+						arrTrackSelected[intThisTrack] := false
+					}
 			}
-		}
-		Gosub, DisplayCoversPage ; ### display only current Board
+		Gosub, DisplayCoversPage ; ### display only affected Covers?
+	}
+	else ; make master
+	{
+		arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
+		arrBoardPicFiles.Remove(intPosition + 1)
 	}
 }
 else if (intCommand = 2) ; load clipboard
@@ -1027,8 +1072,8 @@ else if (intCommand = 3) ; load file
 else if (intCommand = 4) ; remove
 	arrBoardPicFiles.Remove(intThisPosition)
 
-
-Gosub, DisplayBoard ; ### display only current Board
+if !(intCommand = 1 and intThisPosition = 1)
+	Gosub, DisplayBoard ; ### display only current Board
 
 return
 ;-----------------------------------------------------------
