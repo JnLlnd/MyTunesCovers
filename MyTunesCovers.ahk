@@ -660,41 +660,7 @@ if (intNbTracks > 0) ; do not check for boolean because intNbTracks can be -1
 		intPosition := intPosition + 1
 		intTrack := intTrack + 1
 		
-		GuiControl, Hide, lnkCoverLink%intPosition%
-		GuiControl, Show, picCover%intPosition%
-		
-		GuiControl, , lblNameLabel%intPosition%, % objCovers[intTrack].Name
-			. (objCovers[intTrack].ArtworkCount > 1 ? " (" . objCovers[intTrack].ArtworkCount . ")" : "")
-		GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCovers[intTrack].Artist . "`n"
-			. lAlbum . ": " . objCovers[intTrack].Album . "`n"
-			. "TrackID: " . objCovers[intTrack].TrackIDHigh . "/" . objCovers[intTrack].TrackIDLow . "`n"
-			. "ArtworkCount/Kind: " . objCovers[intTrack].ArtworkCount . " / Kind: " . objCovers[intTrack].Kind . "`n"
-			. "`n"
-			. "<A ID=""ShowPic"">" . lCoverShowPic . "</A>" . "`n"
-			. "<A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "`n"
-			. "`n"
-			. "<A ID=""Listen"">" . lCoverListen . "</A>" . "`n"
-			
-		if !StrLen(objCovers[intTrack].CoverTempFilePathName) or !FileExist(objCovers[intTrack].CoverTempFilePathName)
-			Cover_GetImage(objCovers[intTrack])
-		
-		if (arrTrackSelected[intTrack])
-			LoadPicControl(picCover%intPosition%, 5) ; Copy here
-		else if StrLen(objCovers[intTrack].CoverTempFilePathName)
-			LoadPicControl(picCover%intPosition%, 1, objCovers[intTrack].CoverTempFilePathName)
-		else 
-			LoadPicControl(picCover%intPosition%, 2) ; No cover
-
-		if (objCovers[intTrack].Kind <> 1)
-		{
-			GuiControl, Show, picCoverButton1%intPosition%
-			loop, 3
-				GuiControl, Hide, % "picCoverButton" . (A_Index + 1) . intPosition
-		}
-		else
-			loop, 4
-				GuiControl, Show, picCoverButton%A_Index%%intPosition%
-
+		gosub, DisplayCover
 		
 	} until (A_Index = intCoversPerPage) or (intTrack = intNbTracks)
 
@@ -725,6 +691,50 @@ if InStr(strLstFocused, "ComboBox")
 	GuiControl, Focus, %strLstFocused%
 else
 	GuiControl, Focus, lstArtists
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+DisplayCover:
+; in: intPosition and intTrack
+;-----------------------------------------------------------
+
+GuiControl, Hide, lnkCoverLink%intPosition%
+GuiControl, Show, picCover%intPosition%
+
+GuiControl, , lblNameLabel%intPosition%, % objCovers[intTrack].Name
+	. (objCovers[intTrack].ArtworkCount > 1 ? " (" . objCovers[intTrack].ArtworkCount . ")" : "")
+GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCovers[intTrack].Artist . "`n"
+	. lAlbum . ": " . objCovers[intTrack].Album . "`n"
+	. "TrackID: " . objCovers[intTrack].TrackIDHigh . "/" . objCovers[intTrack].TrackIDLow . "`n"
+	. "ArtworkCount/Kind: " . objCovers[intTrack].ArtworkCount . " / Kind: " . objCovers[intTrack].Kind . "`n"
+	. "`n"
+	. "<A ID=""ShowPic"">" . lCoverShowPic . "</A>" . "`n"
+	. "<A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "`n"
+	. "`n"
+	. "<A ID=""Listen"">" . lCoverListen . "</A>" . "`n"
+	
+if !StrLen(objCovers[intTrack].CoverTempFilePathName) or !FileExist(objCovers[intTrack].CoverTempFilePathName)
+	Cover_GetImage(objCovers[intTrack])
+
+if (arrTrackSelected[intTrack])
+	LoadPicControl(picCover%intPosition%, 5) ; Copy here
+else if StrLen(objCovers[intTrack].CoverTempFilePathName)
+	LoadPicControl(picCover%intPosition%, 1, objCovers[intTrack].CoverTempFilePathName)
+else 
+	LoadPicControl(picCover%intPosition%, 2) ; No cover
+
+if (objCovers[intTrack].Kind <> 1)
+{
+	GuiControl, Show, picCoverButton1%intPosition%
+	loop, 3
+		GuiControl, Hide, % "picCoverButton" . (A_Index + 1) . intPosition
+}
+else
+	loop, 4
+		GuiControl, Show, picCoverButton%A_Index%%intPosition%
 
 return
 ;-----------------------------------------------------------
@@ -864,56 +874,62 @@ CoverButtonClicked:
 
 StringReplace, strControl, A_GuiControl, picCoverButton
 intCommand := SubStr(strControl, 1, 1)
-intThisPosition := SubStr(strControl, 2)
-intThisTrack := TrackAtPosition(intThisPosition)
+intPosition := SubStr(strControl, 2)
+intTrack := TrackAtPosition(intPosition)
 
+###_D(intTrack . " = " . objCovers[intTrack].ArtworkCount)
 ; The first command can be executed on any kind of track
 if (intCommand = 1) ; Clip
 {
-	if StrLen(objCovers[intThisTrack].CoverTempFilePathName)
+	if StrLen(objCovers[intTrack].CoverTempFilePathName)
 	{
-		arrBoardPicFiles.Insert(1, objCovers[intThisTrack].CoverTempFilePathName)
+		arrBoardPicFiles.Insert(1, objCovers[intTrack].CoverTempFilePathName)
 		Gosub, DisplayBoard
 	}
 	return
 }
 
 ; The following commands can only be executed on file track
-if !(objCovers[intThisTrack].Kind)
+if !(objCovers[intTrack].Kind)
 {
 	Oops(lCoverUnknownTrackKind, lAppName)
 	return
 }
-if (objCovers[intThisTrack].Kind > 1)
+if (objCovers[intTrack].Kind > 1)
 {
-	intKind := objCovers[intThisTrack].Kind
+	intKind := objCovers[intTrack].Kind
 	Oops(lCoverUnsupportedTrackKind, arrTrackKinds%intKind%, lAppName)
 	return
 }
 
 ; Now, we know kind is 1 (File track)
 if (intCommand = 2) ; Select
-	arrTrackSelected[intThisTrack] := !arrTrackSelected[intThisTrack]
+	arrTrackSelected[intTrack] := !arrTrackSelected[intTrack]
 else if (intCommand = 3) ; Paste here
 {
-	blnGo := !(objCovers[intThisTrack].ArtworkCount)
+	blnGo := !(objCovers[intTrack].ArtworkCount)
 	if !(blnGo)
 		blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), lCoverOverwrite) = "Yes")
 	if (blnGo)
-		Cover_SaveCoverToTune(objCovers[intThisTrack], arrBoardPicFiles[1])
+		Cover_SaveCoverToTune(objCovers[intTrack], arrBoardPicFiles[1])
 }
 else if (intCommand = 4) ; Delete
 {
-	blnGo := !(objCovers[intThisTrack].ArtworkCount)
+	blnGo := !(objCovers[intTrack].ArtworkCount)
 	if !(blnGo)
 		blnGo := (YesNoCancel(False, L(lCoverDeleteTitle, lAppName), lCoverDeletePrompt) = "Yes")
 	if (blnGo)
-		Cover_DeleteCoverFromTune(objCovers[intThisTrack])
+		Cover_DeleteCoverFromTune(objCovers[intTrack])
 }
 
 if (intCommand >= 3)
-	FileDelete, % objCovers[intThisTrack].CoverTempFilePathName
-Gosub, DisplayCoversPage ; ### display only current cover
+{
+	objCovers[intTrack].CoverTempFilePathName := ""
+	arrTrackSelected[intTrack] := false
+	objCovers[intTrack].ArtworkCount := Cover_GetArtworkCount(objCovers[intTrack])
+}
+
+Gosub, DisplayCover
 
 return
 ;-----------------------------------------------------------

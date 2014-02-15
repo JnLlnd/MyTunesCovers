@@ -154,6 +154,17 @@ Cover_GetImage(objThisCover)
 
 
 ;-----------------------------------------------------------
+Cover_GetArtworkCount(objThisCover)
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_GetArtworkCount(objThisCover)
+	else
+		return -1
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 Cover_LoadSource() ; NOT USED
 {
 	###_D("Load: " . strCoverSourceType)

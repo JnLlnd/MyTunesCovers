@@ -229,6 +229,16 @@ iTunes_GetImage(objThisCover)
 
 
 ;-----------------------------------------------------------
+iTunes_GetArtworkCount(objThisCover)
+{
+	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
+
+	return objTrack.Artwork.Count
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 iTunes_ReleaseSource() ; NOT USED
 {
 }
