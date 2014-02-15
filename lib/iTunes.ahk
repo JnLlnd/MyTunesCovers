@@ -333,13 +333,11 @@ iTunes_GetTempImageFile(objTrack, strNameNoext)
 		*/
 		strPathNameNoext := strCoversCacheFolder . strNameNoext
 		if (objArtwork.Format = 1)
-			strExtension := "bmp"
-		else if (objArtwork.Format = 2)
 			strExtension := "jpg"
-		else if (objArtwork.Format = 4)
-			strExtension := "gif"
-		else if (objArtwork.Format = 5)
+		else if (objArtwork.Format = 2)
 			strExtension := "png"
+		else if (objArtwork.Format = 3)
+			strExtension := "bmp"
 		else
 			strExtension := ""
 		strPathNameExt := strPathNameNoext . "." . strExtension

@@ -1052,8 +1052,8 @@ else if (intCommand = 2) ; load clipboard
 		Oops(lInvalidClipboardContent)
 		return
 	}
-	strLoadClipboardFilename := strCoversCacheFolder . Cover_GenerateGUID() . ".jpg" ; ### jpg best format? make it option?
-	Gdip_SaveBitmapToFile(ptrBitmapClipbpard, strLoadClipboardFilename, 95) ; 95 = quality
+	strLoadClipboardFilename := strCoversCacheFolder . Cover_GenerateGUID() . ".JPG" ; ### jpg best format? make it option?
+	Gdip_SaveBitmapToFile(ptrBitmapClipbpard, strLoadClipboardFilename, 95) ; quality
 	ptrBitmapClipbpard :=
 
 	if StrLen(strLoadClipboardFilename)
@@ -1174,7 +1174,7 @@ return
 ; ------------------------------------------------
 Check4Update: ; ### NEED TEST
 ; ------------------------------------------------
-Gui, 1:+OwnDialogs 
+Gui, +OwnDialogs 
 IniRead, strLatestSkipped, %strIniFile%, global, strLatestSkipped, 0.0
 strLatestVersion := Url2Var("https://raw.github.com/JnLlnd/CSVBuddy/master/latest-version.txt") ; ###
 
@@ -1261,6 +1261,7 @@ Url2Var(strUrl)
 YesNoCancel(blnWithCancel, strTitle, strPrompt)
 ; ------------------------------------------------
 {
+	Gui, +OwnDialogs
 	MsgBox, % 4 - blnWithCancel, %strTitle%, %strPrompt%
 	IfMsgBox, Yes
 		return "Yes"
@@ -1276,7 +1277,7 @@ YesNoCancel(blnWithCancel, strTitle, strPrompt)
 Oops(strMessage, objVariables*)
 ; ------------------------------------------------
 {
-	Gui, 1:+OwnDialogs
+	Gui, +OwnDialogs
 	MsgBox, 48, % L(lFuncOopsTitle, lAppName, lAppVersion), % L(strMessage, objVariables*)
 }
 ; ------------------------------------------------
