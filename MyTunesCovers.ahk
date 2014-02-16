@@ -4,6 +4,9 @@
 	Written using AutoHotkey_L v1.1.09.03+ (http://l.autohotkey.net/)
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
+	2014-02-## v0.5 ALPHA
+	* 
+
 	2014-02-15 v0.4 ALPHA
 	* Use iTunes persistent IDs
 	* Update only file track, handle error message for other kinds
@@ -51,7 +54,7 @@
 
 ;@Ahk2Exe-SetName MyTunesCovers
 ;@Ahk2Exe-SetDescription iTunes Cover Manager. Freeware.
-;@Ahk2Exe-SetVersion 0.4
+;@Ahk2Exe-SetVersion 0.5
 ;@Ahk2Exe-SetOrigFilename MyTunesCovers.exe
 
 
@@ -64,7 +67,7 @@
 #KeyHistory 0
 ListLines, Off
 
-strCurrentVersion := "0.4 alpha" ; always "." between sub-versions, eg "0.1.2"
+strCurrentVersion := "0.5 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\MyTunesCovers_LANG.ahk
 #Include %A_ScriptDir%\lib\Cover.ahk
