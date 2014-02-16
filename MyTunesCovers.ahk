@@ -11,10 +11,8 @@
 	- sometimes the image exist but does not show up, overwrite image and then it is ok
 	
 	TODO
-	- create cover cache folder if it does not exist
 	- error if images folder not present
 	- embed images folder in exe or zip?
-	- progress bar while creating, saving and loading source
 	- move source setting in setting dialog box
 	- in source setting, load only albums with at least one no cover
 	- progress bar while paste to selected
@@ -24,6 +22,8 @@
 	2014-02-## v0.5 ALPHA
 	* prompt before saving source
 	* reload source if not matching the iTunes library
+	* progress bar while creating, saving and loading source index
+	* create cover cache folder if it does not exist
 	* 
 
 	2014-02-15 v0.4 ALPHA
@@ -176,7 +176,7 @@ IfNotExist, %strIniFile%
 		(LTrim Join`r`n
 			[Global]
 			AlbumArtistDelimiter=%strAlbumArtistDelimiter%
-			CoversCacheFolder=%A_ScriptDir%\covers_cache\
+			CoversCacheFolder=%strCoversCacheFolder%
 			PictureSize=%intPictureSize%
 			SearchLink1=%strSearchLink1%
 			SearchLink2=%strSearchLink2%
@@ -473,6 +473,16 @@ InitSources:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 
+if !FileExist(strCoversCacheFolder)
+{
+	FileCreateDir, %strCoversCacheFolder%
+	if (ErrorLevel)
+	{
+		Oops(L(lCoverErrorCreatingTempFolder, strCoversCacheFolder, lAppName))
+		ExitApp
+	}
+}
+	
 if (radSourceITunes)
 	strSource := "iTunes"
 else
@@ -1381,7 +1391,6 @@ Oops(strMessage, objVariables*)
 ; ------------------------------------------------
 
 
-
 ; ------------------------------------------------
 L(strMessage, objVariables*)
 ; ------------------------------------------------
@@ -1399,3 +1408,41 @@ L(strMessage, objVariables*)
 ; ------------------------------------------------
 
 
+; ------------------------------------------------
+ProgressStart(intType, strText, intMax := "")
+; ------------------------------------------------
+{
+	if (intType = 1)
+		Progress, R0-%intMax% FS8 A, %strText%, , , MS Sans Serif
+	else
+	{
+		StringReplace, strText, strText, ##, 0
+		SB_SetText(strText, -intType)
+	}
+}
+; ------------------------------------------------
+
+
+; ------------------------------------------------
+ProgressUpdate(intType, intActual, intMax, strText)
+; ------------------------------------------------
+{
+	StringReplace, strText, strText, ##, % Round(intActual*100/intMax)
+	if (intType = 1)
+		Progress, %intActual%, %strText%
+	else
+		SB_SetText(strText, -intType)
+}
+; ------------------------------------------------
+
+
+; ------------------------------------------------
+ProgressStop(intType)
+; ------------------------------------------------
+{
+	if (intType = 1)
+		Progress, Off
+	else
+		SB_SetText("", -intType)
+}
+; ------------------------------------------------
