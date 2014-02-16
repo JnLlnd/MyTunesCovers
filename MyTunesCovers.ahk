@@ -4,15 +4,21 @@
 	Written using AutoHotkey_L v1.1.09.03+ (http://l.autohotkey.net/)
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
-	2014-02-## v0.4 ALPHA
-	* Display Board with empty images, support resize
-	* Links inside covers to display cover, clip cover to board
-	* Display artwork count in cover
-	* Move backup board cover to board top, load master from file or clipboard
+	2014-02-15 v0.4 ALPHA
 	* Use iTunes persistent IDs
-	* Checkbox to display only covers without artwork
-	* Copy master to cover, delete cover
 	* Update only file track, handle error message for other kinds
+	* Focus on artists or albums dropdown for easy keyboard navigation
+	* Disable Gui during covers display
+	* Checkbox to display only covers without artwork
+	* Select all and unselect all covers buttons, single page or multipage
+	* Display artwork count in cover
+	* Search image links in covers
+	* Covers buttons to display cover, clip cover to board
+	* Board button to paste master cover to selected covers
+	* Button to delete cover
+	* Display Board with empty images, support resize
+	* Board buttons to load board from clipboard or file, and remove cover from board
+	* Move backup board cover to board top
 	
 	2014-01-17 v0.3 ALPHA
 	* Reset all albums views when select All artists
