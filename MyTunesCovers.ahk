@@ -140,6 +140,8 @@ LoadIniFile:
 strAlbumArtistDelimiter := chr(182)
 strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
 intPictureSize := 160
+strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=""~artist~"" ""~album~"""
+strSearchLink2 := "http://www.covermytunes.com/search.php?search_query=~artist~ ~album~"
 
 IfNotExist, %strIniFile%
 	FileAppend,
@@ -148,6 +150,8 @@ IfNotExist, %strIniFile%
 			AlbumArtistDelimiter=%strAlbumArtistDelimiter%
 			CoversCacheFolder=%A_ScriptDir%\covers_cache\
 			PictureSize=%intPictureSize%
+			SearchLink1=%strSearchLink1%
+			SearchLink2=%strSearchLink2%
 )
 		, %strIniFile%
 Loop
@@ -158,9 +162,11 @@ Loop
 	else
 		break
 }
-IniRead, strLatestSkipped, %strIniFile%, Global, LatestVersionSkipped, 0.0
 IniRead, strCoversCacheFolder, %strIniFile%, Global, CoversCacheFolder, %strCoversCacheFolder%
 IniRead, intPictureSize, %strIniFile%, Global, PictureSize, %intPictureSize%
+IniRead, strSearchLink1, %strIniFile%, Global, SearchLink1, %strSearchLink1%
+IniRead, strSearchLink2, %strIniFile%, Global, SearchLink2, %strSearchLink2%
+IniRead, strLatestSkipped, %strIniFile%, Global, LatestVersionSkipped, 0.0
 
 return
 ;------------------------------------------------------------
@@ -706,15 +712,16 @@ GuiControl, Show, picCover%intPosition%
 
 GuiControl, , lblNameLabel%intPosition%, % objCovers[intTrack].Name
 	. (objCovers[intTrack].ArtworkCount > 1 ? " (" . objCovers[intTrack].ArtworkCount . ")" : "")
-GuiControl, , lnkCoverLink%intPosition%, % lArtist . ": " . objCovers[intTrack].Artist . "`n"
+GuiControl, , lnkCoverLink%intPosition%, % ""
+	. "<A ID=""ShowPic"">" . lCoverShowPic . "</A>" . "  "
+	. "<A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "  "
+	. "<A ID=""Listen"">" . lCoverListen . "</A>" . "  "
+	. "<A ID=""Search1"">" . lCoverSearch . "1</A>" . "  "
+	. "<A ID=""Search2"">" . lCoverSearch . "2</A>" . "`n"
+	. lArtist . ": " . objCovers[intTrack].Artist . "`n"
 	. lAlbum . ": " . objCovers[intTrack].Album . "`n"
 	. "TrackID: " . objCovers[intTrack].TrackIDHigh . "/" . objCovers[intTrack].TrackIDLow . "`n"
-	. "ArtworkCount/Kind: " . objCovers[intTrack].ArtworkCount . " / Kind: " . objCovers[intTrack].Kind . "`n"
-	. "`n"
-	. "<A ID=""ShowPic"">" . lCoverShowPic . "</A>" . "`n"
-	. "<A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "`n"
-	. "`n"
-	. "<A ID=""Listen"">" . lCoverListen . "</A>" . "`n"
+	. "ArtworkCount/Kind: " . objCovers[intTrack].ArtworkCount . " / " . objCovers[intTrack].Kind . "`n"
 	
 if !StrLen(objCovers[intTrack].CoverTempFilePathName) or !FileExist(objCovers[intTrack].CoverTempFilePathName)
 	Cover_GetImage(objCovers[intTrack])
@@ -877,7 +884,6 @@ intCommand := SubStr(strControl, 1, 1)
 intPosition := SubStr(strControl, 2)
 intTrack := TrackAtPosition(intPosition)
 
-###_D(intTrack . " = " . objCovers[intTrack].ArtworkCount)
 ; The first command can be executed on any kind of track
 if (intCommand = 1) ; Clip
 {
@@ -939,23 +945,34 @@ return
 CoverLinkClicked:
 ;-----------------------------------------------------------
 strCommand := ErrorLevel
-StringReplace, intThisPosition, A_GuiControl, lnkCoverLink
-
+StringReplace, intPosition, A_GuiControl, lnkCoverLink
+if Instr(strCommand, "Search")
+{
+	if (strCommand = "Search1")
+		StringReplace, strSearchURL, strSearchLink1, ~artist~, % objCovers[intTrack].Artist, All
+	else
+		StringReplace, strSearchURL, strSearchLink2, ~artist~, % objCovers[intTrack].Artist, All
+	StringReplace, strSearchURL, strSearchURL, ~album~, % objCovers[intTrack].Album, All
+	StringReplace, strSearchURL, strSearchURL, %A_Space%, +, All
+	StringReplace, strSearchURL, strSearchURL, `", `%22, All
+}
 if (strCommand = "ShowPic")
 {
 	GuiControl, Hide, %A_GuiControl%
-	GuiControl, Show, picCover%intThisPosition%
+	GuiControl, Show, picCover%intPosition%
 }
 else if (strCommand = "ViewPic")
 {
-	strFilename := objCovers[intThisTrack].CoverTempFilePathName
+	strFilename := objCovers[intTrack].CoverTempFilePathName
 	if FileExist(strFilename)
 		Run, %strFilename%
 	else
 		Oops(lCoverFileNotFound, strFilename)
 }
 else if (strCommand = "Listen")
-	Cover_PLay(objCovers[intThisTrack])
+	Cover_PLay(objCovers[intTrack])
+else if InStr(strCommand, "Search")
+	Run, %strSearchURL%
 
 return
 ;-----------------------------------------------------------
@@ -973,9 +990,8 @@ loop, %intMaxNbRow%
 		loop, 4
 			GuiControl, Show, % "picBoardButton" . A_Index . intThisPosition
 		strBoardLink := ""
-			. "<A ID=""ViewPic" . A_Index . """>" . arrBoardPicFiles[A_Index] . "</A>" . "`n"
-			. "`n"
-			. "<A ID=""ShowPic" . A_Index . """>" . lBoardShowPic . "</A>" . "`n"
+			. "<A ID=""ShowPic" . A_Index . """>" . lBoardShowPic . "</A>" . "  "
+			. "<A ID=""ViewPic" . A_Index . """>" . lBoardViewPic . "</A>" . "  "
 		GuiControl, , lnkBoardLink%A_Index%, %strBoardLink%
 	}
 	else
