@@ -4,7 +4,26 @@
 	Written using AutoHotkey_L v1.1.09.03+ (http://l.autohotkey.net/)
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
+	BUGS
+	- empty cover in a new selection continue to show the previous track at that position
+	- empty cover in a new selection remember the number of artwork in the previous track at that position
+	- url for search1 (and 2?) is not updated when clicking on serch the 2nd time for a selection
+	- sometimes the image exist but does not show up, overwrite image and then it is ok
+	
+	TODO
+	- create cover cache folder if it does not exist
+	- error if images folder not present
+	- embed images folder in exe or zip?
+	- progress bar while creating, saving and loading source
+	- move source setting in setting dialog box
+	- in source setting, load only albums with at least one no cover
+	- progress bar while paste to selected
+	- when selecting all Artists drop down, preserve the selection of Albums
+	- button to delete all selected covers
+
 	2014-02-## v0.5 ALPHA
+	* prompt before saving source
+	* reload source if not matching the iTunes library
 	* 
 
 	2014-02-15 v0.4 ALPHA
@@ -226,7 +245,7 @@ Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+30 yp, %lSource%
 Gui, Font
 Gui, Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, % L(lSourceITunes)
-Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource, % L(lSourceMP3)
+Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled, % L(lSourceMP3)
 Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+20 yp, %lArtistsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
@@ -460,7 +479,25 @@ else
 	strSource := "MP3"
 
 if (Cover_InitCoversSource(strSource))
+{
+	if FileExist(A_ScriptDir . "\" . strCoverSourceType . "_" . strSourceCacheFilenameExtension)
+	{
+		strAnswer := YesNoCancel(True, lAppName, lLoadCache)
+		if (strAnswer  = "Yes")
+			Cover_LoadSource() ; use cache
+		else if (strAnswer = "No")
+		{
+			FileDelete, %A_ScriptDir%\%strCoverSourceType%_%strSourceCacheFilenameExtension%
+			Cover_InitArtistsAlbumsIndex() ; refresh lists
+		}
+		else
+			return
+	}
+	else
+		Cover_InitArtistsAlbumsIndex() ; have to refresh lists
+	
 	Gosub, PopulateDropdownLists
+}
 else
 	Oops(lInitSourceError)
 
@@ -506,10 +543,11 @@ ExitApp ; will call CleanUpBeforeQuit
 ;-----------------------------------------------------------
 CleanUpBeforeQuit:
 ;-----------------------------------------------------------
-Cover_ReleaseSource()
+if !FileExist(A_ScriptDir . "\" . strCoverSourceType . "_" . strSourceCacheFilenameExtension)
+	if YesNoCancel(False, L(lSaveSourceTitle, lAppName), L(lSaveSourcePrompt, strCoverSourceType, lAppName)) = "Yes"
+		Cover_SaveSource()
 Gdip_Shutdown(objGdiToken)
-ptrObjITunesunesApp := Object(objITunesunesApp)
-ObjRelease(ptrObjITunesunesApp)
+Cover_ReleaseSource()
 if StrLen(strCoversCacheFolder)
 	FileDelete, %strCoversCacheFolder%\*.*
 
@@ -637,13 +675,32 @@ objCovers := Object()
 
 Gui, Submit, NoHide
 
+if !(blnResizeInProgress)
+	Gosub, DisableGui ; protect display cover from user clicks
+
 intNbTracks := Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover) - 1 ; -1 because of the last comma in lists
 
 ; if (intNbTracks < 0)
 ;	return
 
 loop, %intNbTracks%
-	objCovers.Insert(A_Index, Cover_GetCover(A_Index))
+{
+	objNewCover := Cover_GetCover(A_Index)
+	if objNewCover = -1
+	{
+		if !(blnResizeInProgress)
+			Gosub, EnableGui
+		if YesNoCancel(False, L(lITunesNeedRecacheTitle, lAppName), lITunesNeedRecachePrompt) = "Yes"
+		{
+			FileDelete, %A_ScriptDir%\%strCoverSourceType%_%strSourceCacheFilenameExtension%
+			Cover_InitArtistsAlbumsIndex()
+			Gosub, PopulateDropdownLists
+		}
+		return
+	}
+
+	objCovers.Insert(A_Index, objNewCover)
+}
 
 intPage := 1
 intNbPages := Ceil(intNbTracks / intCoversPerPage)

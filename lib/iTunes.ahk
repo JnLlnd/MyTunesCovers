@@ -37,6 +37,11 @@ iTunes_InitArtistsAlbumsIndex()
 {
 	global strAlbumArtistDelimiter
 	
+	objArtistsIndex := Object()
+	objAlbumsIndex := Object()
+	objArtistsAlbumsIndex := Object()
+	objAlbumsOfArtistsIndex := Object()
+
 	Loop, % objITunesTracks.Count ; around 75 sec./10k tracks to build 3 index for 27 k tracks
 	{
 		objITunesTrack := objITunesTracks.Item(A_Index)
@@ -88,6 +93,8 @@ iTunes_InitArtistsAlbumsIndex()
 		if (A_Index = intTestLimit)
 			break
 	}
+	
+	return true
 
 	/*
 	for strArtist, strTracks in objArtistsIndex
@@ -138,6 +145,7 @@ iTunes_LoadSource()
 		%strObjName%.Insert(arrRecord[2], arrRecord[3])
     }
 	TrayTip
+	return true
 }
 ;-----------------------------------------------------------
 
@@ -191,7 +199,7 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "", blnOnlyNoCover := false)
 iTunes_GetCover(intTrackIndex)
 {
 	if (arrTracks.MaxIndex() = "" ; if arrTracks has no items, it returns an empty string
-		or intTracksArrayIndex => arrTracks.MaxIndex()) ; the last item if the array is always empty
+		or intTrackIndex => arrTracks.MaxIndex()) ; the last item if the array is always empty
 		return false
 
 	; ###_D("arrTracks[" . intTrackIndex . "]: " . arrTracks[intTrackIndex])
@@ -201,7 +209,7 @@ iTunes_GetCover(intTrackIndex)
 	objTrack := objITunesTracks.ItemByPersistentID(arrTrackIDs[1], arrTrackIDs[2])
 
 	if !StrLen(objTrack.Name)
-		###_D("objTrack.Name empty. Need to recache the library?")
+		return -1
 
 	objThisCover := New Cover()
 	
@@ -239,8 +247,10 @@ iTunes_GetArtworkCount(objThisCover)
 
 
 ;-----------------------------------------------------------
-iTunes_ReleaseSource() ; NOT USED
+iTunes_ReleaseSource()
 {
+	ptrObjITunesunesApp := Object(objITunesunesApp)
+	ObjRelease(ptrObjITunesunesApp)
 }
 ;-----------------------------------------------------------
 

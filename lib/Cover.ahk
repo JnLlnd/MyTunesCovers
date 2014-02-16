@@ -88,34 +88,34 @@ class Cover
 ;-----------------------------------------------------------
 Cover_InitCoversSource(strSource)
 {
-	strCoverSourceType := strSource
+	strCoverSourceType := strSource ; global variable
 
-	if (strCoverSourceType = "MP3")
-	{
-		###_D("Load MP3 not implemented") ; %strCoverSourceType%_LoadSource()
-		return false
-	}
+	if StrLen(strCoverSourceType)
+		 return %strCoverSourceType%_InitCoversSource()
 	else
-	{
-		blnSourceOK := %strCoverSourceType%_InitCoversSource()
-		if (blnSourceOK)
-		{
-			if FileExist(A_ScriptDir . "\" . strCoverSourceType . "_" . strSourceCacheFilenameExtension)
-			{
-				MsgBox, 36, %lAppName%, %lLoadCache% ; ### or if number of tracks changed
-				IfMsgBox, Yes
-					%strCoverSourceType%_LoadSource() ; use cache
-				IfMsgBox, No
-				{
-					FileDelete, %A_ScriptDir%\%strCoverSourceType%_%strSourceCacheFilenameExtension%
-					%strCoverSourceType%_InitArtistsAlbumsIndex() ; refresh lists
-				}
-			}
-			else
-				%strCoverSourceType%_InitArtistsAlbumsIndex() ; have to refresh lists
-		}
-		return blnSourceOK
-	}
+		return false
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_LoadSource()
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_LoadSource()
+	else
+		return false
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_InitArtistsAlbumsIndex()
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_InitArtistsAlbumsIndex()
+	else
+		return false
 }
 ;-----------------------------------------------------------
 
@@ -165,24 +165,13 @@ Cover_GetArtworkCount(objThisCover)
 
 
 ;-----------------------------------------------------------
-Cover_LoadSource() ; NOT USED
+Cover_SaveSource()
 {
-	###_D("Load: " . strCoverSourceType)
-	return %strCoverSourceType%_LoadSource()
-}
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-Cover_ReleaseSource()
-{
-	if (strCoverSourceType = "MP3")
-		###_D("Save MP3 not implemented") ; %strCoverSourceType%_SaveSource()
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_SaveSource()
 	else
-		if !FileExist(A_ScriptDir . "\" . strCoverSourceType . "_" . strSourceCacheFilenameExtension)
-			%strCoverSourceType%_SaveSource()
+		return -1
 }
-
 ;-----------------------------------------------------------
 
 
@@ -213,6 +202,17 @@ Cover_Play(objCover)
 {
 	if StrLen(strCoverSourceType)
 		return %strCoverSourceType%_Play(objCover)
+	else
+		return false
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_ReleaseSource()
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%Cover_ReleaseSource()
 	else
 		return false
 }
