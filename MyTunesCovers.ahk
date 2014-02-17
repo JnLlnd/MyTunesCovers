@@ -5,16 +5,12 @@
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
 	BUGS
-	- empty cover in a new selection continue to show the previous track at that position
-	- empty cover in a new selection remember the number of artwork in the previous track at that position
-	- url for search1 (and 2?) is not updated when clicking on serch the 2nd time for a selection
 	
 	TODO
 	- embed images folder in exe or zip?
 	- move source setting in setting dialog box
 	- in source setting, load only albums with at least one no cover
 	- progress bar while paste to selected
-	- when selecting all Artists drop down, preserve the selection of Albums
 	- button to delete all selected covers
 
 	2014-02-## v0.5 ALPHA
@@ -23,6 +19,7 @@
 	* progress bar while creating, saving and loading source index
 	* create cover cache folder if it does not exist
 	* display error if images folder not present
+	* when selecting all Artists drop down, preserve the selection of Albums
 	* 
 
 	2014-02-15 v0.4 ALPHA
@@ -211,6 +208,7 @@ ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\no_cover-20
 ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\fill_cover-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\empty-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\copy_here-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapError := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\error-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\clip-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\select-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\paste_here-200x200.png") ; if absent, url download from repo ? ###
@@ -398,7 +396,7 @@ loop, %intCoversPerPage%
 		loop, 4
 		{
 			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicCoverButton" . A_Index . intIndex . " gCoverButtonClicked hidden"
-			LoadPicControl(picCoverButton%A_Index%%intIndex%, (A_Index + 5))
+			LoadPicControl(picCoverButton%A_Index%%intIndex%, (A_Index + 19))
 		}
 		Gui, Font, s8 w700, Arial
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index%
@@ -526,9 +524,11 @@ strArtistsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllArtist
 for strArtist, strTracks in objArtistsIndex
 	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
 GuiControl, , lstArtists, %strArtistsDropDownList%
-GuiControl, Choose, lstArtists, 1
 
 Gosub, PopulateAlbumDropdownList
+
+GuiControl, Choose, lstArtists, 1
+GuiControl, Choose, lstAlbums, 1
 
 return
 ;-----------------------------------------------------------
@@ -541,7 +541,6 @@ strAlbumsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums
 for strAlbum, strTracks in objAlbumsIndex
 	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
 GuiControl, , lstAlbums, %strAlbumsDropDownList%
-GuiControl, Choose, lstAlbums, 1
 
 return
 ;-----------------------------------------------------------
@@ -594,12 +593,20 @@ return
 ArtistsDropDownChanged:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
+
+strPreviousAlbum := ""
 if (lstArtists = A_Space . lDropDownAllArtists)
+{
+	strPreviousAlbum := lstAlbums
 	Gosub, PopulateAlbumDropdownList
+	GuiControl, ChooseString, lstAlbums, %strPreviousAlbum%
+}
 else
+{
 	GuiControl, , lstAlbums, % strAlbumArtistDelimiter . A_Space
 		. lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
-GuiControl, Choose, lstAlbums, 1
+	GuiControl, Choose, lstAlbums, 1
+}
 
 Gosub, DisplayCovers
 
@@ -809,7 +816,10 @@ if !StrLen(objCovers[intTrack].CoverTempFilePathName) or !FileExist(objCovers[in
 if (arrTrackSelected[intTrack])
 	LoadPicControl(picCover%intPosition%, 5) ; Copy here
 else if StrLen(objCovers[intTrack].CoverTempFilePathName)
-	LoadPicControl(picCover%intPosition%, 1, objCovers[intTrack].CoverTempFilePathName)
+	if FileExist(objCovers[intTrack].CoverTempFilePathName)
+		LoadPicControl(picCover%intPosition%, 1, objCovers[intTrack].CoverTempFilePathName)
+	else
+		LoadPicControl(picCover%intPosition%, 6) ; Error
 else 
 	LoadPicControl(picCover%intPosition%, 2) ; No cover
 
@@ -867,11 +877,11 @@ return
 ;-----------------------------------------------------------
 LoadPicControl(ByRef picControl, intPicType, strFile := "")
 ; intPicType =
-; 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 copy here
-; 6 clip cover button / 7 select cover button / 8 paste cover button / 9 delete cover button
+; 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 copy here / 6 error
 ; 10 make master board button / 11 load clipboard board button / 12 load file board button / 13 remove board button / 14 paste to selected board button 1
+; 20 clip cover button / 21 select cover button / 22 paste cover button / 23 delete cover button
 {
-	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapCopyHere
+	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapCopyHere, ptrBitmapError
 		, ptrBitmapCoverButton1, ptrBitmapCoverButton2, ptrBitmapCoverButton3, ptrBitmapCoverButton4
 		, ptrBitmapBoardButton1, ptrBitmapBoardButton2, ptrBitmapBoardButton3, ptrBitmapBoardButton4
 		, ptrBitmapBoardButton0
@@ -891,13 +901,7 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 	if (intPicType = 5)
 		ptrBitmap := ptrBitmapCopyHere
 	if (intPicType = 6)
-		ptrBitmap := ptrBitmapCoverButton1
-	if (intPicType = 7)
-		ptrBitmap := ptrBitmapCoverButton2
-	if (intPicType = 8)
-		ptrBitmap := ptrBitmapCoverButton3
-	if (intPicType = 9)
-		ptrBitmap := ptrBitmapCoverButton4
+		ptrBitmap := ptrBitmapError
 	if (intPicType = 10)
 		ptrBitmap := ptrBitmapBoardButton1
 	if (intPicType = 11)
@@ -908,6 +912,14 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 		ptrBitmap := ptrBitmapBoardButton4
 	if (intPicType = 14)
 		ptrBitmap := ptrBitmapBoardButton0
+	if (intPicType = 20)
+		ptrBitmap := ptrBitmapCoverButton1
+	if (intPicType = 21)
+		ptrBitmap := ptrBitmapCoverButton2
+	if (intPicType = 22)
+		ptrBitmap := ptrBitmapCoverButton3
+	if (intPicType = 23)
+		ptrBitmap := ptrBitmapCoverButton4
 	
 	intWidth := Gdip_GetImageWidth(ptrBitmap)
 	intHeight := Gdip_GetImageHeight(ptrBitmap)
