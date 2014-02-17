@@ -8,10 +8,8 @@
 	- empty cover in a new selection continue to show the previous track at that position
 	- empty cover in a new selection remember the number of artwork in the previous track at that position
 	- url for search1 (and 2?) is not updated when clicking on serch the 2nd time for a selection
-	- sometimes the image exist but does not show up, overwrite image and then it is ok
 	
 	TODO
-	- error if images folder not present
 	- embed images folder in exe or zip?
 	- move source setting in setting dialog box
 	- in source setting, load only albums with at least one no cover
@@ -24,6 +22,7 @@
 	* reload source if not matching the iTunes library
 	* progress bar while creating, saving and loading source index
 	* create cover cache folder if it does not exist
+	* display error if images folder not present
 	* 
 
 	2014-02-15 v0.4 ALPHA
@@ -203,19 +202,24 @@ return
 ;-----------------------------------------------------------
 InitPersistentCovers:
 ;-----------------------------------------------------------
-ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\no_cover-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\fill_cover-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\empty-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\copy_here-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\clip-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\select-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\paste_here-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\delete-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton0 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\paste_to_selected-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\make_master-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\load_clipboard-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\load_file-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir  . "\images\remove-200x200.png") ; if absent, url download from repo ? ###
+if !FileExist(A_ScriptDir . "\images\")
+{
+	Oops(lCoverNoPersistentImages, A_ScriptDir . "\images\", lAppName)
+	ExitApp
+}
+ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\no_cover-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\fill_cover-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\empty-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\copy_here-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\clip-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\select-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\paste_here-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\delete-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton0 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\paste_to_selected-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\make_master-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\load_clipboard-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\load_file-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\remove-200x200.png") ; if absent, url download from repo ? ###
 
 return
 ;-----------------------------------------------------------
@@ -478,7 +482,7 @@ if !FileExist(strCoversCacheFolder)
 	FileCreateDir, %strCoversCacheFolder%
 	if (ErrorLevel)
 	{
-		Oops(L(lCoverErrorCreatingTempFolder, strCoversCacheFolder, lAppName))
+		Oops(lCoverErrorCreatingTempFolder, strCoversCacheFolder, lAppName)
 		ExitApp
 	}
 }
@@ -1022,6 +1026,8 @@ CoverLinkClicked:
 ;-----------------------------------------------------------
 strCommand := ErrorLevel
 StringReplace, intPosition, A_GuiControl, lnkCoverLink
+intTrack := TrackAtPosition(intPosition)
+
 if Instr(strCommand, "Search")
 {
 	if (strCommand = "Search1")

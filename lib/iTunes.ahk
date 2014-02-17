@@ -357,7 +357,7 @@ SaveBatch(strData)
 	until !ErrorLevel or (A_Index > 50) ; after 1 second (20ms x 50), we have a problem
 	
 	if (ErrorLevel)
-		Oops("Error writing" . A_ScriptDir "\" . strITunesCacheFilename)
+		Oops(lErrorWritingCacheFile, A_ScriptDir "\" . strITunesCacheFilename)
 }
 ;-----------------------------------------------------------
 
