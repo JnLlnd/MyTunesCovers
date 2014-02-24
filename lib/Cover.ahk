@@ -11,6 +11,7 @@ global objArtistsIndex := Object()
 global objAlbumsIndex := Object()
 global objArtistsAlbumsIndex := Object()
 global objAlbumsOfArtistsIndex := Object()
+global objArtistsOfAlbumsIndex := Object()
 global strCoverSourceType ; "iTunes" currently implemented, "MP3" coming
 global strSourceCacheFilenameExtension := "SourceCache.csv"
 

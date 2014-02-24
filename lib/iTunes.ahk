@@ -7,7 +7,7 @@
 */
 ;===============================================
 
-global intTestLimit := 30000
+global intTestLimit := 3000
 global intLinesPerBatch := 5000
 global intNbLines2Save := 0
 global objITunesunesApp := Object()
@@ -42,6 +42,7 @@ iTunes_InitArtistsAlbumsIndex()
 	objAlbumsIndex := Object()
 	objArtistsAlbumsIndex := Object()
 	objAlbumsOfArtistsIndex := Object()
+	objArtistsOfAlbumsIndex := Object()
 	intNbLines2Save := 0
 
 	ProgressStart(1, L(lProgressInitArtistsAlbums, 0, objITunesTracks.Count), objITunesTracks.Count)
@@ -106,6 +107,23 @@ iTunes_InitArtistsAlbumsIndex()
 			objAlbumsOfArtistsIndex[strArtist] := objAlbumsOfArtistsIndex[strArtist] . strAlbum . strAlbumArtistDelimiter
 			; we will ignore the strAlbumArtistDelimiter in surplus only if/when we will access the value
 
+		if !StrLen(objArtistsOfAlbumsIndex[strAlbum])
+		{
+			objArtistsOfAlbumsIndex.Insert(strAlbum, "")
+			intNbLines2Save := intNbLines2Save + 1
+		}
+		blnArtistFound := False
+		strTempArtistList := objArtistsOfAlbumsIndex[strAlbum]
+		Loop, Parse, strTempArtistList, %strAlbumArtistDelimiter%
+			if (A_LoopField = strArtist)
+			{
+				blnArtistFound := True
+				break
+			}
+		if (!blnArtistFound)
+			objArtistsOfAlbumsIndex[strAlbum] := objArtistsOfAlbumsIndex[strAlbum] . strArtist . strAlbumArtistDelimiter
+			; we will ignore the strAlbumArtistDelimiter in surplus only if/when we will access the value
+
 		if (A_Index = intTestLimit)
 			break
 	}
@@ -156,6 +174,7 @@ iTunes_LoadSource()
 			objAlbumsIndex := Object()
 			objArtistsAlbumsIndex := Object()
 			objAlbumsOfArtistsIndex := Object()
+			objArtistsOfAlbumsIndex := Object()
 		}
 		arrRecord := StrSplit(A_LoopReadLine, "`t")
 		strObjName := arrRecord[1]
@@ -333,6 +352,20 @@ iTunes_SaveSource()
 			strData := ""
 		}
 		strData := strData . "objAlbumsOfArtistsIndex`t" . strArtist . "`t" . strAlbums . "`n"
+	}
+
+	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex4%
+	for strAlbum, strArtists in objArtistsOfAlbumsIndex
+	{
+		intLines := intLines + 1
+		if !Mod(intLines,100)
+			ProgressUpdate(1, intLines, intNbLines2Save, L(lProgressSavingIndex, Round(intLines / intNbLines2Save * 100, 0)))
+		if !Mod(intLines, intLinesPerBatch)
+		{
+			SaveBatch(strData)
+			strData := ""
+		}
+		strData := strData . "objArtistsOfAlbumsIndex`t" . strAlbum . "`t" . strArtists . "`n"
 	}
 
 	ProgressUpdate(1, intNbLines2Save, intNbLines2Save, L(lProgressInitArtistsAlbums, 100))

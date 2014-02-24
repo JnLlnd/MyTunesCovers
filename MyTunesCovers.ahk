@@ -12,6 +12,7 @@
 	- in source setting, load only albums with at least one no cover
 	- progress bar while paste to selected
 	- button to delete all selected covers
+	- when selecting an albums, restrict the artist list to artists in this album
 
 	2014-02-## v0.5 ALPHA
 	* prompt before saving source
@@ -520,12 +521,9 @@ return
 ;-----------------------------------------------------------
 PopulateDropdownLists:
 ;-----------------------------------------------------------
-strArtistsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllArtists
-for strArtist, strTracks in objArtistsIndex
-	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
-GuiControl, , lstArtists, %strArtistsDropDownList%
 
-Gosub, PopulateAlbumDropdownList
+Gosub, PopulateArtistsDropdownList
+Gosub, PopulateAlbumsDropdownList
 
 GuiControl, Choose, lstArtists, 1
 GuiControl, Choose, lstAlbums, 1
@@ -535,7 +533,19 @@ return
 
 
 ;-----------------------------------------------------------
-PopulateAlbumDropdownList:
+PopulateArtistsDropdownList:
+;-----------------------------------------------------------
+strArtistsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllArtists
+for strArtist, strTracks in objArtistsIndex
+	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
+GuiControl, , lstArtists, %strArtistsDropDownList%
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+PopulateAlbumsDropdownList:
 ;-----------------------------------------------------------
 strAlbumsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums
 for strAlbum, strTracks in objAlbumsIndex
@@ -598,7 +608,7 @@ strPreviousAlbum := ""
 if (lstArtists = A_Space . lDropDownAllArtists)
 {
 	strPreviousAlbum := lstAlbums
-	Gosub, PopulateAlbumDropdownList
+	Gosub, PopulateAlbumsDropdownList
 	GuiControl, ChooseString, lstAlbums, %strPreviousAlbum%
 }
 else
@@ -618,6 +628,20 @@ return
 AlbumsDropDownChanged:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
+
+strPreviousArtist := ""
+if (lstAlbums = A_Space . lDropDownAllAlbums)
+{
+	strPreviousArtist := lstArtists
+	Gosub, PopulateArtistsDropdownList
+	GuiControl, ChooseString, lstArtists, %strPreviousArtist%
+}
+else
+{
+	GuiControl, , lstArtists, % strAlbumArtistDelimiter . A_Space
+		. lDropDownAllArtists . strAlbumArtistDelimiter . objArtistsOfAlbumsIndex[lstAlbums]
+	GuiControl, Choose, lstArtists, 1
+}
 
 Gosub, DisplayCovers
 
