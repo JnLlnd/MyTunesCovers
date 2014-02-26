@@ -7,7 +7,7 @@
 */
 ;===============================================
 
-global intTestLimit := 3000
+global intTestLimit := 30000 ; ###
 global intLinesPerBatch := 5000
 global intNbLines2Save := 0
 global objITunesunesApp := Object()

@@ -12,7 +12,6 @@
 	- in source setting, load only albums with at least one no cover
 	- progress bar while paste to selected
 	- button to delete all selected covers
-	- when selecting an albums, restrict the artist list to artists in this album
 
 	2014-02-## v0.5 ALPHA
 	* prompt before saving source
@@ -21,7 +20,8 @@
 	* create cover cache folder if it does not exist
 	* display error if images folder not present
 	* when selecting all Artists drop down, preserve the selection of Albums
-	* 
+	* when selecting an albums, restrict the artists list to artists in this album
+	* rearrange header buttons, make Select All and Unselect All the same button
 
 	2014-02-15 v0.4 ALPHA
 	* Use iTunes persistent IDs
@@ -165,7 +165,7 @@ LoadIniFile:
 strAlbumArtistDelimiter := chr(182)
 strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
 intPictureSize := 160
-strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=""~artist~"" ""~album~"""
+strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=~artist~ ""~album~"""
 strSearchLink2 := "http://www.covermytunes.com/search.php?search_query=~artist~ ~album~"
 
 IfNotExist, %strIniFile%
@@ -242,22 +242,21 @@ intFooterHeight := 60
 Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
 Gui, +Delimiter%strAlbumArtistDelimiter%
 Gui, Font, s12 w700, Verdana
-Gui, Add, Text, x10, % L(lAppName)
+Gui, Add, Text, x10 w%intBoardWidth% center, % L(lAppName)
 Gui, Font
+Gui, Add, Button, x+10 yp vbtnSelectAll gButtonSelectAllClicked w70, %lSelectAll%
+Gui, Font, s10 w500, Verdana
+Gui, Add, Text, x+20 yp gLabelAllArtistsClicked, %lArtistsDropdownLabel%
+Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
+Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked, %lAlbumsDropdownLabel%
+Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
+Gui, Font
+Gui, Add, Checkbox, x+50 yp vblnOnlyNoCover gOnlyNoCoverClicked, %lOnlyNoCover%
 Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+30 yp, %lSource%
 Gui, Font
 Gui, Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, % L(lSourceITunes)
 Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled, % L(lSourceMP3)
-Gui, Font, s10 w500, Verdana
-Gui, Add, Text, x+20 yp, %lArtistsDropdownLabel%
-Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
-Gui, Add, Text, x+20 yp, %lAlbumsDropdownLabel%
-Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
-Gui, Font
-Gui, Add, Checkbox, x+50 yp vblnOnlyNoCover gOnlyNoCoverClicked, %lOnlyNoCover%
-Gui, Add, Button, x+50 yp vbtnSelectAll gButtonSelectAllClicked, %lSelectAll%
-Gui, Add, Button, x+10 yp vbtnUnSelectAll gButtonUnSelectAllClicked, %lUnSelectAll%
 Gui, Font, s10 w700, Verdana
 Gui, Add, Text, x10 w%intBoardWidth% center, %lBoard%
 Gui, Font
@@ -604,20 +603,14 @@ ArtistsDropDownChanged:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 
-strPreviousAlbum := ""
+strPreviousAlbum := lstAlbums
 if (lstArtists = A_Space . lDropDownAllArtists)
-{
-	strPreviousAlbum := lstAlbums
 	Gosub, PopulateAlbumsDropdownList
-	GuiControl, ChooseString, lstAlbums, %strPreviousAlbum%
-}
 else
-{
 	GuiControl, , lstAlbums, % strAlbumArtistDelimiter . A_Space
 		. lDropDownAllAlbums . strAlbumArtistDelimiter . objAlbumsOfArtistsIndex[lstArtists]
-	GuiControl, Choose, lstAlbums, 1
-}
 
+GuiControl, ChooseString, lstAlbums, %strPreviousAlbum%
 Gosub, DisplayCovers
 
 return
@@ -629,20 +622,14 @@ AlbumsDropDownChanged:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 
-strPreviousArtist := ""
+strPreviousArtist := lstArtists
 if (lstAlbums = A_Space . lDropDownAllAlbums)
-{
-	strPreviousArtist := lstArtists
 	Gosub, PopulateArtistsDropdownList
-	GuiControl, ChooseString, lstArtists, %strPreviousArtist%
-}
 else
-{
 	GuiControl, , lstArtists, % strAlbumArtistDelimiter . A_Space
 		. lDropDownAllArtists . strAlbumArtistDelimiter . objArtistsOfAlbumsIndex[lstAlbums]
-	GuiControl, Choose, lstArtists, 1
-}
 
+GuiControl, ChooseString, lstArtists, %strPreviousArtist%
 Gosub, DisplayCovers
 
 return
@@ -663,17 +650,25 @@ return
 ButtonSelectAllClicked:
 ;-----------------------------------------------------------
 
-if (intNbPages > 1)
+GuiControlGet, strButtonSelectAllLabel, , btnSelectAll
+
+if (strButtonSelectAllLabel = lSelectAll)
 {
-	strAnswer := YesNoCancel(True, L(lSelectAllCoversTitle, lAppName), lSelectAllCoversAllPagesPrompt)
-	if (strAnswer = "Cancel")
-		return
+	if (intNbPages > 1)
+	{
+		strAnswer := YesNoCancel(True, L(lSelectAllCoversTitle, lAppName), lSelectAllCoversAllPagesPrompt)
+		if (strAnswer = "Cancel")
+			return
+	}
+
+	Loop, %intNbTracks%
+		if (strAnswer = "Yes") or (PageOfTrack(A_Index) = intPage)
+			arrTrackSelected[A_Index] := true
 }
+else
+	arrTrackSelected := Object() ; create array or release previous selections
 
-Loop, %intNbTracks%
-	if (strAnswer = "Yes") or (PageOfTrack(A_Index) = intPage)
-		arrTrackSelected[A_Index] := true
-
+GuiControl, , btnSelectAll, % (strButtonSelectAllLabel = lSelectAll ? lUnSelectAll : lSelectAll)
 Gosub, DisplayCoversPage
 
 return
@@ -681,11 +676,22 @@ return
 
 
 ;-----------------------------------------------------------
-ButtonUnSelectAllClicked:
+LabelAllArtistsClicked:
 ;-----------------------------------------------------------
 
-arrTrackSelected := Object() ; create array or release previous selections
-Gosub, DisplayCoversPage
+GuiControl, Choose, lstArtists, 1 
+Gosub, ArtistsDropDownChanged
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+LabelAllAlbumsClicked:
+;-----------------------------------------------------------
+
+GuiControl, Choose, lstAlbums, 1 
+Gosub, AlbumsDropDownChanged
 
 return
 ;-----------------------------------------------------------
@@ -751,6 +757,7 @@ intPage := 1
 intNbPages := Ceil(intNbTracks / intCoversPerPage)
 
 arrTrackSelected := Object() ; create array or release previous selections
+GuiControl, , btnSelectAll, %lSelectAll%
 
 Gosub, DisplayCoversPage
 
