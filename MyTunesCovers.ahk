@@ -5,13 +5,12 @@
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
 	BUGS
+	- none (known)
 	
 	TODO
 	- embed images folder in exe or zip?
 	- move source setting in setting dialog box
 	- in source setting, load only albums with at least one no cover
-	- progress bar while paste to selected
-	- button to delete all selected covers
 
 	2014-02-## v0.5 ALPHA
 	* prompt before saving source
@@ -22,6 +21,8 @@
 	* when selecting all Artists drop down, preserve the selection of Albums
 	* when selecting an albums, restrict the artists list to artists in this album
 	* rearrange header buttons, make Select All and Unselect All the same button
+	* progress bar while pasting to selected
+	* button to delete all selected covers
 
 	2014-02-15 v0.4 ALPHA
 	* Use iTunes persistent IDs
@@ -245,6 +246,7 @@ Gui, Font, s12 w700, Verdana
 Gui, Add, Text, x10 w%intBoardWidth% center, % L(lAppName)
 Gui, Font
 Gui, Add, Button, x+10 yp vbtnSelectAll gButtonSelectAllClicked w70, %lSelectAll%
+Gui, Add, Button, x+10 yp vbtnDeleteSelected gButtonDeleteSelectedClicked w90, %lDeleteSelected%
 Gui, Font, s10 w500, Verdana
 Gui, Add, Text, x+20 yp gLabelAllArtistsClicked, %lArtistsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
@@ -676,6 +678,32 @@ return
 
 
 ;-----------------------------------------------------------
+ButtonDeleteSelectedClicked:
+;-----------------------------------------------------------
+
+strAnswer := YesNoCancel(False, L(lDeleteAllSelectedTitle, lAppName), lDeleteAllSelectedPrompt)
+
+if (strAnswer <> "Yes")
+	return
+
+ProgressStart(1, lBoardPastingProgress, arrTrackSelected.MaxIndex())
+for intThisTrack, blnSelected in arrTrackSelected
+	if (blnSelected)
+	{
+		Cover_DeleteCoverFromTune(objCovers[intThisTrack])
+		objCovers[intThisTrack].CoverTempFilePathName := ""
+		arrTrackSelected[intThisTrack] := false
+		objCovers[intThisTrack].ArtworkCount := Cover_GetArtworkCount(objCovers[intThisTrack])
+		ProgressUpdate(1, intThisTrack, arrTrackSelected.MaxIndex(), lBoardPastingProgress)
+	}
+ProgressStop(1)
+Gosub, DisplayCoversPage ; ### display only affected Covers?
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 LabelAllArtistsClicked:
 ;-----------------------------------------------------------
 
@@ -1073,11 +1101,15 @@ intTrack := TrackAtPosition(intPosition)
 
 if Instr(strCommand, "Search")
 {
+	strArtist := objCovers[intTrack].Artist
+	StringReplace, strArtist, strArtist, &, `%26, All
 	if (strCommand = "Search1")
-		StringReplace, strSearchURL, strSearchLink1, ~artist~, % objCovers[intTrack].Artist, All
+		StringReplace, strSearchURL, strSearchLink1, ~artist~, %strArtist%, All
 	else
-		StringReplace, strSearchURL, strSearchLink2, ~artist~, % objCovers[intTrack].Artist, All
-	StringReplace, strSearchURL, strSearchURL, ~album~, % objCovers[intTrack].Album, All
+		StringReplace, strSearchURL, strSearchLink2, ~artist~, %strArtist%, All
+	strAlbum := objCovers[intTrack].Album
+	StringReplace, strAlbum, strAlbum, &, `%26, All
+	StringReplace, strSearchURL, strSearchURL, ~album~, %strAlbum%, All
 	StringReplace, strSearchURL, strSearchURL, %A_Space%, +, All
 	StringReplace, strSearchURL, strSearchURL, `", `%22, All
 }
@@ -1181,6 +1213,7 @@ if (intCommand = 1)
 		blnWriteOK := !(blnExistingArtwork)
 			or (YesNoCancel(False, L(lBoardPastingSelected, lAppName), lBoardOverwrite) = "Yes")
 	
+		ProgressStart(1, lBoardPastingProgress, arrTrackSelected.MaxIndex())
 		for intThisTrack, blnSelected in arrTrackSelected
 			if (blnSelected)
 			{
@@ -1191,7 +1224,10 @@ if (intCommand = 1)
 						FileDelete, % objCovers[intThisTrack].CoverTempFilePathName
 						arrTrackSelected[intThisTrack] := false
 					}
+			ProgressUpdate(1, intThisTrack, arrTrackSelected.MaxIndex(), lBoardPastingProgress)
 			}
+		ProgressStop(1)
+		GuiControl, , btnSelectAll, %lSelectAll%
 		Gosub, DisplayCoversPage ; ### display only affected Covers?
 	}
 	else ; make master
@@ -1461,13 +1497,11 @@ L(strMessage, objVariables*)
 ProgressStart(intType, strText, intMax := "")
 ; ------------------------------------------------
 {
+	StringReplace, strText, strText, ##, 0
 	if (intType = 1)
 		Progress, R0-%intMax% FS8 A, %strText%, , , MS Sans Serif
 	else
-	{
-		StringReplace, strText, strText, ##, 0
 		SB_SetText(strText, -intType)
-	}
 }
 ; ------------------------------------------------
 
