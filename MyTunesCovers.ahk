@@ -1224,7 +1224,7 @@ if (intCommand = 1)
 						FileDelete, % objCovers[intThisTrack].CoverTempFilePathName
 						arrTrackSelected[intThisTrack] := false
 					}
-			ProgressUpdate(1, intThisTrack, arrTrackSelected.MaxIndex(), lBoardPastingProgress)
+				ProgressUpdate(1, intThisTrack, arrTrackSelected.MaxIndex(), lBoardPastingProgress)
 			}
 		ProgressStop(1)
 		GuiControl, , btnSelectAll, %lSelectAll%
@@ -1232,8 +1232,8 @@ if (intCommand = 1)
 	}
 	else ; make master
 	{
-		arrBoardPicFiles.Insert(1, arrBoardPicFiles[intPosition])
-		arrBoardPicFiles.Remove(intPosition + 1)
+		arrBoardPicFiles.Insert(1, arrBoardPicFiles[intThisPosition])
+		arrBoardPicFiles.Remove(intThisPosition + 1)
 	}
 }
 else if (intCommand = 2) ; load clipboard
