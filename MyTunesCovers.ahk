@@ -239,39 +239,46 @@ intRowHeight := intPictureSize + intNameLabelHeight + 10
 intBoardWidth := intPictureSize + intButtonSize + 20
 intHeaderHeight := 60
 intFooterHeight := 60
+intStatusBarHeight := 24
 
 Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
 Gui, +Delimiter%strAlbumArtistDelimiter%
+
+Gui, Add, Picture, x0 y0 w1 h1 0xE vpicHeaderBackground, % A_ScriptDir . "\images\background_header.png"
+Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBoardBackground, % A_ScriptDir . "\images\background_board.png"
+
 Gui, Font, s12 w700, Verdana
-Gui, Add, Text, x10 w%intBoardWidth% center, % L(lAppName)
+Gui, Add, Text, x10 y10 w%intBoardWidth% center backgroundtrans, % L(lAppName)
 Gui, Font
 Gui, Add, Button, x+10 yp vbtnSelectAll gButtonSelectAllClicked w70, %lSelectAll%
 Gui, Add, Button, x+10 yp vbtnDeleteSelected gButtonDeleteSelectedClicked w90, %lDeleteSelected%
 Gui, Font, s10 w500, Verdana
-Gui, Add, Text, x+20 yp gLabelAllArtistsClicked, %lArtistsDropdownLabel%
+Gui, Add, Text, x+20 yp gLabelAllArtistsClicked backgroundtrans, %lArtistsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
-Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked, %lAlbumsDropdownLabel%
+Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked backgroundtrans, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
-Gui, Add, Checkbox, x+50 yp vblnOnlyNoCover gOnlyNoCoverClicked, %lOnlyNoCover%
+Gui, Add, Checkbox, x+50 yp vblnOnlyNoCover gOnlyNoCoverClicked backgroundtrans, %lOnlyNoCover%
 Gui, Font, s10 w500, Verdana
-Gui, Add, Text, x+30 yp, %lSource%
+Gui, Add, Text, x+30 yp backgroundtrans, %lSource%
 Gui, Font
-Gui, Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, % L(lSourceITunes)
-Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled, % L(lSourceMP3)
-Gui, Font, s10 w700, Verdana
-Gui, Add, Text, x10 w%intBoardWidth% center, %lBoard%
-Gui, Font
+Gui, Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked backgroundtrans, % L(lSourceITunes)
+Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled backgroundtrans, % L(lSourceMP3)
+; Gui, Font, s10 w700, Verdana
+; Gui, Add, Text, x10 w%intBoardWidth% center backgroundtrans, %lBoard%
+; Gui, Font
 
+/*
 intVerticalLineX := intBoardWidth
 intVerticalLineY := intHeaderHeight + 10
 Gui, Add, Text, x%intVerticalLineX% y%intVerticalLineY% h10 0x11 vlblVerticalLine ; Vertical Line > Etched Gray
 intHorizontalLineY := intHeaderHeight + intPictureSize + intNameLabelHeight
 intHorizontalLineW := intPictureSize + intButtonSize
 Gui, Add, Text, x10 y%intHorizontalLineY% w%intHorizontalLineW% 0x10 vlblHorizontalBoardLine ; Horizontal Line > Etched Gray
+*/
 
 Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
-Gui, Add, Text, x+50 yp w60 vlblPage
+Gui, Add, Text, x+50 yp w60 vlblPage backgroundtrans
 Gui, Add, Button, x+50 yp w80 vbtnNext gButtonNextClicked hidden, % lNext . " ->"
 
 Gui, Add, StatusBar
@@ -309,20 +316,24 @@ intAvailWidth := A_GuiWidth - 5
 intAvailHeight := A_GuiHeight
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol and intMaxNbRow
 
-intVerticalLineH := intMaxNbRow * intRowHeight
-GuiControl, Move, lblVerticalLine, h%intVerticalLineH%
+GuiControl, Move, picHeaderBackground, % "x0 y0 w" . intAvailWidth . " h" . intHeaderHeight
+GuiControl, Move, picBoardBackground, % "x0 y" . intHeaderHeight . " w" . intBoardWidth . " h" . (intMaxNbRow * intRowHeight)
+
+; intVerticalLineH := intMaxNbRow * intRowHeight
+; GuiControl, Move, lblVerticalLine, h%intVerticalLineH%
 
 intX := 0
 intY := intHeaderHeight + 5
 intRow := 1
 intXPic := intX + 10
 intYPic := intY + 5
-intYNameLabel := intY + intPictureSize + 5
+intYNameLabel := intY + intPictureSize + 10
 
 loop, %intNbBoardCreated%
 {
 	GuiControl, Hide, picBoard%A_Index%
 	GuiControl, Hide, lblBoardNameLabel%A_Index%
+	intIndex := A_Index
 	loop, 4
 		GuiControl, Hide, picBoardButton%A_Index%%intIndex%
 }
@@ -346,11 +357,13 @@ loop, %intMaxNbRow%
 				LoadPicControl(picBoardButton%A_Index%%intIndex%, (A_Index + 9))
 		}
 		Gui, Font, s8 w700, Arial
-		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblBoardNameLabel%A_Index%
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblBoardNameLabel%A_Index% backgroundtrans
+		/*
 		if (A_Index = 1)
 			GuiControl, , lblBoardNameLabel%A_Index%, %lBoardMasterCover%
 		else
 			GuiControl, , lblBoardNameLabel%A_Index%, %lBoardBackupCover% #%A_Index%
+		*/
 
 		GuiControlGet, posBoard%A_Index%, Pos, picBoard%A_Index%
 		if (A_Index > intNbBoardCreated)
@@ -362,7 +375,7 @@ loop, %intMaxNbRow%
 	intRow := intRow + 1
 	intY := intY + intRowHeight
 	intYPic := intY + 5
-	intYNameLabel := intY + intPictureSize + 5
+	intYNameLabel := intY + intPictureSize + 10
 }
 
 intCoversPerPagePrevious := intCoversPerPage
@@ -1138,22 +1151,36 @@ return
 ;-----------------------------------------------------------
 DisplayBoard:
 ;-----------------------------------------------------------
+loop, 4
+	if (A_Index = 1)
+		LoadPicControl(picBoardButton11, 14)
+	else
+		LoadPicControl(picBoardButton%A_Index%1, (A_Index + 9))
+
 loop, %intMaxNbRow%
 {
 	if (A_Index <= arrBoardPicFiles.MaxIndex())
 	{
 		LoadPicControl(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
-		intThisPosition := A_Index
+		intIndex := A_Index
 		loop, 4
-			GuiControl, Show, % "picBoardButton" . A_Index . intThisPosition
+			GuiControl, Show, % "picBoardButton" . A_Index . intIndex
 		strBoardLink := ""
 			. "<A ID=""ShowPic" . A_Index . """>" . lBoardShowPic . "</A>" . "  "
 			. "<A ID=""ViewPic" . A_Index . """>" . lBoardViewPic . "</A>" . "  "
 		GuiControl, , lnkBoardLink%A_Index%, %strBoardLink%
+		intIndex := A_Index
+		loop, 4
+			GuiControl, Show, % "picBoardButton" . A_Index . intIndex
 	}
 	else
 		LoadPicControl(picBoard%A_Index%, 4)
-	
+
+	if (A_Index = 1)
+		GuiControl, , lblBoardNameLabel%A_Index%, %lBoardMasterCover%
+	else
+		GuiControl, , lblBoardNameLabel%A_Index%, %lBoardBackupCover% #%A_Index%
+
 	GuiControl, Hide, lnkBoardLink%A_Index%
 	GuiControl, Show, picBoard%A_Index%
 	GuiControl, Show, lblBoardNameLabel%A_Index%
