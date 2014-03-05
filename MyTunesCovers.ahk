@@ -244,8 +244,10 @@ intStatusBarHeight := 24
 Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
 Gui, +Delimiter%strAlbumArtistDelimiter%
 
-Gui, Add, Picture, x0 y0 w1 h1 0xE vpicHeaderBackground, % A_ScriptDir . "\images\background_header.png"
-Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBoardBackground, % A_ScriptDir . "\images\background_board.png"
+Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundHeader, % A_ScriptDir . "\images\background_header.png"
+Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundBoard, % A_ScriptDir . "\images\background_board.png"
+Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundCovers, % A_ScriptDir . "\images\background_covers.png"
+Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundFooter, % A_ScriptDir . "\images\background_footer.png"
 
 Gui, Font, s12 w700, Verdana
 Gui, Add, Text, x10 y10 w%intBoardWidth% center backgroundtrans, % L(lAppName)
@@ -316,8 +318,10 @@ intAvailWidth := A_GuiWidth - 5
 intAvailHeight := A_GuiHeight
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol and intMaxNbRow
 
-GuiControl, Move, picHeaderBackground, % "x0 y0 w" . intAvailWidth . " h" . intHeaderHeight
-GuiControl, Move, picBoardBackground, % "x0 y" . intHeaderHeight . " w" . intBoardWidth . " h" . (intMaxNbRow * intRowHeight)
+GuiControl, Move, picBackgroundHeader, % "x0 y0 w" . intAvailWidth . " h" . intHeaderHeight
+GuiControl, Move, picBackgroundBoard, % "x0 y" . intHeaderHeight . " w" . intBoardWidth . " h" . (intMaxNbRow * intRowHeight)
+GuiControl, Move, picBackgroundCovers, % "x" . intBoardWidth . " y" . intHeaderHeight . " w" . (intAvailWidth - intBoardWidth + 10) . " h" . (intMaxNbRow * intRowHeight)
+GuiControl, Move, picBackgroundFooter, % "x0 y" . intHeaderHeight + (intMaxNbRow * intRowHeight) . " w" . intAvailWidth . " h" . (intFooterHeight + 200)
 
 ; intVerticalLineH := intMaxNbRow * intRowHeight
 ; GuiControl, Move, lblVerticalLine, h%intVerticalLineH%
@@ -414,7 +418,7 @@ loop, %intCoversPerPage%
 			LoadPicControl(picCoverButton%A_Index%%intIndex%, (A_Index + 19))
 		}
 		Gui, Font, s8 w700, Arial
-		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index%
+		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index% backgroundtrans
 		Gui, Font
 		intNbCoversCreated := A_Index
 	}
@@ -845,6 +849,8 @@ loop, %intRemainingCovers%
 		GuiControl, Hide, picCoverButton%A_Index%%intPosition%
 }
 
+GuiControl, Hide, btnPrevious
+GuiControl, Hide, btnNext
 GuiControl, % (intPage > 1 ? "Show" : "Hide"), btnPrevious
 GuiControl, % (intTrack < intNbTracks ? "Show" : "Hide"), btnNext
 if (intNbPages)
@@ -1006,6 +1012,8 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 		intNewWidth := posControlw
 		intNewHeight := Round(intHeight*(intNewWidth/intWidth))
 	}
+	intNewWidth := intNewWidth + 2
+	intNewHeight := intNewHeight + 2
 
 	ptrBitmapPicControl := Gdip_CreateBitmap(posControlw, posControlh)
 	ptrGraphicPicControl := Gdip_GraphicsFromImage(ptrBitmapPicControl)
