@@ -211,9 +211,9 @@ iTunes_InitCoverScan(strArtist := "", strAlbum := "", blnOnlyNoCover := false)
 		intCurrentTrackIndex := 1
 		loop, % arrTracks.MaxIndex() - 1 ; last item always empty
 		{
-			arrTrackIDs := StrSplit(arrTracks[intCurrentTrackIndex], ";") ; "intIDHigh ; intIDLow"
+			arrTrackIDs := StrSplit(arrTracks[intCurrentTrackIndex], ";") ; "intIDHigh ; intIDLow ; intArtworkCount"
 			objTrack := objITunesTracks.ItemByPersistentID(arrTrackIDs[1], arrTrackIDs[2])
-			if (objTrack.Artwork.Count)
+			if (objTrack.Artwork.Count) ; do not use arrTrackIDs[3] because we want most up-to-date info
 				arrTracks.Remove(intCurrentTrackIndex)
 			else
 				intCurrentTrackIndex := intCurrentTrackIndex + 1
@@ -241,7 +241,7 @@ iTunes_GetCover(intTrackIndex)
 	; ###_D("arrTracks[" . intTrackIndex . "]: " . arrTracks[intTrackIndex])
 	; objTrack := objITunesTracks.Item(arrTracks[intTrackIndex])
 
-	arrTrackIDs := StrSplit(arrTracks[intTrackIndex], ";") ; "intIDHigh ; intIDLow"
+	arrTrackIDs := StrSplit(arrTracks[intTrackIndex], ";") ; "intIDHigh ; intIDLow ; intArtworkCount"
 	objTrack := objITunesTracks.ItemByPersistentID(arrTrackIDs[1], arrTrackIDs[2])
 
 	if !StrLen(objTrack.Name)
@@ -283,11 +283,11 @@ iTunes_GetArtworkCount(objThisCover)
 
 
 ;-----------------------------------------------------------
-iTunes_ArtistHasNoCover(strTracks)
+iTunes_ArtistOrAlbumHasNoCover(strTracks)
 {
 	arrTracks := StrSplit(strTracks, ",")
 
-	blnArtistHasNoCover := true
+	iTunes_ArtistOrAlbumHasNoCover := true
 	loop
 	{
 		arrTrackIDs := StrSplit(arrTracks[A_Index], ";") ; "intIDHigh ; intIDLow ; intArtworkCount"
@@ -295,35 +295,12 @@ iTunes_ArtistHasNoCover(strTracks)
 			break
 		if (A_Index = arrTracks.MaxIndex() - 1) ; last item always empty
 		{
-			blnArtistHasNoCover := false
+			iTunes_ArtistOrAlbumHasNoCover := false
 			break
 		}
 	}
 	
-	return blnArtistHasNoCover
-}
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-iTunes_AlbumHasNoCover(strTracks)
-{
-	arrTracks := StrSplit(strTracks, ",")
-
-	blnAlbumHasNoCover := true
-	loop
-	{
-		arrTrackIDs := StrSplit(arrTracks[A_Index], ";") ; "intIDHigh ; intIDLow ; intArtworkCount"
-		if (!arrTrackIDs[3])
-			break
-		if (A_Index = arrTracks.MaxIndex() - 1) ; last item always empty
-		{
-			blnAlbumHasNoCover := false
-			break
-		}
-	}
-	
-	return blnAlbumHasNoCover
+	return iTunes_ArtistOrAlbumHasNoCover
 }
 ;-----------------------------------------------------------
 

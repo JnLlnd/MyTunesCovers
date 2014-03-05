@@ -558,7 +558,7 @@ Gui, Submit, NoHide
 
 strArtistsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllArtists
 for strArtist, strTracks in objArtistsIndex
-	if (!blnListsWithNoCover) or Cover_ArtistHasNoCover(strTracks)
+	if (!blnListsWithNoCover) or Cover_ArtistOrAlbumHasNoCover(strTracks)
 		strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
 GuiControl, , lstArtists, %strArtistsDropDownList%
 
@@ -571,7 +571,7 @@ PopulateAlbumsDropdownList:
 ;-----------------------------------------------------------
 strAlbumsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums
 for strAlbum, strTracks in objAlbumsIndex
-	if (!blnListsWithNoCover) or Cover_AlbumHasNoCover(strTracks)
+	if (!blnListsWithNoCover) or Cover_ArtistOrAlbumHasNoCover(strTracks)
 		strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
 GuiControl, , lstAlbums, %strAlbumsDropDownList%
 
