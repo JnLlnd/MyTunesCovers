@@ -7,7 +7,7 @@
 */
 ;===============================================
 
-global intTestLimit := 30000 ; ###
+global intTestLimit := 300000 ; ###
 global intLinesPerBatch := 5000
 global intNbLines2Save := 0
 global objITunesunesApp := Object()
@@ -55,7 +55,8 @@ iTunes_InitArtistsAlbumsIndex()
 
 		intIDHigh := objITunesunesApp.ITObjectPersistentIDHigh(objITunesTrack)
 		intIDLow := objITunesunesApp.ITObjectPersistentIDLow(objITunesTrack)
-		strTrackIDs := intIDHigh . ";" . intIDLow
+		intArtworkcount := objITunesTrack.Artwork.Count
+		strTrackIDs := intIDHigh . ";" . intIDLow . ";" . intArtworkcount
 
 		strArtist := Trim(objITunesTracks.Item(A_Index).Artist)
 		if !StrLen(strArtist)
@@ -277,6 +278,52 @@ iTunes_GetArtworkCount(objThisCover)
 	objTrack := objITunesTracks.ItemByPersistentID(objThisCover.TrackIDHigh, objThisCover.TrackIDLow)
 
 	return objTrack.Artwork.Count
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+iTunes_ArtistHasNoCover(strTracks)
+{
+	arrTracks := StrSplit(strTracks, ",")
+
+	blnArtistHasNoCover := true
+	loop
+	{
+		arrTrackIDs := StrSplit(arrTracks[A_Index], ";") ; "intIDHigh ; intIDLow ; intArtworkCount"
+		if (!arrTrackIDs[3])
+			break
+		if (A_Index = arrTracks.MaxIndex() - 1) ; last item always empty
+		{
+			blnArtistHasNoCover := false
+			break
+		}
+	}
+	
+	return blnArtistHasNoCover
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+iTunes_AlbumHasNoCover(strTracks)
+{
+	arrTracks := StrSplit(strTracks, ",")
+
+	blnAlbumHasNoCover := true
+	loop
+	{
+		arrTrackIDs := StrSplit(arrTracks[A_Index], ";") ; "intIDHigh ; intIDLow ; intArtworkCount"
+		if (!arrTrackIDs[3])
+			break
+		if (A_Index = arrTracks.MaxIndex() - 1) ; last item always empty
+		{
+			blnAlbumHasNoCover := false
+			break
+		}
+	}
+	
+	return blnAlbumHasNoCover
 }
 ;-----------------------------------------------------------
 

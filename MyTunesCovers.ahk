@@ -260,9 +260,10 @@ Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked backgroundtrans, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
-Gui, Add, Checkbox, x+50 yp vblnOnlyNoCover gOnlyNoCoverClicked backgroundtrans, %lOnlyNoCover%
+Gui, Add, Checkbox, x+20 yp vblnOnlyNoCover gOnlyNoCoverClicked backgroundtrans, %lOnlyNoCover%
+Gui, Add, Checkbox, x+20 yp vblnListsWithNoCover gAlbumsWithNoCoverClicked backgroundtrans, %lListsWithNoCover%
 Gui, Font, s10 w500, Verdana
-Gui, Add, Text, x+30 yp backgroundtrans, %lSource%
+Gui, Add, Text, x+20 yp backgroundtrans, %lSource%
 Gui, Font
 Gui, Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked backgroundtrans, % L(lSourceITunes)
 Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled backgroundtrans, % L(lSourceMP3)
@@ -553,9 +554,12 @@ return
 ;-----------------------------------------------------------
 PopulateArtistsDropdownList:
 ;-----------------------------------------------------------
+Gui, Submit, NoHide
+
 strArtistsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllArtists
 for strArtist, strTracks in objArtistsIndex
-	strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
+	if (!blnListsWithNoCover) or Cover_ArtistHasNoCover(strTracks)
+		strArtistsDropDownList := strArtistsDropDownList . strAlbumArtistDelimiter . strArtist
 GuiControl, , lstArtists, %strArtistsDropDownList%
 
 return
@@ -567,7 +571,8 @@ PopulateAlbumsDropdownList:
 ;-----------------------------------------------------------
 strAlbumsDropDownList := strAlbumArtistDelimiter . A_Space . lDropDownAllAlbums
 for strAlbum, strTracks in objAlbumsIndex
-	strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
+	if (!blnListsWithNoCover) or Cover_AlbumHasNoCover(strTracks)
+		strAlbumsDropDownList := strAlbumsDropDownList . strAlbumArtistDelimiter . strAlbum
 GuiControl, , lstAlbums, %strAlbumsDropDownList%
 
 return
@@ -660,6 +665,16 @@ OnlyNoCoverClicked:
 ;-----------------------------------------------------------
 
 Gosub, DisplayCovers
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+AlbumsWithNoCoverClicked:
+;-----------------------------------------------------------
+
+Gosub, PopulateDropdownLists
 
 return
 ;-----------------------------------------------------------

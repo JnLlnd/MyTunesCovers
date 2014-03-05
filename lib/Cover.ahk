@@ -166,6 +166,28 @@ Cover_GetArtworkCount(objThisCover)
 
 
 ;-----------------------------------------------------------
+Cover_ArtistHasNoCover(strTracks)
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_ArtistHasNoCover(strTracks)
+	else
+		return -1
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+Cover_AlbumHasNoCover(strTracks)
+{
+	if StrLen(strCoverSourceType)
+		return %strCoverSourceType%_AlbumHasNoCover(strTracks)
+	else
+		return -1
+}
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
 Cover_SaveSource()
 {
 	if StrLen(strCoverSourceType)
