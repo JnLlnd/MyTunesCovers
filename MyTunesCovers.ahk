@@ -10,7 +10,6 @@
 	TODO
 	- embed images folder in exe or zip?
 	- move source setting in setting dialog box
-	- in source setting, load only albums with at least one no cover
 
 	2014-02-## v0.5 ALPHA
 	* prompt before saving source
@@ -23,6 +22,8 @@
 	* rearrange header buttons, make Select All and Unselect All the same button
 	* progress bar while pasting to selected
 	* button to delete all selected covers
+	* checkbox to show in artists and album dropdowns only albums with at least one tune without cover
+	* display links when no cover, linkes re-arranged, added trask info duration, year and comment
 
 	2014-02-15 v0.4 ALPHA
 	* Use iTunes persistent IDs
@@ -887,34 +888,44 @@ DisplayCover:
 ; in: intPosition and intTrack
 ;-----------------------------------------------------------
 
-GuiControl, Hide, lnkCoverLink%intPosition%
-GuiControl, Show, picCover%intPosition%
-
-GuiControl, , lblNameLabel%intPosition%, % objCovers[intTrack].Name
-	. (objCovers[intTrack].ArtworkCount > 1 ? " (" . objCovers[intTrack].ArtworkCount . ")" : "")
-GuiControl, , lnkCoverLink%intPosition%, % ""
-	. "<A ID=""ShowPic"">" . lCoverShowPic . "</A>" . "  "
-	. "<A ID=""ViewPic"">" . lCoverViewPic . "</A>" . "  "
-	. "<A ID=""Listen"">" . lCoverListen . "</A>" . "  "
-	. "<A ID=""Search1"">" . lCoverSearch . "1</A>" . "  "
-	. "<A ID=""Search2"">" . lCoverSearch . "2</A>" . "`n"
-	. lArtist . ": " . objCovers[intTrack].Artist . "`n"
-	. lAlbum . ": " . objCovers[intTrack].Album . "`n"
-	. "TrackID: " . objCovers[intTrack].TrackIDHigh . "/" . objCovers[intTrack].TrackIDLow . "`n"
-	. "ArtworkCount/Kind: " . objCovers[intTrack].ArtworkCount . " / " . objCovers[intTrack].Kind . "`n"
-	
 if !StrLen(objCovers[intTrack].CoverTempFilePathName) or !FileExist(objCovers[intTrack].CoverTempFilePathName)
 	Cover_GetImage(objCovers[intTrack])
 
+blnNoCover := false
 if (arrTrackSelected[intTrack])
 	LoadPicControl(picCover%intPosition%, 5) ; Copy here
 else if StrLen(objCovers[intTrack].CoverTempFilePathName)
 	if FileExist(objCovers[intTrack].CoverTempFilePathName)
 		LoadPicControl(picCover%intPosition%, 1, objCovers[intTrack].CoverTempFilePathName)
 	else
+	{
+		blnNoCover := true
 		LoadPicControl(picCover%intPosition%, 6) ; Error
-else 
+	}
+else
+{
+	blnNoCover := true
 	LoadPicControl(picCover%intPosition%, 2) ; No cover
+}
+
+GuiControl, , lblNameLabel%intPosition%, % objCovers[intTrack].Name
+	. (objCovers[intTrack].ArtworkCount > 1 ? " (" . objCovers[intTrack].ArtworkCount . ")" : "")
+GuiControl, , lnkCoverLink%intPosition%, % ""
+	. "<A ID=""Search1"">" . lCoverSearch . "1</A>"
+	. "  <A ID=""Search2"">" . lCoverSearch . "2</A>"
+	. (blnNoCover ? "" : "`n<A ID=""ShowPic"">" . lCoverShowPic . "</A>")
+	. (blnNoCover ? "" : "  <A ID=""ViewPic"">" . lCoverViewPic . "</A>")
+	. "  <A ID=""Listen"">" . lCoverListen . "</A>" . "`n"
+	; . "TrackID: " . objCovers[intTrack].TrackIDHigh . "/" . objCovers[intTrack].TrackIDLow . "`n"
+	; . "ArtworkCount/Kind: " . objCovers[intTrack].ArtworkCount . " / " . objCovers[intTrack].Kind . "`n"
+	. lArtist . ": " . objCovers[intTrack].Artist . "`n"
+	. lAlbum . ": " . objCovers[intTrack].Album . "`n"
+	. "Duration: " . objCovers[intTrack].Time . "  Year: " . objCovers[intTrack].Year . "`n"
+	. "Comment: " . objCovers[intTrack].Comment
+	
+GuiControl, % (blnNoCover ? "Show" : "Hide"), lnkCoverLink%intPosition%
+GuiControl, % (blnNoCover ? "Hide" : "Show"), picCover%intPosition%
+	
 
 if (objCovers[intTrack].Kind <> 1)
 {

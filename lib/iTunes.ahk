@@ -250,7 +250,7 @@ iTunes_GetCover(intTrackIndex)
 	objThisCover := New Cover()
 	
 	; ###_D("objTrack.Kind: " . , objTrack.Kind)
-	objThisCover.SetCoverProperties(objTrack.Artist, objTrack.Album, objTrack.Name, objTrack.Index, arrTrackIDs[1], arrTrackIDs[2], objTrack.Artwork.Count, objTrack.Kind)
+	objThisCover.SetCoverProperties(objTrack.Artist, objTrack.Album, objTrack.Name, objTrack.Index, arrTrackIDs[1], arrTrackIDs[2], objTrack.Artwork.Count, objTrack.Kind, objTrack.Time, objTrack.Year, objTrack.Comment)
 	; ###_D("objThisCover.Index: " . objThisCover.Index)
 
 	return objThisCover

@@ -33,7 +33,7 @@ class Cover
 		this.CoverTempFilePathName := strFilePathName
 	}
 
-	SetCoverProperties(strArtist, strAlbum, strName, intIndex, intTrackIDHigh, intTrackIDLow, intArtworkCount, intKind)
+	SetCoverProperties(strArtist, strAlbum, strName, intIndex, intTrackIDHigh, intTrackIDLow, intArtworkCount, intKind, strTime, strYear, strComment)
 	/*
 		IMPLEMENTED
 			Artist ; Returns the Artist name.
@@ -44,22 +44,22 @@ class Cover
 			TrackIDLow ; Returns low part of the persistent ID of the track
 			Artwork.Count ; Returns the number of pieces of artwork in the collection.
 			Kind ; Returns the kind of the track. 
+			Time ; Returns the length of the track (in MM:SS format). 
+			Year ; Returns the year the track was recorded/released. 
+			Comment ; Returns freeform notes about the track. 
 
 		NOT IMPLEMENTED:
 			Playlist ; Returns an IITPlaylist object corresponding to the playlist that contains the track. Use IITFileOrCDTrack::Playlists() or IITURLTrack::Playlists() to get the collection of all playlists that contain the song this track represents. 
 			Album ; Returns the name of the album containing the track. 
 			Artist ; Returns the name of the artist/source of the track. 
-			Comment ; Returns freeform notes about the track. 
 			Compilation ; Returns true if this track is from a compilation album. 
 			KindAsString ; Returns the text description of the track (e.g. "AAC audio file"). 
 			ModificationDate ([out, retval] DATE *dateModified) ; Returns the modification date of the content of the track. 
 			Size ; Returns the size of the track (in bytes). 
-			Time ; Returns the length of the track (in MM:SS format). 
 			TrackCount ; Returns the total number of tracks on the source album. 
 			TrackID ; Returns the ID that identifies the track within the playlist. 
 			TrackDatabaseID ; Returns the ID that identifies the track, independent of its playlist. 
 			TrackNumber ; Returns the index of the track on the source album. 
-			Year ; Returns the year the track was recorded/released. 
 			Artwork ; Returns a collection containing the artwork for the track. 
 			Artwork.Item(index) ; Returns an IITArtwork object corresponding to the given index (1-based).
 	*/
@@ -72,6 +72,9 @@ class Cover
 		this.TrackIDLow := intTrackIDLow
 		this.ArtworkCount := intArtworkCount
 		this.Kind := intKind
+		this.Time := strTime
+		this.Year := strYear
+		this.Comment := strComment
 	}
 
 /*
