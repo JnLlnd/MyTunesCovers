@@ -642,21 +642,21 @@ if !FileExist(strCoversCacheFolder)
 
 if (Cover_InitCoversSource(strSourceType))
 {
-	if FileExist(A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceCacheFilenameExtension)
+	if FileExist(A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension)
 	{
-		strAnswer := YesNoCancel(True, lAppName, lLoadCache)
+		strAnswer := YesNoCancel(True, lAppName, lLoadIndex)
 		if (strAnswer  = "Yes")
-			Cover_LoadSource() ; use cache
+			Cover_LoadIndex() ; use saved index
 		else if (strAnswer = "No")
 		{
-			FileDelete, %A_ScriptDir%\%strSourceType%_%strSourceSelection%_%strSourceCacheFilenameExtension%
-			Cover_InitArtistsAlbumsIndex() ; refresh lists
+			FileDelete, %A_ScriptDir%\%strSourceType%_%strSourceSelection%_%strSourceIndexFilenameExtension%
+			Cover_BuildArtistsAlbumsIndex() ; refresh lists
 		}
 		else
 			return
 	}
 	else
-		Cover_InitArtistsAlbumsIndex() ; have to refresh lists
+		Cover_BuildArtistsAlbumsIndex() ; have to refresh lists
 	
 	Gosub, PopulateDropdownLists
 }
@@ -897,10 +897,10 @@ loop, %intNbTracks%
 	{
 		if !(blnResizeInProgress)
 			Gosub, EnableGui
-		if YesNoCancel(False, L(lITunesNeedRecacheTitle, lAppName), lITunesNeedRecachePrompt) = "Yes"
+		if YesNoCancel(False, L(lITunesNeedReindexTitle, lAppName), lITunesNeedReindexPrompt) = "Yes"
 		{
-			FileDelete, %A_ScriptDir%\%strSourceType%_%strSourceSelection%_%strSourceCacheFilenameExtension%
-			Cover_InitArtistsAlbumsIndex()
+			FileDelete, %A_ScriptDir%\%strSourceType%_%strSourceSelection%_%strSourceIndexFilenameExtension%
+			Cover_BuildArtistsAlbumsIndex()
 			Gosub, PopulateDropdownLists
 		}
 		return

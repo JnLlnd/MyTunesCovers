@@ -15,7 +15,7 @@ global objITunesPlaylists := Object()
 global objITunesTracks := Object()
 global arrTracks
 global intTracksArrayIndex := 0
-global strITunesCacheFilename
+global strITunesIndexFilename
 
 
 ;-----------------------------------------------------------
@@ -32,7 +32,7 @@ iTunes_InitCoversSource()
 	objITunesPlaylist := objITunesPlaylists.ItemByName(strSourceSelection)
 	objITunesTracks := objITunesPlaylist.Tracks
 
-	strITunesCacheFilename := A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceCacheFilenameExtension
+	strITunesIndexFilename := A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension
 
 	return objITunesTracks.Count
 }
@@ -40,7 +40,7 @@ iTunes_InitCoversSource()
 
 
 ;-----------------------------------------------------------
-iTunes_InitArtistsAlbumsIndex()
+iTunes_BuildArtistsAlbumsIndex()
 {
 	global strAlbumArtistDelimiter
 	
@@ -171,9 +171,9 @@ iTunes_InitArtistsAlbumsIndex()
 
 
 ;-----------------------------------------------------------
-iTunes_LoadSource()
+iTunes_LoadIndex()
 {
-	Loop, Read, %strITunesCacheFilename%
+	Loop, Read, %strITunesIndexFilename%
 	{
 		if (A_Index = 1)
 		{
@@ -321,11 +321,11 @@ iTunes_ReleaseSource()
 
 
 ;-----------------------------------------------------------
-iTunes_SaveSource()
+iTunes_SaveIndex()
 {
 	ProgressStart(1, L(lProgressSavingIndex, 0), intNbLines2Save)
 
-	FileDelete, %strITunesCacheFilename%
+	FileDelete, %strITunesIndexFilename%
 	intLines := 0
 
 	strData := "Index`tKey`tValue`n"
@@ -342,7 +342,7 @@ iTunes_SaveSource()
 		strData := strData . "objArtistsIndex`t" . strArtist . "`t" . strTracks . "`n"
 	}
 
-	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex2%
+	TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex2%
 	for strAlbum, strTracks in objAlbumsIndex
 	{
 		intLines := intLines + 1
@@ -356,7 +356,7 @@ iTunes_SaveSource()
 		strData := strData . "objAlbumsIndex`t" . strAlbum . "`t" . strTracks . "`n"
 	}
 	
-	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex3%
+	TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex3%
 	for strArtistAlbum, strTracks in objArtistsAlbumsIndex
 	{
 		intLines := intLines + 1
@@ -370,7 +370,7 @@ iTunes_SaveSource()
 		strData := strData . "objArtistsAlbumsIndex`t" . strArtistAlbum . "`t" . strTracks . "`n"
 	}
 
-	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex4%
+	TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex4%
 	for strArtist, strAlbums in objAlbumsOfArtistsIndex
 	{
 		intLines := intLines + 1
@@ -384,7 +384,7 @@ iTunes_SaveSource()
 		strData := strData . "objAlbumsOfArtistsIndex`t" . strArtist . "`t" . strAlbums . "`n"
 	}
 
-	TrayTip, % L(lliTunesSavingSourceIndexTitle, lAppName), %liTunesSavingSourceIndex4%
+	TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex4%
 	for strAlbum, strArtists in objArtistsOfAlbumsIndex
 	{
 		intLines := intLines + 1
@@ -413,14 +413,14 @@ SaveBatch(strData)
 {
 	loop
 	{
-		FileAppend, %strData%, %strITunesCacheFilename%
+		FileAppend, %strData%, %strITunesIndexFilename%
 		if ErrorLevel
 			Sleep, 20
 	}
 	until !ErrorLevel or (A_Index > 50) ; after 1 second (20ms x 50), we have a problem
 	
 	if (ErrorLevel)
-		Oops(lErrorWritingCacheFile, strITunesCacheFilename)
+		Oops(lErrorWritingIndexFile, strITunesIndexFilename)
 }
 ;-----------------------------------------------------------
 

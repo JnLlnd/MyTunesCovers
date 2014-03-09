@@ -14,7 +14,7 @@ global objAlbumsOfArtistsIndex := Object()
 global objArtistsOfAlbumsIndex := Object()
 global strSourceType ; "iTunes" currently implemented, "MP3" coming
 global strSourceSelection
-global strSourceCacheFilenameExtension := "SourceCache.csv"
+global strSourceIndexFilenameExtension := "Index.csv"
 
 #Include %A_ScriptDir%\lib\iTunes.ahk ; Cover source (INCLUDE MUST BE AFTER GLOBAL DECLARATIONS)
 
@@ -104,10 +104,10 @@ Cover_InitCoversSource(strSource)
 
 
 ;-----------------------------------------------------------
-Cover_LoadSource()
+Cover_LoadIndex()
 {
 	if StrLen(strSourceType)
-		return %strSourceType%_LoadSource()
+		return %strSourceType%_LoadIndex()
 	else
 		return false
 }
@@ -115,10 +115,10 @@ Cover_LoadSource()
 
 
 ;-----------------------------------------------------------
-Cover_InitArtistsAlbumsIndex()
+Cover_BuildArtistsAlbumsIndex()
 {
 	if StrLen(strSourceType)
-		return %strSourceType%_InitArtistsAlbumsIndex()
+		return %strSourceType%_BuildArtistsAlbumsIndex()
 	else
 		return false
 }
@@ -181,10 +181,10 @@ Cover_ArtistOrAlbumHasNoCover(strTracks)
 
 
 ;-----------------------------------------------------------
-Cover_SaveSource()
+Cover_SaveIndex()
 {
 	if StrLen(strSourceType)
-		return %strSourceType%_SaveSource()
+		return %strSourceType%_SaveIndex()
 	else
 		return -1
 }
@@ -227,9 +227,9 @@ Cover_Play(objCover)
 ;-----------------------------------------------------------
 Cover_ReleaseSource()
 {
-	if !FileExist(A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceCacheFilenameExtension)
-		if YesNoCancel(False, L(lSaveSourceTitle, lAppName), L(lSaveSourcePrompt, strSourceType, lAppName)) = "Yes"
-			Cover_SaveSource()
+	if !FileExist(A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension)
+		if YesNoCancel(False, L(lSaveIndexTitle, lAppName), L(lSaveIndexPrompt, strSourceType, lAppName)) = "Yes"
+			Cover_SaveIndex()
 	if StrLen(strSourceType)
 		return %strSourceType%Cover_ReleaseSource()
 	else
