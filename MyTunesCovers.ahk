@@ -13,7 +13,6 @@
 	- change Save button to Close until someting changed
 	- display filneame when loading/saving index cache
 	- better index saving progress feedback
-	- rename sourcecache file to index
 	- moving index files to a subdirectory
 	- embed images folder in exe or zip?
 
@@ -630,6 +629,9 @@ InitSources:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 
+if !FileExist(A_ScriptDir . "\index\")
+	FileCreateDir, % A_ScriptDir . "\index\"
+
 if !FileExist(strCoversCacheFolder)
 {
 	FileCreateDir, %strCoversCacheFolder%
@@ -642,14 +644,14 @@ if !FileExist(strCoversCacheFolder)
 
 if (Cover_InitCoversSource(strSourceType))
 {
-	if FileExist(A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension)
+	if FileExist(A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension)
 	{
-		strAnswer := YesNoCancel(True, lAppName, lLoadIndex)
+		strAnswer := YesNoCancel(True, L(lLoadIndexTitle, lAppName), L(lLoadIndexPrompt, strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension))
 		if (strAnswer  = "Yes")
 			Cover_LoadIndex() ; use saved index
 		else if (strAnswer = "No")
 		{
-			FileDelete, %A_ScriptDir%\%strSourceType%_%strSourceSelection%_%strSourceIndexFilenameExtension%
+			FileDelete, %A_ScriptDir%\index\%strSourceType%_%strSourceSelection%_%strSourceIndexFilenameExtension%
 			Cover_BuildArtistsAlbumsIndex() ; refresh lists
 		}
 		else
@@ -899,7 +901,7 @@ loop, %intNbTracks%
 			Gosub, EnableGui
 		if YesNoCancel(False, L(lITunesNeedReindexTitle, lAppName), lITunesNeedReindexPrompt) = "Yes"
 		{
-			FileDelete, %A_ScriptDir%\%strSourceType%_%strSourceSelection%_%strSourceIndexFilenameExtension%
+			FileDelete, %A_ScriptDir%\index\%strSourceType%_%strSourceSelection%_%strSourceIndexFilenameExtension%
 			Cover_BuildArtistsAlbumsIndex()
 			Gosub, PopulateDropdownLists
 		}

@@ -7,7 +7,7 @@
 */
 ;===============================================
 
-global intTestLimit := 100000
+global intTestLimit := 1000
 global intLinesPerBatch := 5000
 global intNbLines2Save := 0
 global objITunesunesApp := Object()
@@ -32,7 +32,7 @@ iTunes_InitCoversSource()
 	objITunesPlaylist := objITunesPlaylists.ItemByName(strSourceSelection)
 	objITunesTracks := objITunesPlaylist.Tracks
 
-	strITunesIndexFilename := A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension
+	strITunesIndexFilename := A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension
 
 	return objITunesTracks.Count
 }

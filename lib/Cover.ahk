@@ -227,8 +227,9 @@ Cover_Play(objCover)
 ;-----------------------------------------------------------
 Cover_ReleaseSource()
 {
-	if !FileExist(A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension)
-		if YesNoCancel(False, L(lSaveIndexTitle, lAppName), L(lSaveIndexPrompt, strSourceType, lAppName)) = "Yes"
+	if !FileExist(A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension)
+		if YesNoCancel(False, L(lSaveIndexTitle, lAppName)
+			, L(lSaveIndexPrompt, strSourceType, lAppName, strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension)) = "Yes"
 			Cover_SaveIndex()
 	if StrLen(strSourceType)
 		return %strSourceType%Cover_ReleaseSource()
