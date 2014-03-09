@@ -8,14 +8,14 @@
 	- none (known)
 	
 	TODO
-	- embed images folder in exe or zip?
-	- remane Options to Settings
-	- display filneame when loading/saving index cache
 	- display current playlist as default in playlist dropdown
 	- improve labels in settings dialog box
 	- change Save button to Close until someting changed
+	- display filneame when loading/saving index cache
 	- better index saving progress feedback
 	- rename sourcecache file to index
+	- moving index files to a subdirectory
+	- embed images folder in exe or zip?
 
 	2014-03-## v0.6 ALPHA
 	* moved source selection to options dialog box
@@ -284,7 +284,7 @@ Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked backgroundtrans, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
-Gui, Add, Button, x+10 yp vbtnOptions gGuiOptions, %lOptions%
+Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings, %lSettings%
 
 ; Gui, Font, s10 w700, Verdana
 ; Gui, Add, Text, x10 w%intBoardWidth% center backgroundtrans, %lBoard%
@@ -510,7 +510,7 @@ return
 
 
 ;------------------------------------------------------------
-GuiOptions:
+GuiSettings:
 ;------------------------------------------------------------
 
 intGui1WinID := WinExist("A")
@@ -520,20 +520,20 @@ blnPreviousListsWithNoCover := blnListsWithNoCover
 strPreviousSourceTypeSelection := strSourceSelection
 
 ; Build Gui header
-Gui, 2:New, , % L(lOptionsGuiTitle, lAppName, lAppVersion)
+Gui, 2:New, , % L(lSettingsGuiTitle, lAppName, lAppVersion)
 Gui, 2:+Owner
 Gui, 2:+OwnDialogs
 Gui, 2:+Delimiter%strAlbumArtistDelimiter%
 
 ; Build options
-Gui, 2:Add, Text, x10 y10, %lOptionsSource%
-Gui, 2:Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, %lOptionsSourceITunes%
-Gui, 2:Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled, %lOptionsSourceMP3%
+Gui, 2:Add, Text, x10 y10, %lSettingsSource%
+Gui, 2:Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, %lSettingsSourceITunes%
+Gui, 2:Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled, %lSettingsSourceMP3%
 
 Gui, 2:Add, Text, x10 y30 w300 vlblSourceSelection, Source Selection
 ; MP3 Only
 Gui, 2:Add, Edit, % "x10 y50 w220 vedtMP3Folder " . (strSourceType = "iTunes" ? "hidden" : ""), %strSourceMP3Folder%
-Gui, 2:Add, Button, % "x+10 yp vbtnMP3Folder " . (strSourceType = "iTunes" ? "hidden" : ""), %lOptionsButtonSelectFolder%
+Gui, 2:Add, Button, % "x+10 yp vbtnMP3Folder " . (strSourceType = "iTunes" ? "hidden" : ""), %lSettingsButtonSelectFolder%
 ; iTunes Only
 Gui, 2:Add, DropDownList, % "x10 y50 w300 vdrpITunesPlaylist " . (strSourceType = "MP3" ? "hidden" : ""), %strSourceSelection%
 
@@ -542,8 +542,8 @@ Gui, 2:Add, Checkbox, % "x10 y+10 vchkListsWithNoCover " . (blnListsWithNoCover 
 
 ; Build Gui footer
 Gui, 2:Add, Button, x40 y+20 w100 gButtonDonate, %lDonateButton%
-Gui, 2:Add, Button, x+60 yp w80 gButtonOptionsSave vbtnOptionsSave, %lOptionsSave%
-GuiControl, 2:Focus, btnOptionsSave
+Gui, 2:Add, Button, x+60 yp w80 gButtonSettingsSave vbtnSettingsSave, %lSettingsSave%
+GuiControl, 2:Focus, btnSettingsSave
 
 Gosub, ClickedRadSource
 Gui, 2:Show, AutoSize Center
@@ -573,7 +573,7 @@ return
 
 
 ;------------------------------------------------------------
-ButtonOptionsSave:
+ButtonSettingsSave:
 ;------------------------------------------------------------
 Gui, 2:Submit, NoHide
 
