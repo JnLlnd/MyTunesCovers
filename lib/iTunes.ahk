@@ -7,14 +7,15 @@
 */
 ;===============================================
 
-global intTestLimit := 300000 ; ###
+global intTestLimit := 100000
 global intLinesPerBatch := 5000
 global intNbLines2Save := 0
 global objITunesunesApp := Object()
+global objITunesPlaylists := Object()
 global objITunesTracks := Object()
 global arrTracks
 global intTracksArrayIndex := 0
-global strITunesCacheFilename := "iTunes_" . strSourceCacheFilenameExtension
+global strITunesCacheFilename
 
 
 ;-----------------------------------------------------------
@@ -24,9 +25,14 @@ iTunes_InitCoversSource()
 	; Creates a COM object for the iTunes application (iTunes will be launched if not running)
 	objITunesLibrary := objITunesunesApp.Sources.Item(1)
 	; iTunes library (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - source #1 is the main library
-	objITunesPlaylist := objITunesLibrary.Playlists.Item(1)
-	; iTunes main playlist (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - playlist #1 is the library
+	objITunesPlaylists := objITunesLibrary.Playlists
+	if (strSourceSelection = "ERROR")
+		strSourceSelection := objITunesPlaylists.Item(1).Name
+		; iTunes main playlist (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - playlist #1 is the library
+	objITunesPlaylist := objITunesPlaylists.ItemByName(strSourceSelection)
 	objITunesTracks := objITunesPlaylist.Tracks
+
+	strITunesCacheFilename := A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceCacheFilenameExtension
 
 	return objITunesTracks.Count
 }
@@ -167,7 +173,7 @@ iTunes_InitArtistsAlbumsIndex()
 ;-----------------------------------------------------------
 iTunes_LoadSource()
 {
-	Loop, Read, %A_ScriptDir%\%strITunesCacheFilename%
+	Loop, Read, %strITunesCacheFilename%
 	{
 		if (A_Index = 1)
 		{
@@ -319,7 +325,7 @@ iTunes_SaveSource()
 {
 	ProgressStart(1, L(lProgressSavingIndex, 0), intNbLines2Save)
 
-	FileDelete, %A_ScriptDir%\%strITunesCacheFilename%
+	FileDelete, %strITunesCacheFilename%
 	intLines := 0
 
 	strData := "Index`tKey`tValue`n"
@@ -407,14 +413,14 @@ SaveBatch(strData)
 {
 	loop
 	{
-		FileAppend, %strData%,  %A_ScriptDir%\%strITunesCacheFilename%
+		FileAppend, %strData%, %strITunesCacheFilename%
 		if ErrorLevel
 			Sleep, 20
 	}
 	until !ErrorLevel or (A_Index > 50) ; after 1 second (20ms x 50), we have a problem
 	
 	if (ErrorLevel)
-		Oops(lErrorWritingCacheFile, A_ScriptDir "\" . strITunesCacheFilename)
+		Oops(lErrorWritingCacheFile, strITunesCacheFilename)
 }
 ;-----------------------------------------------------------
 
@@ -497,3 +503,20 @@ iTunes_Play(objThisCover)
 ;-----------------------------------------------------------
 
 
+;-----------------------------------------------------------
+iTunes_GetITunesPlaylist()
+;-----------------------------------------------------------
+{
+	global strAlbumArtistDelimiter
+	
+	strPlaylists := ""
+	loop, % objITunesPlaylists.Count
+	{
+		strPlaylists := strPlaylists . strAlbumArtistDelimiter . objITunesPlaylists.Item(A_Index).Name
+		if (A_Index = 1)
+			strPlaylists := strPlaylists . strAlbumArtistDelimiter
+	}
+
+	return strPlaylists
+}
+;-----------------------------------------------------------

@@ -12,7 +12,8 @@ global objAlbumsIndex := Object()
 global objArtistsAlbumsIndex := Object()
 global objAlbumsOfArtistsIndex := Object()
 global objArtistsOfAlbumsIndex := Object()
-global strCoverSourceType ; "iTunes" currently implemented, "MP3" coming
+global strSourceType ; "iTunes" currently implemented, "MP3" coming
+global strSourceSelection
 global strSourceCacheFilenameExtension := "SourceCache.csv"
 
 #Include %A_ScriptDir%\lib\iTunes.ahk ; Cover source (INCLUDE MUST BE AFTER GLOBAL DECLARATIONS)
@@ -80,7 +81,7 @@ class Cover
 /*
 	SaveCover(strFilePathName)
 	{
-		strResult := %strCoverSourceType%_SetImageFile(this.Index, strFilePathName)
+		strResult := %strSourceType%_SetImageFile(this.Index, strFilePathName)
 		return strResult
 	}
 */
@@ -92,10 +93,10 @@ class Cover
 ;-----------------------------------------------------------
 Cover_InitCoversSource(strSource)
 {
-	strCoverSourceType := strSource ; global variable
+	strSourceType := strSource ; global variable
 
-	if StrLen(strCoverSourceType)
-		 return %strCoverSourceType%_InitCoversSource()
+	if StrLen(strSourceType)
+		 return %strSourceType%_InitCoversSource()
 	else
 		return false
 }
@@ -105,8 +106,8 @@ Cover_InitCoversSource(strSource)
 ;-----------------------------------------------------------
 Cover_LoadSource()
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_LoadSource()
+	if StrLen(strSourceType)
+		return %strSourceType%_LoadSource()
 	else
 		return false
 }
@@ -116,8 +117,8 @@ Cover_LoadSource()
 ;-----------------------------------------------------------
 Cover_InitArtistsAlbumsIndex()
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_InitArtistsAlbumsIndex()
+	if StrLen(strSourceType)
+		return %strSourceType%_InitArtistsAlbumsIndex()
 	else
 		return false
 }
@@ -127,8 +128,8 @@ Cover_InitArtistsAlbumsIndex()
 ;-----------------------------------------------------------
 Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover)
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover)
+	if StrLen(strSourceType)
+		return %strSourceType%_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover)
 	else
 		return false
 }
@@ -138,8 +139,8 @@ Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover)
 ;-----------------------------------------------------------
 Cover_GetCover(intTrackIndex)
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_GetCover(intTrackIndex)
+	if StrLen(strSourceType)
+		return %strSourceType%_GetCover(intTrackIndex)
 	else
 		return false
 }
@@ -149,8 +150,8 @@ Cover_GetCover(intTrackIndex)
 ;-----------------------------------------------------------
 Cover_GetImage(objThisCover)
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_GetImage(objThisCover)
+	if StrLen(strSourceType)
+		return %strSourceType%_GetImage(objThisCover)
 	else
 		return false
 }
@@ -160,8 +161,8 @@ Cover_GetImage(objThisCover)
 ;-----------------------------------------------------------
 Cover_GetArtworkCount(objThisCover)
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_GetArtworkCount(objThisCover)
+	if StrLen(strSourceType)
+		return %strSourceType%_GetArtworkCount(objThisCover)
 	else
 		return -1
 }
@@ -171,8 +172,8 @@ Cover_GetArtworkCount(objThisCover)
 ;-----------------------------------------------------------
 Cover_ArtistOrAlbumHasNoCover(strTracks)
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_ArtistOrAlbumHasNoCover(strTracks)
+	if StrLen(strSourceType)
+		return %strSourceType%_ArtistOrAlbumHasNoCover(strTracks)
 	else
 		return -1
 }
@@ -182,8 +183,8 @@ Cover_ArtistOrAlbumHasNoCover(strTracks)
 ;-----------------------------------------------------------
 Cover_SaveSource()
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_SaveSource()
+	if StrLen(strSourceType)
+		return %strSourceType%_SaveSource()
 	else
 		return -1
 }
@@ -193,8 +194,8 @@ Cover_SaveSource()
 ;-----------------------------------------------------------
 Cover_SaveCoverToTune(ByRef objCover, strFile)
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_SaveCoverToTune(objCover, strFile, blnReplace)
+	if StrLen(strSourceType)
+		return %strSourceType%_SaveCoverToTune(objCover, strFile, blnReplace)
 	else
 		return false
 }
@@ -204,8 +205,8 @@ Cover_SaveCoverToTune(ByRef objCover, strFile)
 ;-----------------------------------------------------------
 Cover_DeleteCoverFromTune(ByRef objCover)
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_DeleteCoverFromTune(objCover)
+	if StrLen(strSourceType)
+		return %strSourceType%_DeleteCoverFromTune(objCover)
 	else
 		return false
 }
@@ -215,8 +216,8 @@ Cover_DeleteCoverFromTune(ByRef objCover)
 ;-----------------------------------------------------------
 Cover_Play(objCover)
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%_Play(objCover)
+	if StrLen(strSourceType)
+		return %strSourceType%_Play(objCover)
 	else
 		return false
 }
@@ -226,8 +227,11 @@ Cover_Play(objCover)
 ;-----------------------------------------------------------
 Cover_ReleaseSource()
 {
-	if StrLen(strCoverSourceType)
-		return %strCoverSourceType%Cover_ReleaseSource()
+	if !FileExist(A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceCacheFilenameExtension)
+		if YesNoCancel(False, L(lSaveSourceTitle, lAppName), L(lSaveSourcePrompt, strSourceType, lAppName)) = "Yes"
+			Cover_SaveSource()
+	if StrLen(strSourceType)
+		return %strSourceType%Cover_ReleaseSource()
 	else
 		return false
 }
@@ -256,3 +260,11 @@ Cover_GenerateGUID()         ; 32 hex digits = 128-bit Globally Unique ID
 ;-----------------------------------------------------------
 
 
+
+;-----------------------------------------------------------
+Cover_GetITunesPlaylist()
+;-----------------------------------------------------------
+{
+	return iTunes_GetITunesPlaylist()
+}
+;-----------------------------------------------------------

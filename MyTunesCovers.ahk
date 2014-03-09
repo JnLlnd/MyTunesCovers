@@ -9,9 +9,20 @@
 	
 	TODO
 	- embed images folder in exe or zip?
-	- move source setting in setting dialog box
+	- remane Options to Settings
+	- display filneame when loading/saving index cache
+	- display current playlist as default in playlist dropdown
+	- improve labels in settings dialog box
+	- change Save button to Close until someting changed
+	- better index saving progress feedback
+	- rename sourcecache file to index
 
-	2014-02-## v0.5 ALPHA
+	2014-03-## v0.6 ALPHA
+	* moved source selection to options dialog box
+	* added iTunes Playlist selection and saving index file according to current playlist selection
+	* moved display only no cover and list only ablum with no cover checkboxes to option dialog box
+
+	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
 	* reload source if not matching the iTunes library
 	* progress bar while creating, saving and loading source index
@@ -23,7 +34,7 @@
 	* progress bar while pasting to selected
 	* button to delete all selected covers
 	* checkbox to show in artists and album dropdowns only albums with at least one tune without cover
-	* display links when no cover, linkes re-arranged, added trask info duration, year and comment
+	* display links when no cover, linkes re-arranged, added track info duration, year and comment
 
 	2014-02-15 v0.4 ALPHA
 	* Use iTunes persistent IDs
@@ -72,9 +83,14 @@
 
 ;@Ahk2Exe-SetName MyTunesCovers
 ;@Ahk2Exe-SetDescription iTunes Cover Manager. Freeware.
-;@Ahk2Exe-SetVersion 0.5
+;@Ahk2Exe-SetVersion 0.6
 ;@Ahk2Exe-SetOrigFilename MyTunesCovers.exe
 
+;@Ahk2Exe-IgnoreBegin
+; Piece of code for developement phase only - won't be compiled
+Menu, Tray, Icon, %A_ScriptDir%\small_icons-256-RED.ico, 1
+; / Piece of code for developement phase only - won't be compiled
+;@Ahk2Exe-IgnoreEnd
 
 ;============================================================
 ; INITIALIZATION
@@ -83,9 +99,10 @@
 #NoEnv
 #SingleInstance force
 #KeyHistory 0
+#NoTrayIcon 
 ListLines, Off
 
-strCurrentVersion := "0.5 alpha" ; always "." between sub-versions, eg "0.1.2"
+strCurrentVersion := "0.6 alpha" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\MyTunesCovers_LANG.ahk
 #Include %A_ScriptDir%\lib\Cover.ahk
@@ -164,6 +181,8 @@ return
 ;-----------------------------------------------------------
 LoadIniFile:
 ;-----------------------------------------------------------
+strSourceType := "iTunes"
+strSourceSelection := ""
 strAlbumArtistDelimiter := chr(182)
 strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
 intPictureSize := 160
@@ -174,6 +193,8 @@ IfNotExist, %strIniFile%
 	FileAppend,
 		(LTrim Join`r`n
 			[Global]
+			Source=%strSourceType%
+			SourceSelection=%strSourceSelection%
 			AlbumArtistDelimiter=%strAlbumArtistDelimiter%
 			CoversCacheFolder=%strCoversCacheFolder%
 			PictureSize=%intPictureSize%
@@ -189,6 +210,8 @@ Loop
 	else
 		break
 }
+IniRead, strSourceType, %strIniFile%, Global, Source, %strSourceType%
+IniRead, strSourceSelection, %strIniFile%, Global, SourceSelection, %strSourceSelection%
 IniRead, strCoversCacheFolder, %strIniFile%, Global, CoversCacheFolder, %strCoversCacheFolder%
 IniRead, intPictureSize, %strIniFile%, Global, PictureSize, %intPictureSize%
 IniRead, strSearchLink1, %strIniFile%, Global, SearchLink1, %strSearchLink1%
@@ -242,8 +265,8 @@ intHeaderHeight := 60
 intFooterHeight := 60
 intStatusBarHeight := 24
 
-Gui, New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
-Gui, +Delimiter%strAlbumArtistDelimiter%
+Gui, 1:New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
+Gui, 1:+Delimiter%strAlbumArtistDelimiter%
 
 Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundHeader, % A_ScriptDir . "\images\background_header.png"
 Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundBoard, % A_ScriptDir . "\images\background_board.png"
@@ -261,13 +284,8 @@ Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked backgroundtrans, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
-Gui, Add, Checkbox, x+20 yp vblnOnlyNoCover gOnlyNoCoverClicked backgroundtrans, %lOnlyNoCover%
-Gui, Add, Checkbox, x+20 yp vblnListsWithNoCover gAlbumsWithNoCoverClicked backgroundtrans, %lListsWithNoCover%
-Gui, Font, s10 w500, Verdana
-Gui, Add, Text, x+20 yp backgroundtrans, %lSource%
-Gui, Font
-Gui, Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked backgroundtrans, % L(lSourceITunes)
-Gui, Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled backgroundtrans, % L(lSourceMP3)
+Gui, Add, Button, x+10 yp vbtnOptions gGuiOptions, %lOptions%
+
 ; Gui, Font, s10 w700, Verdana
 ; Gui, Add, Text, x10 w%intBoardWidth% center backgroundtrans, %lBoard%
 ; Gui, Font
@@ -491,6 +509,122 @@ return
 ;-----------------------------------------------------------
 
 
+;------------------------------------------------------------
+GuiOptions:
+;------------------------------------------------------------
+
+intGui1WinID := WinExist("A")
+strPreviousSourceType := strSourceType
+blnPreviousOnlyNoCover := blnOnlyNoCover
+blnPreviousListsWithNoCover := blnListsWithNoCover
+strPreviousSourceTypeSelection := strSourceSelection
+
+; Build Gui header
+Gui, 2:New, , % L(lOptionsGuiTitle, lAppName, lAppVersion)
+Gui, 2:+Owner
+Gui, 2:+OwnDialogs
+Gui, 2:+Delimiter%strAlbumArtistDelimiter%
+
+; Build options
+Gui, 2:Add, Text, x10 y10, %lOptionsSource%
+Gui, 2:Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, %lOptionsSourceITunes%
+Gui, 2:Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled, %lOptionsSourceMP3%
+
+Gui, 2:Add, Text, x10 y30 w300 vlblSourceSelection, Source Selection
+; MP3 Only
+Gui, 2:Add, Edit, % "x10 y50 w220 vedtMP3Folder " . (strSourceType = "iTunes" ? "hidden" : ""), %strSourceMP3Folder%
+Gui, 2:Add, Button, % "x+10 yp vbtnMP3Folder " . (strSourceType = "iTunes" ? "hidden" : ""), %lOptionsButtonSelectFolder%
+; iTunes Only
+Gui, 2:Add, DropDownList, % "x10 y50 w300 vdrpITunesPlaylist " . (strSourceType = "MP3" ? "hidden" : ""), %strSourceSelection%
+
+Gui, 2:Add, Checkbox, % "x10 y+20 vchkOnlyNoCover " . (blnOnlyNoCover ? "checked" : ""), %lOnlyNoCover%
+Gui, 2:Add, Checkbox, % "x10 y+10 vchkListsWithNoCover " . (blnListsWithNoCover ? "checked" : ""), %lListsWithNoCover%
+
+; Build Gui footer
+Gui, 2:Add, Button, x40 y+20 w100 gButtonDonate, %lDonateButton%
+Gui, 2:Add, Button, x+60 yp w80 gButtonOptionsSave vbtnOptionsSave, %lOptionsSave%
+GuiControl, 2:Focus, btnOptionsSave
+
+Gosub, ClickedRadSource
+Gui, 2:Show, AutoSize Center
+Gui, 1:+Disabled
+
+return
+;------------------------------------------------------------
+
+
+;------------------------------------------------------------
+ClickedRadSource:
+;------------------------------------------------------------
+Gui, 2:Submit, NoHide
+strSourceType := (radSourceITunes ? "iTunes" : "MP3")
+
+if (strPreviousSourceType <> strSourceType)
+{
+	GuiControl, % (strSourceType = "MP3" ? "Show" : "Hide"), edtMP3Folder
+	GuiControl, % (strSourceType = "MP3" ? "Show" : "Hide"), btnMP3Folder
+	GuiControl, % (strSourceType = "iTunes" ? "Show" : "Hide"), drpITunesPlaylist
+}
+strITunesPlaylists := Cover_GetITunesPlaylist()
+GuiControl, 2:, drpITunesPlaylist, %strITunesPlaylists%
+
+return
+;------------------------------------------------------------
+
+
+;------------------------------------------------------------
+ButtonOptionsSave:
+;------------------------------------------------------------
+Gui, 2:Submit, NoHide
+
+blnOnlyNoCover := chkOnlyNoCover
+blnListsWithNoCover := chkListsWithNoCover
+strSourceSelection := drpITunesPlaylist
+
+Gosub, 2GuiClose
+
+return
+;------------------------------------------------------------
+
+
+;------------------------------------------------------------
+ButtonDonate:
+;------------------------------------------------------------
+Run, https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8UWKXDR5ZQNJW ; ### update Paypal code
+
+return
+; ------------------------------------------------
+
+
+;------------------------------------------------------------
+2GuiClose:
+2GuiEscape:
+;------------------------------------------------------------
+
+Gui, 1:-Disabled
+Gui, 2:Destroy
+Gui, 1:Default ; REMEMBER!
+
+WinActivate, ahk_id %intGui1WinID%
+
+if (strPreviousSourceType <> strSourceType or strPreviousSourceTypeSelection <> strSourceSelection)
+{
+	IniWrite, %strSourceType%, %strIniFile%, Global, Source
+	IniWrite, %strSourceSelection%, %strIniFile%, Global, SourceSelection
+	Cover_ReleaseSource()
+	Gosub, InitSources
+}
+else if (blnOnlyNoCover <> blnPreviousOnlyNoCover or blnListsWithNoCover <> blnPreviousListsWithNoCover)
+{
+	if (blnListsWithNoCoverClicked)
+		Gosub, PopulateDropdownLists
+	Gosub, DisplayCovers
+}
+
+return
+;------------------------------------------------------------
+
+
 ;-----------------------------------------------------------
 InitSources:
 ;-----------------------------------------------------------
@@ -505,22 +639,17 @@ if !FileExist(strCoversCacheFolder)
 		ExitApp
 	}
 }
-	
-if (radSourceITunes)
-	strSource := "iTunes"
-else
-	strSource := "MP3"
 
-if (Cover_InitCoversSource(strSource))
+if (Cover_InitCoversSource(strSourceType))
 {
-	if FileExist(A_ScriptDir . "\" . strCoverSourceType . "_" . strSourceCacheFilenameExtension)
+	if FileExist(A_ScriptDir . "\" . strSourceType . "_" . strSourceSelection . "_" . strSourceCacheFilenameExtension)
 	{
 		strAnswer := YesNoCancel(True, lAppName, lLoadCache)
 		if (strAnswer  = "Yes")
 			Cover_LoadSource() ; use cache
 		else if (strAnswer = "No")
 		{
-			FileDelete, %A_ScriptDir%\%strCoverSourceType%_%strSourceCacheFilenameExtension%
+			FileDelete, %A_ScriptDir%\%strSourceType%_%strSourceSelection%_%strSourceCacheFilenameExtension%
 			Cover_InitArtistsAlbumsIndex() ; refresh lists
 		}
 		else
@@ -590,36 +719,12 @@ ExitApp ; will call CleanUpBeforeQuit
 ;-----------------------------------------------------------
 CleanUpBeforeQuit:
 ;-----------------------------------------------------------
-if !FileExist(A_ScriptDir . "\" . strCoverSourceType . "_" . strSourceCacheFilenameExtension)
-	if YesNoCancel(False, L(lSaveSourceTitle, lAppName), L(lSaveSourcePrompt, strCoverSourceType, lAppName)) = "Yes"
-		Cover_SaveSource()
 Gdip_Shutdown(objGdiToken)
 Cover_ReleaseSource()
 if StrLen(strCoversCacheFolder)
 	FileDelete, %strCoversCacheFolder%\*.*
 
 ExitApp
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-ClickedRadSource:
-;-----------------------------------------------------------
-Cover_ReleaseSource()
-
-Gui, Submit, NoHide
-
-if (radSourceITunes)
-	strSource := "iTunes"
-else
-	strSource := "MP3"
-
-if (Cover_InitCoversSource(strSource))
-	Gosub, PopulateDropdownLists
-else
-	Oops(lInitSourceError)
-
-return
 ;-----------------------------------------------------------
 
 
@@ -655,16 +760,6 @@ else
 		. lDropDownAllArtists . strAlbumArtistDelimiter . objArtistsOfAlbumsIndex[lstAlbums]
 
 GuiControl, ChooseString, lstArtists, %strPreviousArtist%
-Gosub, DisplayCovers
-
-return
-;-----------------------------------------------------------
-
-
-;-----------------------------------------------------------
-OnlyNoCoverClicked:
-;-----------------------------------------------------------
-
 Gosub, DisplayCovers
 
 return
@@ -804,7 +899,7 @@ loop, %intNbTracks%
 			Gosub, EnableGui
 		if YesNoCancel(False, L(lITunesNeedRecacheTitle, lAppName), lITunesNeedRecachePrompt) = "Yes"
 		{
-			FileDelete, %A_ScriptDir%\%strCoverSourceType%_%strSourceCacheFilenameExtension%
+			FileDelete, %A_ScriptDir%\%strSourceType%_%strSourceSelection%_%strSourceCacheFilenameExtension%
 			Cover_InitArtistsAlbumsIndex()
 			Gosub, PopulateDropdownLists
 		}
@@ -1411,15 +1506,6 @@ ButtonCheck4Update: ; ### NEED TEST
 ; ------------------------------------------------
 blnButtonCheck4Update := True ; ???
 Gosub, Check4Update
-
-return
-; ------------------------------------------------
-
-
-; ------------------------------------------------
-ButtonDonate:
-; ------------------------------------------------
-Run, https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8UWKXDR5ZQNJW ; ### update Paypal code
 
 return
 ; ------------------------------------------------
