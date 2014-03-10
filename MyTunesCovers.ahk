@@ -127,6 +127,9 @@ Init:
 
 SetWorkingDir, %A_ScriptDir%
 
+strSkin := "night"
+strSkinExtension := "png"
+
 strTrackKinds := "File track,CD track,URL track,Device track,Shared library or Cloud track"
 StringSplit, arrTrackKinds, strTrackKinds, `,
 
@@ -242,6 +245,15 @@ ptrBitmapBoardButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\load_c
 ptrBitmapBoardButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\load_file-200x200.png") ; if absent, url download from repo ? ###
 ptrBitmapBoardButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\remove-200x200.png") ; if absent, url download from repo ? ###
 
+ptrBitmapBackgroundHeader := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_header." . strSkinExtension)
+Gdip_GetImageDimensions(ptrBitmapBackgroundHeader, intWidthBackgroundHeader, intHeightBackgroundHeader)
+ptrBitmapBackgroundBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_board." . strSkinExtension)
+Gdip_GetImageDimensions(ptrBitmapBackgroundBoard, intWidthBackgroundBoard, intHeightBackgroundBoard)
+ptrBitmapBackgroundCovers := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_covers." . strSkinExtension)
+Gdip_GetImageDimensions(ptrBitmapBackgroundCovers, intWidthBackgroundCovers, intHeightBackgroundCovers)
+; ptrBitmapBackgroundFooter := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_footer." . strSkinExtension)
+; Gdip_GetImageDimensions(ptrBitmapBackgroundFooter, intWidthBackgroundFooter, intHeightBackgroundFooter)
+
 return
 ;-----------------------------------------------------------
 
@@ -265,10 +277,14 @@ intStatusBarHeight := 24
 Gui, 1:New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
 Gui, 1:+Delimiter%strAlbumArtistDelimiter%
 
-Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundHeader, % A_ScriptDir . "\images\background_header.png"
-Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundBoard, % A_ScriptDir . "\images\background_board.png"
-Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundCovers, % A_ScriptDir . "\images\background_covers.png"
-Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundFooter, % A_ScriptDir . "\images\background_footer.png"
+; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundHeader, % A_ScriptDir . "\skins\" . strSkin . "\background_header." . strSkinExtension
+Gui, Add, Picture, % "x0 y0 w" . intWidthBackgroundHeader . " h" . intHeightBackgroundHeader, % A_ScriptDir . "\skins\" . strSkin . "\background_header." . strSkinExtension
+; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundBoard, % A_ScriptDir . "\skins\" . strSkin . "\background_board." . strSkinExtension
+Gui, Add, Picture, % "x0 y" . intHeaderHeight . " w" . intWidthBackgroundBoard . " h" . intHeightBackgroundBoard, % A_ScriptDir . "\skins\" . strSkin . "\background_board." . strSkinExtension
+; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundCovers, % A_ScriptDir . "\skins\" . strSkin . "\background_covers." . strSkinExtension
+Gui, Add, Picture, % "x" . intBoardWidth . " y" . intHeaderHeight . " w" . intWidthBackgroundCovers . " h" . intHeightBackgroundCovers . " 0xE vpicBackgroundCovers", % A_ScriptDir . "\skins\" . strSkin . "\background_covers." . strSkinExtension
+; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundFooter, % A_ScriptDir . "\skins\" . strSkin . "\background_footer." . strSkinExtension
+; Gui, Add, Picture, % "x0 y" . intHeaderHeight + (intMaxNbRow * intRowHeight) . " w" . intWidthBackgroundFooter . " h" . intHeightBackgroundFooter, % A_ScriptDir . "\skins\" . strSkin . "\background_footer." . strSkinExtension
 
 Gui, Font, s12 w700, Verdana
 Gui, Add, Text, x10 y10 w%intBoardWidth% center backgroundtrans, % L(lAppName)
@@ -335,10 +351,10 @@ intAvailWidth := A_GuiWidth - 5
 intAvailHeight := A_GuiHeight
 Gosub, CalcMaxRowsAndCols ; calculate intMaxNbCol and intMaxNbRow
 
-GuiControl, Move, picBackgroundHeader, % "x0 y0 w" . intAvailWidth . " h" . intHeaderHeight
-GuiControl, Move, picBackgroundBoard, % "x0 y" . intHeaderHeight . " w" . intBoardWidth . " h" . (intMaxNbRow * intRowHeight)
-GuiControl, Move, picBackgroundCovers, % "x" . intBoardWidth . " y" . intHeaderHeight . " w" . (intAvailWidth - intBoardWidth + 10) . " h" . (intMaxNbRow * intRowHeight)
-GuiControl, Move, picBackgroundFooter, % "x0 y" . intHeaderHeight + (intMaxNbRow * intRowHeight) . " w" . intAvailWidth . " h" . (intFooterHeight + 200)
+; GuiControl, Move, picBackgroundHeader, % "x0 y0 w" . intAvailWidth . " h" . intHeaderHeight
+; GuiControl, Move, picBackgroundBoard, % "x0 y" . intHeaderHeight . " w" . intBoardWidth . " h" . (intMaxNbRow * intRowHeight)
+; GuiControl, Move, picBackgroundCovers, % "x" . intBoardWidth . " y" . intHeaderHeight . " w" . (intAvailWidth - intBoardWidth + 10) . " h" . (intMaxNbRow * intRowHeight)
+; GuiControl, Move, picBackgroundFooter, % "x0 y" . intHeaderHeight + (intMaxNbRow * intRowHeight) . " w" . intAvailWidth . " h" . (intFooterHeight + 200)
 
 ; intVerticalLineH := intMaxNbRow * intRowHeight
 ; GuiControl, Move, lblVerticalLine, h%intVerticalLineH%
