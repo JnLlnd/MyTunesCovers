@@ -8,18 +8,16 @@
 	- none (known)
 	
 	TODO
-	- display current playlist as default in playlist dropdown
-	- improve labels in settings dialog box
-	- change Save button to Close until someting changed
-	- display filneame when loading/saving index cache
-	- better index saving progress feedback
-	- moving index files to a subdirectory
+	- encode indexes
 	- embed images folder in exe or zip?
 
 	2014-03-## v0.6 ALPHA
 	* moved source selection to options dialog box
 	* added iTunes Playlist selection and saving index file according to current playlist selection
 	* moved display only no cover and list only ablum with no cover checkboxes to option dialog box
+	* moving index files to a subdirectory
+	* display file name when loading/saving index cache, display file date when loading
+	* display current playlist as default in playlist dropdown
 
 	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
@@ -283,7 +281,7 @@ Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked backgroundtrans, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
-Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings, %lSettings%
+Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings Disabled, %lSettings%
 
 ; Gui, Font, s10 w700, Verdana
 ; Gui, Add, Text, x10 w%intBoardWidth% center backgroundtrans, %lBoard%
@@ -514,9 +512,9 @@ GuiSettings:
 
 intGui1WinID := WinExist("A")
 strPreviousSourceType := strSourceType
+strPreviousSourceTypeSelection := strSourceSelection
 blnPreviousOnlyNoCover := blnOnlyNoCover
 blnPreviousListsWithNoCover := blnListsWithNoCover
-strPreviousSourceTypeSelection := strSourceSelection
 
 ; Build Gui header
 Gui, 2:New, , % L(lSettingsGuiTitle, lAppName, lAppVersion)
@@ -529,19 +527,19 @@ Gui, 2:Add, Text, x10 y10, %lSettingsSource%
 Gui, 2:Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, %lSettingsSourceITunes%
 Gui, 2:Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled, %lSettingsSourceMP3%
 
-Gui, 2:Add, Text, x10 y30 w300 vlblSourceSelection, Source Selection
+Gui, 2:Add, Text, x10 y30 w300 vlblSourceSelection, % (strSourceType = "iTunes" ? "Select the playlist" : "Select the root folder")
 ; MP3 Only
-Gui, 2:Add, Edit, % "x10 y50 w220 vedtMP3Folder " . (strSourceType = "iTunes" ? "hidden" : ""), %strSourceMP3Folder%
+Gui, 2:Add, Edit, % "x10 y50 w220 vedtMP3Folder gSettingChanged " . (strSourceType = "iTunes" ? "hidden" : ""), %strSourceMP3Folder%
 Gui, 2:Add, Button, % "x+10 yp vbtnMP3Folder " . (strSourceType = "iTunes" ? "hidden" : ""), %lSettingsButtonSelectFolder%
 ; iTunes Only
-Gui, 2:Add, DropDownList, % "x10 y50 w300 vdrpITunesPlaylist " . (strSourceType = "MP3" ? "hidden" : ""), %strSourceSelection%
+Gui, 2:Add, DropDownList, % "x10 y50 w300 vdrpITunesPlaylist gSettingChanged " . (strSourceType = "MP3" ? "hidden" : "")
 
-Gui, 2:Add, Checkbox, % "x10 y+20 vchkOnlyNoCover " . (blnOnlyNoCover ? "checked" : ""), %lOnlyNoCover%
-Gui, 2:Add, Checkbox, % "x10 y+10 vchkListsWithNoCover " . (blnListsWithNoCover ? "checked" : ""), %lListsWithNoCover%
+Gui, 2:Add, Checkbox, % "x10 y+20 vchkOnlyNoCover gSettingChanged " . (blnOnlyNoCover ? "checked" : ""), %lOnlyNoCover%
+Gui, 2:Add, Checkbox, % "x10 y+10 vchkListsWithNoCover gSettingChanged " . (blnListsWithNoCover ? "checked" : ""), %lListsWithNoCover%
 
 ; Build Gui footer
 Gui, 2:Add, Button, x40 y+20 w100 gButtonDonate, %lDonateButton%
-Gui, 2:Add, Button, x+60 yp w80 gButtonSettingsSave vbtnSettingsSave, %lSettingsSave%
+Gui, 2:Add, Button, x+60 yp w80 gButtonSettingsSave vbtnSettingsSave, %lSettingsClose%
 GuiControl, 2:Focus, btnSettingsSave
 
 Gosub, ClickedRadSource
@@ -563,9 +561,24 @@ if (strPreviousSourceType <> strSourceType)
 	GuiControl, % (strSourceType = "MP3" ? "Show" : "Hide"), edtMP3Folder
 	GuiControl, % (strSourceType = "MP3" ? "Show" : "Hide"), btnMP3Folder
 	GuiControl, % (strSourceType = "iTunes" ? "Show" : "Hide"), drpITunesPlaylist
+	GuiControl, 2:, lblSourceSelection, % (strSourceType = "iTunes" ? "Select the playlist" : "Select the root folder")
+	GuiControl, 2:, btnSettingsSave, %lSettingsSave%
 }
-strITunesPlaylists := Cover_GetITunesPlaylist()
-GuiControl, 2:, drpITunesPlaylist, %strITunesPlaylists%
+if (strSourceType = "iTunes")
+{
+	strITunesPlaylists := Cover_GetITunesPlaylist()
+	StringReplace, strITunesPlaylists, strITunesPlaylists, %strSourceSelection%, %strSourceSelection%%strAlbumArtistDelimiter%
+	GuiControl, 2:, drpITunesPlaylist, %strITunesPlaylists%
+}
+
+return
+;------------------------------------------------------------
+
+
+;------------------------------------------------------------
+SettingChanged:
+;------------------------------------------------------------
+GuiControl, 2:, btnSettingsSave, %lSettingsSave%
 
 return
 ;------------------------------------------------------------
@@ -610,12 +623,14 @@ if (strPreviousSourceType <> strSourceType or strPreviousSourceTypeSelection <> 
 {
 	IniWrite, %strSourceType%, %strIniFile%, Global, Source
 	IniWrite, %strSourceSelection%, %strIniFile%, Global, SourceSelection
-	Cover_ReleaseSource()
+	Cover_ReleaseSource(strPreviousSourceType, strPreviousSourceTypeSelection)
 	Gosub, InitSources
+	Gosub, DisplayCovers ; initialize empty board
 }
-else if (blnOnlyNoCover <> blnPreviousOnlyNoCover or blnListsWithNoCover <> blnPreviousListsWithNoCover)
+
+if (blnPreviousOnlyNoCover <> blnOnlyNoCover or blnPreviousListsWithNoCover <> blnListsWithNoCover)
 {
-	if (blnListsWithNoCoverClicked)
+	if (blnPreviousListsWithNoCover <> blnListsWithNoCover)
 		Gosub, PopulateDropdownLists
 	Gosub, DisplayCovers
 }
@@ -644,18 +659,18 @@ if !FileExist(strCoversCacheFolder)
 
 if (Cover_InitCoversSource(strSourceType))
 {
-	if FileExist(A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension)
+	if FileExist(A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension)
 	{
-		strAnswer := YesNoCancel(True, L(lLoadIndexTitle, lAppName), L(lLoadIndexPrompt, strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension))
+		FileGetTime, strIndexDate, % A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension, C
+		FormatTime, strIndexDate, %strIndexDate%
+		strAnswer := YesNoCancel(True, L(lLoadIndexTitle, lAppName), L(lLoadIndexPrompt, strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension, strIndexDate))
 		if (strAnswer  = "Yes")
 			Cover_LoadIndex() ; use saved index
 		else if (strAnswer = "No")
 		{
-			FileDelete, %A_ScriptDir%\index\%strSourceType%_%strSourceSelection%_%strSourceIndexFilenameExtension%
+			FileDelete, %A_ScriptDir%\index\%strSourceType%_%strSourceSelection%_%strIndexFilenameExtension%
 			Cover_BuildArtistsAlbumsIndex() ; refresh lists
 		}
-		else
-			return
 	}
 	else
 		Cover_BuildArtistsAlbumsIndex() ; have to refresh lists
@@ -664,6 +679,8 @@ if (Cover_InitCoversSource(strSourceType))
 }
 else
 	Oops(lInitSourceError)
+
+GuiControl, Enable, btnSettings
 
 return
 ;-----------------------------------------------------------
@@ -722,7 +739,7 @@ ExitApp ; will call CleanUpBeforeQuit
 CleanUpBeforeQuit:
 ;-----------------------------------------------------------
 Gdip_Shutdown(objGdiToken)
-Cover_ReleaseSource()
+Cover_ReleaseSource(strSourceType, strSourceSelection)
 if StrLen(strCoversCacheFolder)
 	FileDelete, %strCoversCacheFolder%\*.*
 
@@ -901,7 +918,7 @@ loop, %intNbTracks%
 			Gosub, EnableGui
 		if YesNoCancel(False, L(lITunesNeedReindexTitle, lAppName), lITunesNeedReindexPrompt) = "Yes"
 		{
-			FileDelete, %A_ScriptDir%\index\%strSourceType%_%strSourceSelection%_%strSourceIndexFilenameExtension%
+			FileDelete, %A_ScriptDir%\index\%strSourceType%_%strSourceSelection%_%strIndexFilenameExtension%
 			Cover_BuildArtistsAlbumsIndex()
 			Gosub, PopulateDropdownLists
 		}

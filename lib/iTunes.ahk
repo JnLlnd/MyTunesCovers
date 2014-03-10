@@ -7,7 +7,7 @@
 */
 ;===============================================
 
-global intTestLimit := 1000
+global intTestLimit := 100000
 global intLinesPerBatch := 5000
 global intNbLines2Save := 0
 global objITunesunesApp := Object()
@@ -32,7 +32,7 @@ iTunes_InitCoversSource()
 	objITunesPlaylist := objITunesPlaylists.ItemByName(strSourceSelection)
 	objITunesTracks := objITunesPlaylist.Tracks
 
-	strITunesIndexFilename := A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strSourceIndexFilenameExtension
+	strITunesIndexFilename := A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension
 
 	return objITunesTracks.Count
 }
@@ -321,11 +321,12 @@ iTunes_ReleaseSource()
 
 
 ;-----------------------------------------------------------
-iTunes_SaveIndex()
+iTunes_SaveIndex(strSource, strSelection)
 {
 	ProgressStart(1, L(lProgressSavingIndex, 0), intNbLines2Save)
 
-	FileDelete, %strITunesIndexFilename%
+	strFilename := A_ScriptDir . "\index\" . strSource . "_" . strSelection . "_" . strIndexFilenameExtension
+	FileDelete, %strFilename%
 	intLines := 0
 
 	strData := "Index`tKey`tValue`n"
@@ -336,13 +337,13 @@ iTunes_SaveIndex()
 			ProgressUpdate(1, intLines, intNbLines2Save, L(lProgressSavingIndex, Round(intLines / intNbLines2Save * 100, 0)))
 		if !Mod(intLines, intLinesPerBatch)
 		{
-			SaveBatch(strData)
+			SaveBatch(strData, strFilename)
 			strData := ""
 		}
 		strData := strData . "objArtistsIndex`t" . strArtist . "`t" . strTracks . "`n"
 	}
 
-	TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex2%
+	; TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex2%
 	for strAlbum, strTracks in objAlbumsIndex
 	{
 		intLines := intLines + 1
@@ -350,13 +351,13 @@ iTunes_SaveIndex()
 			ProgressUpdate(1, intLines, intNbLines2Save, L(lProgressSavingIndex, Round(intLines / intNbLines2Save * 100, 0)))
 		if !Mod(intLines, intLinesPerBatch)
 		{
-			SaveBatch(strData)
+			SaveBatch(strData, strFilename)
 			strData := ""
 		}
 		strData := strData . "objAlbumsIndex`t" . strAlbum . "`t" . strTracks . "`n"
 	}
 	
-	TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex3%
+	; TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex3%
 	for strArtistAlbum, strTracks in objArtistsAlbumsIndex
 	{
 		intLines := intLines + 1
@@ -364,13 +365,13 @@ iTunes_SaveIndex()
 			ProgressUpdate(1, intLines, intNbLines2Save, L(lProgressSavingIndex, Round(intLines / intNbLines2Save * 100, 0)))
 		if !Mod(intLines, intLinesPerBatch)
 		{
-			SaveBatch(strData)
+			SaveBatch(strData, strFilename)
 			strData := ""
 		}
 		strData := strData . "objArtistsAlbumsIndex`t" . strArtistAlbum . "`t" . strTracks . "`n"
 	}
 
-	TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex4%
+	; TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex4%
 	for strArtist, strAlbums in objAlbumsOfArtistsIndex
 	{
 		intLines := intLines + 1
@@ -378,13 +379,13 @@ iTunes_SaveIndex()
 			ProgressUpdate(1, intLines, intNbLines2Save, L(lProgressSavingIndex, Round(intLines / intNbLines2Save * 100, 0)))
 		if !Mod(intLines, intLinesPerBatch)
 		{
-			SaveBatch(strData)
+			SaveBatch(strData, strFilename)
 			strData := ""
 		}
 		strData := strData . "objAlbumsOfArtistsIndex`t" . strArtist . "`t" . strAlbums . "`n"
 	}
 
-	TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex4%
+	; TrayTip, % L(lliTunesSavingIndexTitle, lAppName), %liTunesSavingIndex4%
 	for strAlbum, strArtists in objArtistsOfAlbumsIndex
 	{
 		intLines := intLines + 1
@@ -392,7 +393,7 @@ iTunes_SaveIndex()
 			ProgressUpdate(1, intLines, intNbLines2Save, L(lProgressSavingIndex, Round(intLines / intNbLines2Save * 100, 0)))
 		if !Mod(intLines, intLinesPerBatch)
 		{
-			SaveBatch(strData)
+			SaveBatch(strData, strFilename)
 			strData := ""
 		}
 		strData := strData . "objArtistsOfAlbumsIndex`t" . strAlbum . "`t" . strArtists . "`n"
@@ -400,7 +401,7 @@ iTunes_SaveIndex()
 
 	ProgressUpdate(1, intNbLines2Save, intNbLines2Save, L(lProgressInitArtistsAlbums, 100))
 	
-	SaveBatch(strData)
+	SaveBatch(strData, strFilename)
 	
 	ProgressStop(1)
 	TrayTip
@@ -409,11 +410,11 @@ iTunes_SaveIndex()
 
 
 ;-----------------------------------------------------------
-SaveBatch(strData)
+SaveBatch(strData, strFilename)
 {
 	loop
 	{
-		FileAppend, %strData%, %strITunesIndexFilename%
+		FileAppend, %strData%, %strFilename%
 		if ErrorLevel
 			Sleep, 20
 	}
@@ -470,8 +471,9 @@ iTunes_SaveCoverToTune(ByRef objThisCover, strFile)
 		strResult := objArtwork.SetArtworkFromFile(strFile)
 	}
 	else
-		objArtwork := objTrack.AddArtworkFromFile(strFile)
+		strResult := objTrack.AddArtworkFromFile(strFile)
 	
+	; strResult is always empty even when errors occur
 	return true
 }
 ;-----------------------------------------------------------
@@ -508,14 +510,11 @@ iTunes_GetITunesPlaylist()
 ;-----------------------------------------------------------
 {
 	global strAlbumArtistDelimiter
+	global strSourceSelection
 	
 	strPlaylists := ""
 	loop, % objITunesPlaylists.Count
-	{
 		strPlaylists := strPlaylists . strAlbumArtistDelimiter . objITunesPlaylists.Item(A_Index).Name
-		if (A_Index = 1)
-			strPlaylists := strPlaylists . strAlbumArtistDelimiter
-	}
 
 	return strPlaylists
 }
