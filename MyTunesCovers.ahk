@@ -127,9 +127,6 @@ Init:
 
 SetWorkingDir, %A_ScriptDir%
 
-strSkin := "night"
-strSkinExtension := "png"
-
 strTrackKinds := "File track,CD track,URL track,Device track,Shared library or Cloud track"
 StringSplit, arrTrackKinds, strTrackKinds, `,
 
@@ -188,6 +185,7 @@ strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
 intPictureSize := 160
 strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=~artist~ ""~album~"""
 strSearchLink2 := "http://www.covermytunes.com/search.php?search_query=~artist~ ~album~"
+strSkin := "night"
 
 IfNotExist, %strIniFile%
 	FileAppend,
@@ -200,6 +198,7 @@ IfNotExist, %strIniFile%
 			PictureSize=%intPictureSize%
 			SearchLink1=%strSearchLink1%
 			SearchLink2=%strSearchLink2%
+			Skin=Default
 )
 		, %strIniFile%
 Loop
@@ -217,6 +216,26 @@ IniRead, intPictureSize, %strIniFile%, Global, PictureSize, %intPictureSize%
 IniRead, strSearchLink1, %strIniFile%, Global, SearchLink1, %strSearchLink1%
 IniRead, strSearchLink2, %strIniFile%, Global, SearchLink2, %strSearchLink2%
 IniRead, strLatestSkipped, %strIniFile%, Global, LatestVersionSkipped, 0.0
+IniRead, strSkin, %strIniFile%, Global, Skin, %strSkin%
+
+strSkinIniFile := A_ScriptDir . "\skins\" . strSkin . "\" . strSkin . ".ini"
+IniRead, strFontNameTitle, %strSkinIniFile%, Fonts, NameTitle
+IniRead, strFontOptionsTitle, %strSkinIniFile%, Fonts, OptionsTitle
+IniRead, strFontNameHeaderText, %strSkinIniFile%, Fonts, NameHeaderText
+IniRead, strFontOptionsHeaderText, %strSkinIniFile%, Fonts, OptionsHeaderText
+IniRead, strFontNamePage, %strSkinIniFile%, Fonts, NamePage
+IniRead, strFontOptionsPage, %strSkinIniFile%, Fonts, OptionsPage
+IniRead, strFontNameBoardInside, %strSkinIniFile%, Fonts, NameBoardInside
+IniRead, strFontOptionsBoardInside, %strSkinIniFile%, Fonts, OptionsBoardInside
+IniRead, strFontNameBoardName, %strSkinIniFile%, Fonts, NameBoardName
+IniRead, strFontOptionsBoardName, %strSkinIniFile%, Fonts, OptionsBoardName
+IniRead, strFontNameCoverInside, %strSkinIniFile%, Fonts, NameCoverInside
+IniRead, strFontOptionsCoverInside, %strSkinIniFile%, Fonts, OptionsCoverInside
+IniRead, strFontNameCoverName, %strSkinIniFile%, Fonts, NameCoverName
+IniRead, strFontOptionsCoverName, %strSkinIniFile%, Fonts, OptionsCoverName
+
+IniRead, strWindowBackground, %strSkinIniFile%, Colors, WindowBackground
+IniRead, strWindowControls, %strSkinIniFile%, Colors, WindowControls
 
 return
 ;------------------------------------------------------------
@@ -225,31 +244,31 @@ return
 ;-----------------------------------------------------------
 InitPersistentCovers:
 ;-----------------------------------------------------------
-if !FileExist(A_ScriptDir . "\images\")
+if !FileExist(A_ScriptDir . "\skins\")
 {
-	Oops(lCoverNoPersistentImages, A_ScriptDir . "\images\", lAppName)
+	Oops(lCoverNoPersistentImages, A_ScriptDir . "\skins\", lAppName)
 	ExitApp
 }
-ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\no_cover-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\fill_cover-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\empty-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\copy_here-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapError := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\error-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\clip-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\select-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\paste_here-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\delete-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton0 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\paste_to_selected-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\make_master-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\load_clipboard-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\load_file-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\images\remove-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\no_cover-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\fill_cover-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\empty-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\copy_here-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapError := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\error-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\clip-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\select-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\paste_here-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapCoverButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\delete-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton0 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\paste_to_selected-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\make_master-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\load_clipboard-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\load_file-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapBoardButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\remove-200x200.png") ; if absent, url download from repo ? ###
 
-ptrBitmapBackgroundHeader := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_header." . strSkinExtension)
+ptrBitmapBackgroundHeader := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_header.png")
 Gdip_GetImageDimensions(ptrBitmapBackgroundHeader, intWidthBackgroundHeader, intHeightBackgroundHeader)
-ptrBitmapBackgroundBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_board." . strSkinExtension)
+ptrBitmapBackgroundBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_board.png")
 Gdip_GetImageDimensions(ptrBitmapBackgroundBoard, intWidthBackgroundBoard, intHeightBackgroundBoard)
-ptrBitmapBackgroundCovers := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_covers." . strSkinExtension)
+ptrBitmapBackgroundCovers := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_covers.png")
 Gdip_GetImageDimensions(ptrBitmapBackgroundCovers, intWidthBackgroundCovers, intHeightBackgroundCovers)
 ; ptrBitmapBackgroundFooter := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_footer." . strSkinExtension)
 ; Gdip_GetImageDimensions(ptrBitmapBackgroundFooter, intWidthBackgroundFooter, intHeightBackgroundFooter)
@@ -275,29 +294,34 @@ intFooterHeight := 60
 intStatusBarHeight := 24
 
 Gui, 1:New, +Resize, % L(lGuiTitle, lAppName, lAppVersion)
+Gui, Color, %strWindowBackground%, %strWindowControls%
 Gui, 1:+Delimiter%strAlbumArtistDelimiter%
 
 ; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundHeader, % A_ScriptDir . "\skins\" . strSkin . "\background_header." . strSkinExtension
-Gui, Add, Picture, % "x0 y0 w" . intWidthBackgroundHeader . " h" . intHeightBackgroundHeader, % A_ScriptDir . "\skins\" . strSkin . "\background_header." . strSkinExtension
+Gui, Add, Picture, % "x0 y0 w" . intWidthBackgroundHeader . " h" . intHeightBackgroundHeader, % A_ScriptDir . "\skins\" . strSkin . "\background_header.png"
 ; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundBoard, % A_ScriptDir . "\skins\" . strSkin . "\background_board." . strSkinExtension
-Gui, Add, Picture, % "x0 y" . intHeaderHeight . " w" . intWidthBackgroundBoard . " h" . intHeightBackgroundBoard, % A_ScriptDir . "\skins\" . strSkin . "\background_board." . strSkinExtension
+Gui, Add, Picture, % "x0 y" . intHeaderHeight . " w" . intWidthBackgroundBoard . " h" . intHeightBackgroundBoard, % A_ScriptDir . "\skins\" . strSkin . "\background_board.png"
 ; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundCovers, % A_ScriptDir . "\skins\" . strSkin . "\background_covers." . strSkinExtension
-Gui, Add, Picture, % "x" . intBoardWidth . " y" . intHeaderHeight . " w" . intWidthBackgroundCovers . " h" . intHeightBackgroundCovers . " 0xE vpicBackgroundCovers", % A_ScriptDir . "\skins\" . strSkin . "\background_covers." . strSkinExtension
+Gui, Add, Picture, % "x" . intBoardWidth . " y" . intHeaderHeight . " w" . intWidthBackgroundCovers . " h" . intHeightBackgroundCovers . " 0xE vpicBackgroundCovers", % A_ScriptDir . "\skins\" . strSkin . "\background_covers.png"
 ; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundFooter, % A_ScriptDir . "\skins\" . strSkin . "\background_footer." . strSkinExtension
 ; Gui, Add, Picture, % "x0 y" . intHeaderHeight + (intMaxNbRow * intRowHeight) . " w" . intWidthBackgroundFooter . " h" . intHeightBackgroundFooter, % A_ScriptDir . "\skins\" . strSkin . "\background_footer." . strSkinExtension
 
-Gui, Font, s12 w700, Verdana
+Gui, Font, %strFontOptionsTitle%, %strFontNameTitle%
 Gui, Add, Text, x10 y10 w%intBoardWidth% center backgroundtrans, % L(lAppName)
-Gui, Font
-Gui, Add, Button, x+10 yp vbtnSelectAll gButtonSelectAllClicked w70, %lSelectAll%
-Gui, Add, Button, x+10 yp vbtnDeleteSelected gButtonDeleteSelectedClicked w90, %lDeleteSelected%
-Gui, Font, s10 w500, Verdana
-Gui, Add, Text, x+20 yp gLabelAllArtistsClicked backgroundtrans, %lArtistsDropdownLabel%
-Gui, Add, DropDownList, x+20 yp w300 vlstArtists gArtistsDropDownChanged Sort
+; Gui, Add, Button, x+10 yp vbtnSelectAll gButtonSelectAllClicked w70, %lSelectAll%
+Gui, Add, Picture, x+10 yp vbtnSelectAll gButtonSelectAllClicked, % A_ScriptDir . "\skins\" . strSkin . "\button_select_all.png"
+; Gui, Add, Button, x+10 yp vbtnDeleteSelected gButtonDeleteSelectedClicked w90, %lDeleteSelected%
+GuiControlGet, arrButtonPos, Pos, btnSelectAll
+Gui, Add, Picture, x%arrButtonPosX% y%arrButtonPosY% vbtnDeselectAll gButtonDeselectAllClicked hidden, % A_ScriptDir . "\skins\" . strSkin . "\button_deselect_all.png"
+Gui, Add, Picture, x+10 yp vbtnDeleteSelected gButtonDeleteSelectedClicked, % A_ScriptDir . "\skins\" . strSkin . "\button_delete_selected.png"
+Gui, Font, %strFontOptionsHeaderText%, %strFontNameHeaderText%
+Gui, Add, Text, x+30 yp gLabelAllArtistsClicked backgroundtrans, %lArtistsDropdownLabel%
+Gui, Add, DropDownList, x+10 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked backgroundtrans, %lAlbumsDropdownLabel%
-Gui, Add, DropDownList, x+20 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
+Gui, Add, DropDownList, x+10 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
-Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings Disabled, %lSettings%
+; Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings Disabled, %lSettings%
+Gui, Add, Picture, x+40 yp vbtnSettings gGuiSettings Disabled,% A_ScriptDir . "\skins\" . strSkin . "\button_settings.png"
 
 ; Gui, Font, s10 w700, Verdana
 ; Gui, Add, Text, x10 w%intBoardWidth% center backgroundtrans, %lBoard%
@@ -312,9 +336,12 @@ intHorizontalLineW := intPictureSize + intButtonSize
 Gui, Add, Text, x10 y%intHorizontalLineY% w%intHorizontalLineW% 0x10 vlblHorizontalBoardLine ; Horizontal Line > Etched Gray
 */
 
-Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
-Gui, Add, Text, x+50 yp w60 vlblPage backgroundtrans
-Gui, Add, Button, x+50 yp w80 vbtnNext gButtonNextClicked hidden, % lNext . " ->"
+; Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
+Gui, Add, Picture, x150 y+10 vbtnPrevious gButtonPreviousClicked hidden, % A_ScriptDir . "\skins\" . strSkin . "\button_previous.png"
+Gui, Font, %strFontOptionsPage%, %strFontNamePage%
+Gui, Add, Text, x+50 yp w80 vlblPage ; backgroundtrans
+; Gui, Add, Button, x+50 yp w80 vbtnNext gButtonNextClicked hidden, % lNext . " ->"
+Gui, Add, Picture, x+50 yp vbtnNext gButtonNextClicked hidden, % A_ScriptDir . "\skins\" . strSkin . "\button_next.png"
 
 Gui, Add, StatusBar
 SB_SetParts(200)
@@ -380,7 +407,7 @@ loop, %intMaxNbRow%
 	if (intNbBoardCreated < A_Index)
 	{
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% 0xE vpicBoard%A_Index% gPicBoardClicked
-		Gui, Font, s8 w500, Arial
+		Gui, Font, %strFontOptionsBoardInside%, %strFontNameBoardInside%
 		Gui, Add, Link, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% vlnkBoardLink%A_Index% gBoardLinkClicked border hidden
 		intIndex := A_Index
 		loop, 4
@@ -393,7 +420,8 @@ loop, %intMaxNbRow%
 			else
 				LoadPicControl(picBoardButton%A_Index%%intIndex%, (A_Index + 9))
 		}
-		Gui, Font, s8 w700, Arial
+		; Gui, Font, s8 w700, Arial
+		Gui, Font, %strFontOptionsBoardName%, %strFontNameBoardName%
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblBoardNameLabel%A_Index% backgroundtrans
 		/*
 		if (A_Index = 1)
@@ -442,7 +470,8 @@ loop, %intCoversPerPage%
 	{
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% 0xE vpicCover%A_Index% gPicCoverClicked
 		GuiControlGet, posCover%A_Index%, Pos, picCover%A_Index%
-		Gui, Font, s8 w500, Arial
+		; Gui, Font, s8 w500, Arial
+		Gui, Font, %strFontOptionsCoverInside%, %strFontNameCoverInside%
 		Gui, Add, Link, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% vlnkCoverLink%A_Index% gCoverLinkClicked border hidden
 		intIndex := A_Index
 		loop, 4
@@ -450,7 +479,8 @@ loop, %intCoversPerPage%
 			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicCoverButton" . A_Index . intIndex . " gCoverButtonClicked hidden"
 			LoadPicControl(picCoverButton%A_Index%%intIndex%, (A_Index + 19))
 		}
-		Gui, Font, s8 w700, Arial
+		; Gui, Font, s8 w700, Arial
+		Gui, Font, %strFontOptionsCoverName%, %strFontNameCoverName%
 		Gui, Add, Text, x%intXPic% y%intYNameLabel% w%intPictureSize% h%intNameLabelHeight% center vlblNameLabel%A_Index% backgroundtrans
 		Gui, Font
 		intNbCoversCreated := A_Index
@@ -815,25 +845,37 @@ return
 ButtonSelectAllClicked:
 ;-----------------------------------------------------------
 
-GuiControlGet, strButtonSelectAllLabel, , btnSelectAll
-
-if (strButtonSelectAllLabel = lSelectAll)
+if (intNbPages > 1)
 {
-	if (intNbPages > 1)
-	{
-		strAnswer := YesNoCancel(True, L(lSelectAllCoversTitle, lAppName), lSelectAllCoversAllPagesPrompt)
-		if (strAnswer = "Cancel")
-			return
-	}
-
-	Loop, %intNbTracks%
-		if (strAnswer = "Yes") or (PageOfTrack(A_Index) = intPage)
-			arrTrackSelected[A_Index] := true
+	strAnswer := YesNoCancel(True, L(lSelectAllCoversTitle, lAppName), lSelectAllCoversAllPagesPrompt)
+	if (strAnswer = "Cancel")
+		return
 }
-else
-	arrTrackSelected := Object() ; create array or release previous selections
 
-GuiControl, , btnSelectAll, % (strButtonSelectAllLabel = lSelectAll ? lUnSelectAll : lSelectAll)
+Loop, %intNbTracks%
+	if (strAnswer = "Yes") or (PageOfTrack(A_Index) = intPage)
+		arrTrackSelected[A_Index] := true
+
+; GuiControl, , btnSelectAll, % (strButtonSelectAllLabel = lSelectAll ? lDeselectAll : lSelectAll)
+GuiControl, Hide, btnSelectAll
+GuiControl, Show, btnDeselectAll
+
+Gosub, DisplayCoversPage
+
+return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+ButtonDeselectAllClicked:
+;-----------------------------------------------------------
+
+arrTrackSelected := Object() ; create array or release previous selections
+
+; GuiControl, , btnSelectAll, % (strButtonSelectAllLabel = lSelectAll ? lDeselectAll : lSelectAll)
+GuiControl, Show, btnSelectAll
+GuiControl, Hide, btnDeselectAll
+
 Gosub, DisplayCoversPage
 
 return
@@ -844,7 +886,7 @@ return
 ButtonDeleteSelectedClicked:
 ;-----------------------------------------------------------
 
-strAnswer := YesNoCancel(False, L(lDeleteAllSelectedTitle, lAppName), lDeleteAllSelectedPrompt)
+strAnswer := YesNoCancel(False, L(lDeleteAllSelectedTitle, lAppName), (intNbPages > 1 ? lDeleteAllSelectedPromptAllPages : lDeleteAllSelectedPrompt))
 
 if (strAnswer <> "Yes")
 	return
@@ -948,7 +990,9 @@ intPage := 1
 intNbPages := Ceil(intNbTracks / intCoversPerPage)
 
 arrTrackSelected := Object() ; create array or release previous selections
-GuiControl, , btnSelectAll, %lSelectAll%
+; GuiControl, , btnSelectAll, %lSelectAll%
+GuiControl, Show, btnSelectAll
+GuiControl, Hide, btnDeselectAll
 
 Gosub, DisplayCoversPage
 
