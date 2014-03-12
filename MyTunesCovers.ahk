@@ -339,7 +339,7 @@ Gui, Add, Text, x10 y%intHorizontalLineY% w%intHorizontalLineW% 0x10 vlblHorizon
 ; Gui, Add, Button, x150 y+10 w80 vbtnPrevious gButtonPreviousClicked hidden, % "<- " . lPrevious
 Gui, Add, Picture, x150 y+10 vbtnPrevious gButtonPreviousClicked hidden, % A_ScriptDir . "\skins\" . strSkin . "\button_previous.png"
 Gui, Font, %strFontOptionsPage%, %strFontNamePage%
-Gui, Add, Text, x+50 yp w80 vlblPage ; backgroundtrans
+Gui, Add, Text, x+50 yp w80 vlblPage backgroundtrans hidden
 ; Gui, Add, Button, x+50 yp w80 vbtnNext gButtonNextClicked hidden, % lNext . " ->"
 Gui, Add, Picture, x+50 yp vbtnNext gButtonNextClicked hidden, % A_ScriptDir . "\skins\" . strSkin . "\button_next.png"
 
@@ -963,9 +963,7 @@ if !(blnResizeInProgress)
 	Gosub, DisableGui ; protect display cover from user clicks
 
 intNbTracks := Cover_InitCoverScan(lstArtists, lstAlbums, blnOnlyNoCover) - 1 ; -1 because of the last comma in lists
-
-; if (intNbTracks < 0)
-;	return
+GuiControl, % (intNbTracks > 0 ? "Show" : "Hide"), lblPage ;  intNbTracks can be negative, do not use as a boolean
 
 loop, %intNbTracks%
 {
@@ -1387,7 +1385,7 @@ loop, %intMaxNbRow%
 	if (A_Index = 1)
 		GuiControl, , lblBoardNameLabel%A_Index%, %lBoardMasterCover%
 	else
-		GuiControl, , lblBoardNameLabel%A_Index%, %lBoardBackupCover% #%A_Index%
+		GuiControl, , lblBoardNameLabel%A_Index%, % lBoardBackupCover . "#" . (A_Index - 1)
 
 	GuiControl, Hide, lnkBoardLink%A_Index%
 	GuiControl, Show, picBoard%A_Index%

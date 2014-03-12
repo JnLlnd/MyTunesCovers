@@ -26,7 +26,7 @@ iTunes_InitCoversSource()
 	objITunesLibrary := objITunesunesApp.Sources.Item(1)
 	; iTunes library (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - source #1 is the main library
 	objITunesPlaylists := objITunesLibrary.Playlists
-	if (strSourceSelection = "ERROR")
+	if (strSourceSelection = "ERROR" or !StrLen(strSourceSelection))
 		strSourceSelection := objITunesPlaylists.Item(1).Name
 		; iTunes main playlist (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - playlist #1 is the library
 	objITunesPlaylist := objITunesPlaylists.ItemByName(strSourceSelection)
