@@ -32,7 +32,7 @@ iTunes_InitCoversSource()
 	objITunesPlaylist := objITunesPlaylists.ItemByName(strSourceSelection)
 	objITunesTracks := objITunesPlaylist.Tracks
 
-	strITunesIndexFilename := A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension
+	strITunesIndexFilename := A_ScriptDir . strIndexFolder . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension
 
 	return objITunesTracks.Count
 }
@@ -321,11 +321,11 @@ iTunes_ReleaseSource()
 
 
 ;-----------------------------------------------------------
-iTunes_SaveIndex(strSource, strSelection)
+iTunes_SaveIndex(strSource, strIndexFolder, strSelection)
 {
 	ProgressStart(1, L(lProgressSavingIndex, 0), intNbLines2Save)
 
-	strFilename := A_ScriptDir . "\index\" . strSource . "_" . strSelection . "_" . strIndexFilenameExtension
+	strFilename := A_ScriptDir . strIndexFolder . strSource . "_" . strSelection . "_" . strIndexFilenameExtension
 	FileDelete, %strFilename%
 	intLines := 0
 

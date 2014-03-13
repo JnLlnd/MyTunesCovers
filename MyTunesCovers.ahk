@@ -140,6 +140,16 @@ else if InStr(A_ComputerName, "STIC") ; for my work hotkeys
 ; / Piece of code for developement phase only - won't be compiled
 ;@Ahk2Exe-IgnoreEnd
 
+strIndexFolder := "\index\"
+;@Ahk2Exe-IgnoreBegin
+; Piece of code for developement phase only - won't be compiled
+if (A_ComputerName = "JEAN-PC") ; for my home PC
+	strIndexFolder := "\index-HOME\"
+else if InStr(A_ComputerName, "STIC") ; for my work PC
+	strIndexFolder := "\index-WORK\"
+; / Piece of code for developement phase only - won't be compiled
+;@Ahk2Exe-IgnoreEnd
+
 arrBoardPicFiles := Object()
 
 Hotkey, Up, DoNothing, Off
@@ -182,7 +192,6 @@ strSourceType := "iTunes"
 strSourceSelection := ""
 strAlbumArtistDelimiter := chr(182)
 strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
-intPictureSize := 160
 strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=~artist~ ""~album~"""
 strSearchLink2 := "http://www.covermytunes.com/search.php?search_query=~artist~ ~album~"
 strSkin := "night"
@@ -218,7 +227,21 @@ IniRead, strSearchLink2, %strIniFile%, Global, SearchLink2, %strSearchLink2%
 IniRead, strLatestSkipped, %strIniFile%, Global, LatestVersionSkipped, 0.0
 IniRead, strSkin, %strIniFile%, Global, Skin, %strSkin%
 
-strSkinIniFile := A_ScriptDir . "\skins\" . strSkin . "\" . strSkin . ".ini"
+Loop
+{
+	strSkinIniFile := A_ScriptDir . "\skins\" . strSkin . "\" . strSkin . ".ini"
+	IfExist, %strSkinIniFile%
+		break
+	else
+		strSkin := "Default"
+	if (A_Index > 2)
+	{
+		Oops(lCoverNoSkinFolder, A_ScriptDir . "\skins\", lAppName)
+		ExitApp
+	}
+}
+IniRead, intPictureSize, %strSkinIniFile%, Global, PictureSize
+
 IniRead, strFontNameTitle, %strSkinIniFile%, Fonts, NameTitle
 IniRead, strFontOptionsTitle, %strSkinIniFile%, Fonts, OptionsTitle
 IniRead, strFontNameHeaderText, %strSkinIniFile%, Fonts, NameHeaderText
@@ -246,7 +269,7 @@ InitPersistentCovers:
 ;-----------------------------------------------------------
 if !FileExist(A_ScriptDir . "\skins\")
 {
-	Oops(lCoverNoPersistentImages, A_ScriptDir . "\skins\", lAppName)
+	Oops(lCoverNoSkinFolder, A_ScriptDir . "\skins\", lAppName)
 	ExitApp
 }
 ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\no_cover-200x200.png") ; if absent, url download from repo ? ###
@@ -306,10 +329,13 @@ Gui, Add, Picture, % "x" . intBoardWidth . " y" . intHeaderHeight . " w" . intWi
 ; Gui, Add, Picture, x0 y0 w1 h1 0xE vpicBackgroundFooter, % A_ScriptDir . "\skins\" . strSkin . "\background_footer." . strSkinExtension
 ; Gui, Add, Picture, % "x0 y" . intHeaderHeight + (intMaxNbRow * intRowHeight) . " w" . intWidthBackgroundFooter . " h" . intHeightBackgroundFooter, % A_ScriptDir . "\skins\" . strSkin . "\background_footer." . strSkinExtension
 
+Gui, Add, Picture, % "x10 y10 w-1 h" . intHeaderHeight - 20, % A_ScriptDir . "\skins\small_icons-256-white.png"
 Gui, Font, %strFontOptionsTitle%, %strFontNameTitle%
-Gui, Add, Text, x10 y10 w%intBoardWidth% center backgroundtrans, % L(lAppName)
+Gui, Add, Text, % "x" . intHeaderHeight . " y5 left backgroundtrans", %lAppName3Lines%
+; Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings Disabled, %lSettings%
+Gui, Add, Picture, % "x+20 y" . (intHeaderHeight / 2) - 10 . " vbtnSettings gGuiSettings Disabled",% A_ScriptDir . "\skins\" . strSkin . "\button_settings.png"
 ; Gui, Add, Button, x+10 yp vbtnSelectAll gButtonSelectAllClicked w70, %lSelectAll%
-Gui, Add, Picture, x+10 yp vbtnSelectAll gButtonSelectAllClicked, % A_ScriptDir . "\skins\" . strSkin . "\button_select_all.png"
+Gui, Add, Picture, % "x+10 yp vbtnSelectAll gButtonSelectAllClicked", % A_ScriptDir . "\skins\" . strSkin . "\button_select_all.png"
 ; Gui, Add, Button, x+10 yp vbtnDeleteSelected gButtonDeleteSelectedClicked w90, %lDeleteSelected%
 GuiControlGet, arrButtonPos, Pos, btnSelectAll
 Gui, Add, Picture, x%arrButtonPosX% y%arrButtonPosY% vbtnDeselectAll gButtonDeselectAllClicked hidden, % A_ScriptDir . "\skins\" . strSkin . "\button_deselect_all.png"
@@ -320,8 +346,6 @@ Gui, Add, DropDownList, x+10 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked backgroundtrans, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+10 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
-; Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings Disabled, %lSettings%
-Gui, Add, Picture, x+40 yp vbtnSettings gGuiSettings Disabled,% A_ScriptDir . "\skins\" . strSkin . "\button_settings.png"
 
 ; Gui, Font, s10 w700, Verdana
 ; Gui, Add, Text, x10 w%intBoardWidth% center backgroundtrans, %lBoard%
@@ -561,6 +585,7 @@ strPreviousSourceType := strSourceType
 strPreviousSourceTypeSelection := strSourceSelection
 blnPreviousOnlyNoCover := blnOnlyNoCover
 blnPreviousListsWithNoCover := blnListsWithNoCover
+intPreviousPictureSize := intPictureSize
 
 ; Build Gui header
 Gui, 2:New, , % L(lSettingsGuiTitle, lAppName, lAppVersion)
@@ -582,6 +607,15 @@ Gui, 2:Add, DropDownList, % "x10 y50 w300 vdrpITunesPlaylist gSettingChanged " .
 
 Gui, 2:Add, Checkbox, % "x10 y+20 vchkOnlyNoCover gSettingChanged " . (blnOnlyNoCover ? "checked" : ""), %lOnlyNoCover%
 Gui, 2:Add, Checkbox, % "x10 y+10 vchkListsWithNoCover gSettingChanged " . (blnListsWithNoCover ? "checked" : ""), %lListsWithNoCover%
+
+Gui, Add, Text, x10 y+20, %lSettingsSizeLabel%
+Gui, Add, Radio, % (intPreviousPictureSize = 60 ? "checked" : "") . " x20 vradPictureSize gRadPictureSizeClicked", %lSettingsSizeTooSmall%
+Gui, Add, Radio, % (intPreviousPictureSize = 80 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeVerySmall%
+Gui, Add, Radio, % (intPreviousPictureSize = 120 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeSmall%
+Gui, Add, Radio, % (intPreviousPictureSize = 160 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeMedium%
+Gui, Add, Radio, % (intPreviousPictureSize = 200 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeLarge%
+Gui, Add, Radio, % (intPreviousPictureSize = 260 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeVeryLarge%
+Gui, Add, Radio, % (intPreviousPictureSize = 320 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeTooLarge%
 
 ; Build Gui footer
 Gui, 2:Add, Button, x40 y+20 w100 gButtonDonate, %lDonateButton%
@@ -623,6 +657,7 @@ return
 
 ;------------------------------------------------------------
 SettingChanged:
+RadPictureSizeClicked:
 ;------------------------------------------------------------
 GuiControl, 2:, btnSettingsSave, %lSettingsSave%
 
@@ -638,6 +673,8 @@ Gui, 2:Submit, NoHide
 blnOnlyNoCover := chkOnlyNoCover
 blnListsWithNoCover := chkListsWithNoCover
 strSourceSelection := drpITunesPlaylist
+
+intPictureSize := (radPictureSize = 1 ? 60 : (radPictureSize = 2 ? 80 : (radPictureSize = 3 ? 120 : (radPictureSize = 4 ? 160 : (radPictureSize = 5 ? 200 : (radPictureSize = 6 ? 260 : 320))))))
 
 Gosub, 2GuiClose
 
@@ -669,12 +706,30 @@ if (strPreviousSourceType <> strSourceType or strPreviousSourceTypeSelection <> 
 {
 	IniWrite, %strSourceType%, %strIniFile%, Global, Source
 	IniWrite, %strSourceSelection%, %strIniFile%, Global, SourceSelection
-	Cover_ReleaseSource(strPreviousSourceType, strPreviousSourceTypeSelection)
+	Cover_ReleaseSource(strPreviousSourceType, strIndexFolder, strPreviousSourceTypeSelection)
 	Gosub, InitSources
 	Gosub, DisplayCovers ; initialize empty board
 }
 
-if (blnPreviousOnlyNoCover <> blnOnlyNoCover or blnPreviousListsWithNoCover <> blnListsWithNoCover)
+if (intPreviousPictureSize <> intPictureSize)
+{
+	IniWrite, %intPictureSize%, %strSkinIniFile%, Global, PictureSize
+	if YesNoCancel(false, L(lSettingsPictureSizeReloadTitle, lAppName), L(lSettingsPictureSizeReload, lAppName)) = "Yes"
+		Reload
+	/*
+	; Gosub, InitPersistentCovers
+	if StrLen(lstArtists)
+		strPreviousArtist := lstArtists
+	if StrLen(lstAlbums)
+		strPreviousAlbum := lstAlbums
+	Gui, Destroy
+	Gosub, BuildGui
+	Gosub, PopulateDropdownLists ; ### DEBUG - do not respect artist selection in albums
+	GuiControl, Enable, btnSettings
+	*/
+}
+else if (blnPreviousOnlyNoCover <> blnOnlyNoCover
+	or blnPreviousListsWithNoCover <> blnListsWithNoCover)
 {
 	if (blnPreviousListsWithNoCover <> blnListsWithNoCover)
 		Gosub, PopulateDropdownLists
@@ -690,8 +745,8 @@ InitSources:
 ;-----------------------------------------------------------
 Gui, Submit, NoHide
 
-if !FileExist(A_ScriptDir . "\index\")
-	FileCreateDir, % A_ScriptDir . "\index\"
+if !FileExist(A_ScriptDir . strIndexFolder)
+	FileCreateDir, % A_ScriptDir . strIndexFolder
 
 if !FileExist(strCoversCacheFolder)
 {
@@ -705,16 +760,16 @@ if !FileExist(strCoversCacheFolder)
 
 if (Cover_InitCoversSource(strSourceType))
 {
-	if FileExist(A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension)
+	if FileExist(A_ScriptDir . strIndexFolder . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension)
 	{
-		FileGetTime, strIndexDate, % A_ScriptDir . "\index\" . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension, C
+		FileGetTime, strIndexDate, % A_ScriptDir . strIndexFolder . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension, C
 		FormatTime, strIndexDate, %strIndexDate%
 		strAnswer := YesNoCancel(True, L(lLoadIndexTitle, lAppName), L(lLoadIndexPrompt, strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension, strIndexDate))
 		if (strAnswer  = "Yes")
 			Cover_LoadIndex() ; use saved index
 		else if (strAnswer = "No")
 		{
-			FileDelete, %A_ScriptDir%\index\%strSourceType%_%strSourceSelection%_%strIndexFilenameExtension%
+			FileDelete, %A_ScriptDir%%strIndexFolder%%strSourceType%_%strSourceSelection%_%strIndexFilenameExtension%
 			Cover_BuildArtistsAlbumsIndex() ; refresh lists
 		}
 	}
@@ -785,7 +840,7 @@ ExitApp ; will call CleanUpBeforeQuit
 CleanUpBeforeQuit:
 ;-----------------------------------------------------------
 Gdip_Shutdown(objGdiToken)
-Cover_ReleaseSource(strSourceType, strSourceSelection)
+Cover_ReleaseSource(strSourceType, strIndexFolder, strSourceSelection)
 if StrLen(strCoversCacheFolder)
 	FileDelete, %strCoversCacheFolder%\*.*
 
@@ -974,7 +1029,7 @@ loop, %intNbTracks%
 			Gosub, EnableGui
 		if YesNoCancel(False, L(lITunesNeedReindexTitle, lAppName), lITunesNeedReindexPrompt) = "Yes"
 		{
-			FileDelete, %A_ScriptDir%\index\%strSourceType%_%strSourceSelection%_%strIndexFilenameExtension%
+			FileDelete, %A_ScriptDir%%strIndexFolder%%strSourceType%_%strSourceSelection%_%strIndexFilenameExtension%
 			Cover_BuildArtistsAlbumsIndex()
 			Gosub, PopulateDropdownLists
 		}

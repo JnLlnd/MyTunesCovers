@@ -14,6 +14,7 @@ global objAlbumsOfArtistsIndex := Object()
 global objArtistsOfAlbumsIndex := Object()
 global strSourceType ; "iTunes" currently implemented, "MP3" coming
 global strSourceSelection
+global strIndexFolder
 global strIndexFilenameExtension := "Index.csv"
 
 #Include %A_ScriptDir%\lib\iTunes.ahk ; Cover source (INCLUDE MUST BE AFTER GLOBAL DECLARATIONS)
@@ -181,10 +182,10 @@ Cover_ArtistOrAlbumHasNoCover(strTracks)
 
 
 ;-----------------------------------------------------------
-Cover_SaveIndex(strSource, strSelection)
+Cover_SaveIndex(strSource, strIndexFolder, strSelection)
 {
 	if StrLen(strSourceType)
-		return %strSourceType%_SaveIndex(strSource, strSelection)
+		return %strSourceType%_SaveIndex(strSource, strIndexFolder, strSelection)
 	else
 		return -1
 }
@@ -225,12 +226,12 @@ Cover_Play(objCover)
 
 
 ;-----------------------------------------------------------
-Cover_ReleaseSource(strSource, strSelection)
+Cover_ReleaseSource(strSource, strIndexFolder, strSelection)
 {
-	if !FileExist(A_ScriptDir . "\index\" . strSource . "_" . strSelection . "_" . strIndexFilenameExtension)
+	if !FileExist(A_ScriptDir . strIndexFolder . strSource . "_" . strSelection . "_" . strIndexFilenameExtension)
 		if YesNoCancel(False, L(lSaveIndexTitle, lAppName)
 			, L(lSaveIndexPrompt, strSource, lAppName, strSource . "_" . strSelection . "_" . strIndexFilenameExtension)) = "Yes"
-			Cover_SaveIndex(strSource, strSelection)
+			Cover_SaveIndex(strSource, strIndexFolder, strSelection)
 	if StrLen(strSource)
 		return %strSource%_ReleaseSource()
 	else
