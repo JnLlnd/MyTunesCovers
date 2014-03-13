@@ -18,6 +18,9 @@
 	* moving index files to a subdirectory
 	* display file name when loading/saving index cache, display file date when loading
 	* display current playlist as default in playlist dropdown
+	* add logo to gui
+	* add picture size selection to settings
+	* add skin selection in settings
 
 	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
@@ -194,7 +197,7 @@ strAlbumArtistDelimiter := chr(182)
 strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
 strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=~artist~ ""~album~"""
 strSearchLink2 := "http://www.covermytunes.com/search.php?search_query=~artist~ ~album~"
-strSkin := "night"
+strSkin := "Night by Not an artist"
 
 IfNotExist, %strIniFile%
 	FileAppend,
@@ -581,11 +584,13 @@ GuiSettings:
 ;------------------------------------------------------------
 
 intGui1WinID := WinExist("A")
+
 strPreviousSourceType := strSourceType
 strPreviousSourceTypeSelection := strSourceSelection
 blnPreviousOnlyNoCover := blnOnlyNoCover
 blnPreviousListsWithNoCover := blnListsWithNoCover
 intPreviousPictureSize := intPictureSize
+strPreviousSkin := strSkin
 
 ; Build Gui header
 Gui, 2:New, , % L(lSettingsGuiTitle, lAppName, lAppVersion)
@@ -598,24 +603,30 @@ Gui, 2:Add, Text, x10 y10, %lSettingsSource%
 Gui, 2:Add, Radio, x+10 yp vradSourceITunes gClickedRadSource checked, %lSettingsSourceITunes%
 Gui, 2:Add, Radio, x+10 yp vradSourceMP3 gClickedRadSource disabled, %lSettingsSourceMP3%
 
-Gui, 2:Add, Text, x10 y30 w300 vlblSourceSelection, % (strSourceType = "iTunes" ? "Select the playlist" : "Select the root folder")
+Gui, 2:Add, Text, x10 y30 w300 vlblSourceSelection, % (strSourceType = "iTunes" ? lSettingsSelectPlaylist : lSettingsSelectMP3Root)
 ; MP3 Only
 Gui, 2:Add, Edit, % "x10 y50 w220 vedtMP3Folder gSettingChanged " . (strSourceType = "iTunes" ? "hidden" : ""), %strSourceMP3Folder%
 Gui, 2:Add, Button, % "x+10 yp vbtnMP3Folder " . (strSourceType = "iTunes" ? "hidden" : ""), %lSettingsButtonSelectFolder%
 ; iTunes Only
 Gui, 2:Add, DropDownList, % "x10 y50 w300 vdrpITunesPlaylist gSettingChanged " . (strSourceType = "MP3" ? "hidden" : "")
 
-Gui, 2:Add, Checkbox, % "x10 y+20 vchkOnlyNoCover gSettingChanged " . (blnOnlyNoCover ? "checked" : ""), %lOnlyNoCover%
+Gui, 2:Add, Checkbox, % "x10 y+10 vchkOnlyNoCover gSettingChanged " . (blnOnlyNoCover ? "checked" : ""), %lOnlyNoCover%
 Gui, 2:Add, Checkbox, % "x10 y+10 vchkListsWithNoCover gSettingChanged " . (blnListsWithNoCover ? "checked" : ""), %lListsWithNoCover%
 
 Gui, Add, Text, x10 y+20, %lSettingsSizeLabel%
 Gui, Add, Radio, % (intPreviousPictureSize = 60 ? "checked" : "") . " x20 vradPictureSize gRadPictureSizeClicked", %lSettingsSizeTooSmall%
+Gui, Add, Radio, % (intPreviousPictureSize = 200 ? "checked" : "") . " x120 yp gRadPictureSizeClicked", %lSettingsSizeLarge%
 Gui, Add, Radio, % (intPreviousPictureSize = 80 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeVerySmall%
+Gui, Add, Radio, % (intPreviousPictureSize = 260 ? "checked" : "") . " x120 yp gRadPictureSizeClicked", %lSettingsSizeVeryLarge%
 Gui, Add, Radio, % (intPreviousPictureSize = 120 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeSmall%
+Gui, Add, Radio, % (intPreviousPictureSize = 320 ? "checked" : "") . " x120 yp gRadPictureSizeClicked", %lSettingsSizeTooLarge%
 Gui, Add, Radio, % (intPreviousPictureSize = 160 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeMedium%
-Gui, Add, Radio, % (intPreviousPictureSize = 200 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeLarge%
-Gui, Add, Radio, % (intPreviousPictureSize = 260 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeVeryLarge%
-Gui, Add, Radio, % (intPreviousPictureSize = 320 ? "checked" : "") . " x20 gRadPictureSizeClicked", %lSettingsSizeTooLarge%
+
+Gui, 2:Add, Text, x10 y+20 w300, %lSettingsSelectSkin%
+strITunesPlaylists := GetSkinsList()
+StringReplace, strITunesPlaylists, strITunesPlaylists, %strSkin%, %strSkin%%strAlbumArtistDelimiter%
+Gui, 2:Add, DropDownList, x10 y+10 w300 vdrpSkin gSettingChanged, %strITunesPlaylists%
+Gui, 2:Add, Link, x50 y+5, %lSettingsSkinCallOut%
 
 ; Build Gui footer
 Gui, 2:Add, Button, x40 y+20 w100 gButtonDonate, %lDonateButton%
@@ -631,6 +642,21 @@ return
 
 
 ;------------------------------------------------------------
+GetSkinsList()
+;------------------------------------------------------------
+{
+	global strAlbumArtistDelimiter
+	
+	strSkinsList := ""
+	Loop, % A_ScriptDir . "\skins\*.*", 2
+		strSkinsList := strSkinsList . A_LoopFileName . strAlbumArtistDelimiter
+
+	return strSkinsList
+}
+;------------------------------------------------------------
+
+
+;------------------------------------------------------------
 ClickedRadSource:
 ;------------------------------------------------------------
 Gui, 2:Submit, NoHide
@@ -641,7 +667,7 @@ if (strPreviousSourceType <> strSourceType)
 	GuiControl, % (strSourceType = "MP3" ? "Show" : "Hide"), edtMP3Folder
 	GuiControl, % (strSourceType = "MP3" ? "Show" : "Hide"), btnMP3Folder
 	GuiControl, % (strSourceType = "iTunes" ? "Show" : "Hide"), drpITunesPlaylist
-	GuiControl, 2:, lblSourceSelection, % (strSourceType = "iTunes" ? "Select the playlist" : "Select the root folder")
+	GuiControl, 2:, lblSourceSelection, % (strSourceType = "iTunes" ? lSettingsSelectPlaylist : lSettingsSelectMP3Root)
 	GuiControl, 2:, btnSettingsSave, %lSettingsSave%
 }
 if (strSourceType = "iTunes")
@@ -673,8 +699,9 @@ Gui, 2:Submit, NoHide
 blnOnlyNoCover := chkOnlyNoCover
 blnListsWithNoCover := chkListsWithNoCover
 strSourceSelection := drpITunesPlaylist
+strSkin := drpSkin
 
-intPictureSize := (radPictureSize = 1 ? 60 : (radPictureSize = 2 ? 80 : (radPictureSize = 3 ? 120 : (radPictureSize = 4 ? 160 : (radPictureSize = 5 ? 200 : (radPictureSize = 6 ? 260 : 320))))))
+intPictureSize := (radPictureSize = 1 ? 60 : (radPictureSize = 2 ? 200 : (radPictureSize = 3 ? 80 : (radPictureSize = 4 ? 260 : (radPictureSize = 5 ? 120 : (radPictureSize = 6 ? 320 : 160))))))
 
 Gosub, 2GuiClose
 
@@ -714,7 +741,7 @@ if (strPreviousSourceType <> strSourceType or strPreviousSourceTypeSelection <> 
 if (intPreviousPictureSize <> intPictureSize)
 {
 	IniWrite, %intPictureSize%, %strSkinIniFile%, Global, PictureSize
-	if YesNoCancel(false, L(lSettingsPictureSizeReloadTitle, lAppName), L(lSettingsPictureSizeReload, lAppName)) = "Yes"
+	if YesNoCancel(false, L(lSettingsSizeOrSkinReloadTitle, lAppName), L(lSettingsSizeOrSkinReloadPrompt, lSettingsSizeOrSkinReloadSize, lAppName)) = "Yes"
 		Reload
 	/*
 	; Gosub, InitPersistentCovers
@@ -728,7 +755,15 @@ if (intPreviousPictureSize <> intPictureSize)
 	GuiControl, Enable, btnSettings
 	*/
 }
-else if (blnPreviousOnlyNoCover <> blnOnlyNoCover
+
+if (strPreviousSkin <> strSkin)
+{
+	IniWrite, %strSkin%, %strIniFile%, Global, Skin
+	if YesNoCancel(false, L(lSettingsSizeOrSkinReloadTitle, lAppName), L(lSettingsSizeOrSkinReloadPrompt, lSettingsSizeOrSkinReloadSkin, lAppName)) = "Yes"
+		Reload
+}
+
+if (blnPreviousOnlyNoCover <> blnOnlyNoCover
 	or blnPreviousListsWithNoCover <> blnListsWithNoCover)
 {
 	if (blnPreviousListsWithNoCover <> blnListsWithNoCover)
