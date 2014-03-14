@@ -5,6 +5,7 @@
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
 	BUGS
+	- paste to selected on all pages = paste even if no
 	- none (known)
 	
 	TODO
@@ -338,7 +339,7 @@ Gui, Add, Text, % "x" . intHeaderHeight . " y5 left backgroundtrans", %lAppName3
 ; Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings Disabled, %lSettings%
 Gui, Add, Picture, % "x+20 y" . (intHeaderHeight / 2) - 10 . " vbtnSettings gGuiSettings Disabled",% A_ScriptDir . "\skins\" . strSkin . "\button_settings.png"
 ; Gui, Add, Button, x+10 yp vbtnSelectAll gButtonSelectAllClicked w70, %lSelectAll%
-Gui, Add, Picture, % "x+10 yp vbtnSelectAll gButtonSelectAllClicked", % A_ScriptDir . "\skins\" . strSkin . "\button_select_all.png"
+Gui, Add, Picture, % "x+20 yp vbtnSelectAll gButtonSelectAllClicked", % A_ScriptDir . "\skins\" . strSkin . "\button_select_all.png"
 ; Gui, Add, Button, x+10 yp vbtnDeleteSelected gButtonDeleteSelectedClicked w90, %lDeleteSelected%
 GuiControlGet, arrButtonPos, Pos, btnSelectAll
 Gui, Add, Picture, x%arrButtonPosX% y%arrButtonPosY% vbtnDeselectAll gButtonDeselectAllClicked hidden, % A_ScriptDir . "\skins\" . strSkin . "\button_deselect_all.png"
@@ -587,8 +588,8 @@ intGui1WinID := WinExist("A")
 
 strPreviousSourceType := strSourceType
 strPreviousSourceTypeSelection := strSourceSelection
-blnPreviousOnlyNoCover := blnOnlyNoCover
-blnPreviousListsWithNoCover := blnListsWithNoCover
+blnPreviousOnlyNoCover := (!StrLen(blnOnlyNoCover) ? 0 : blnOnlyNoCover) ; prevent empty bln <> 0 in 2GuiClose
+blnPreviousListsWithNoCover := (!StrLen(blnListsWithNoCover) ? 0 : blnListsWithNoCover) ; prevent empty bln <> 0 in 2GuiClose
 intPreviousPictureSize := intPictureSize
 strPreviousSkin := strSkin
 
@@ -1550,7 +1551,8 @@ if (intCommand = 1)
 				ProgressUpdate(1, intThisTrack, arrTrackSelected.MaxIndex(), lBoardPastingProgress)
 			}
 		ProgressStop(1)
-		GuiControl, , btnSelectAll, %lSelectAll%
+		GuiControl, Show, btnSelectAll
+		GuiControl, Hide, btnDeselectAll
 		Gosub, DisplayCoversPage ; ### display only affected Covers?
 	}
 	else ; make master
