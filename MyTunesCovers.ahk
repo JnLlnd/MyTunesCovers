@@ -6,6 +6,8 @@
 
 	BUGS
 	- none (known)
+	- deselect after delete or other(?) actions
+	- check progress bar values, look inacurate
 	
 	TODO
 	- encode indexes
@@ -464,7 +466,7 @@ loop, %intMaxNbRow%
 	}
 	else
 		GuiControl, Show, picBoard%A_Index%
-	
+
 	intRow := intRow + 1
 	intY := intY + intRowHeight
 	intYPic := intY + 5
@@ -713,7 +715,7 @@ return
 ;------------------------------------------------------------
 ButtonDonate:
 ;------------------------------------------------------------
-Run, https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8UWKXDR5ZQNJW ; ### update Paypal code
+Run, https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZRBHX4QF5SG7S
 
 return
 ; ------------------------------------------------
@@ -1449,23 +1451,24 @@ return
 DisplayBoard:
 ;-----------------------------------------------------------
 loop, 4
+{
 	if (A_Index = 1)
 		LoadPicControl(picBoardButton11, 14)
 	else
 		LoadPicControl(picBoardButton%A_Index%1, (A_Index + 9))
+	GuiControl, Show, % "picBoardButton" . A_Index . 1
+}
 
 loop, %intMaxNbRow%
 {
 	if (A_Index <= arrBoardPicFiles.MaxIndex())
 	{
 		LoadPicControl(picBoard%A_Index%, 1, arrBoardPicFiles[A_Index])
-		intIndex := A_Index
-		loop, 4
-			GuiControl, Show, % "picBoardButton" . A_Index . intIndex
 		strBoardLink := ""
 			. "<A ID=""ShowPic" . A_Index . """>" . lBoardShowPic . "</A>" . "  "
 			. "<A ID=""ViewPic" . A_Index . """>" . lBoardViewPic . "</A>" . "  "
 		GuiControl, , lnkBoardLink%A_Index%, %strBoardLink%
+
 		intIndex := A_Index
 		loop, 4
 			GuiControl, Show, % "picBoardButton" . A_Index . intIndex
