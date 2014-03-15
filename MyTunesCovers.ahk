@@ -5,12 +5,10 @@
 	By Jean Lalonde (JnLlnd on AHKScript.org forum)
 
 	BUGS
-	- paste to selected on all pages = paste even if no
 	- none (known)
 	
 	TODO
 	- encode indexes
-	- embed images folder in exe or zip?
 
 	2014-03-## v0.6 ALPHA
 	* moved source selection to options dialog box
@@ -276,20 +274,20 @@ if !FileExist(A_ScriptDir . "\skins\")
 	Oops(lCoverNoSkinFolder, A_ScriptDir . "\skins\", lAppName)
 	ExitApp
 }
-ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\no_cover-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\fill_cover-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\empty-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\copy_here-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapError := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\error-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\clip-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\select-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\paste_here-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapCoverButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\delete-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton0 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\paste_to_selected-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\make_master-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\load_clipboard-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\load_file-200x200.png") ; if absent, url download from repo ? ###
-ptrBitmapBoardButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\remove-200x200.png") ; if absent, url download from repo ? ###
+ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\no_cover-200x200.png")
+ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\fill_cover-200x200.png")
+ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\empty-200x200.png")
+ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\copy_here-200x200.png")
+ptrBitmapError := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\error-200x200.png")
+ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\clip-200x200.png")
+ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\select-200x200.png")
+ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\paste_here-200x200.png")
+ptrBitmapCoverButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\delete-200x200.png")
+ptrBitmapBoardButton0 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\paste_to_selected-200x200.png")
+ptrBitmapBoardButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\make_master-200x200.png")
+ptrBitmapBoardButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\load_clipboard-200x200.png")
+ptrBitmapBoardButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\load_file-200x200.png")
+ptrBitmapBoardButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\remove-200x200.png")
 
 ptrBitmapBackgroundHeader := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\background_header.png")
 Gdip_GetImageDimensions(ptrBitmapBackgroundHeader, intWidthBackgroundHeader, intHeightBackgroundHeader)
@@ -742,7 +740,7 @@ if (strPreviousSourceType <> strSourceType or strPreviousSourceTypeSelection <> 
 if (intPreviousPictureSize <> intPictureSize)
 {
 	IniWrite, %intPictureSize%, %strSkinIniFile%, Global, PictureSize
-	if YesNoCancel(false, L(lSettingsSizeOrSkinReloadTitle, lAppName), L(lSettingsSizeOrSkinReloadPrompt, lSettingsSizeOrSkinReloadSize, lAppName)) = "Yes"
+	if YesNoCancel(false, L(lSettingsSizeOrSkinReloadTitle, lAppName), L(lSettingsSizeOrSkinReloadPrompt, lSettingsSizeOrSkinReloadSize, lAppName), lSettingsSizeOrSkinReloadButton1, lSettingsSizeOrSkinReloadButton2) = "Yes"
 		Reload
 	/*
 	; Gosub, InitPersistentCovers
@@ -760,7 +758,7 @@ if (intPreviousPictureSize <> intPictureSize)
 if (strPreviousSkin <> strSkin)
 {
 	IniWrite, %strSkin%, %strIniFile%, Global, Skin
-	if YesNoCancel(false, L(lSettingsSizeOrSkinReloadTitle, lAppName), L(lSettingsSizeOrSkinReloadPrompt, lSettingsSizeOrSkinReloadSkin, lAppName)) = "Yes"
+	if YesNoCancel(false, L(lSettingsSizeOrSkinReloadTitle, lAppName), L(lSettingsSizeOrSkinReloadPrompt, lSettingsSizeOrSkinReloadSkin, lAppName), lSettingsSizeOrSkinReloadButton1, lSettingsSizeOrSkinReloadButton2) = "Yes"
 		Reload
 }
 
@@ -800,7 +798,7 @@ if (Cover_InitCoversSource(strSourceType))
 	{
 		FileGetTime, strIndexDate, % A_ScriptDir . strIndexFolder . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension, C
 		FormatTime, strIndexDate, %strIndexDate%
-		strAnswer := YesNoCancel(True, L(lLoadIndexTitle, lAppName), L(lLoadIndexPrompt, strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension, strIndexDate))
+		strAnswer := YesNoCancel(True, L(lLoadIndexTitle, lAppName), L(lLoadIndexPrompt, strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension, strIndexDate), lLoadIndexButton1, lLoadIndexButton2)
 		if (strAnswer  = "Yes")
 			Cover_LoadIndex() ; use saved index
 		else if (strAnswer = "No")
@@ -938,7 +936,7 @@ ButtonSelectAllClicked:
 
 if (intNbPages > 1)
 {
-	strAnswer := YesNoCancel(True, L(lSelectAllCoversTitle, lAppName), lSelectAllCoversAllPagesPrompt)
+	strAnswer := YesNoCancel(True, L(lSelectAllCoversTitle, lAppName), lSelectAllCoversAllPagesPrompt, lSelectAllCoversAllPagesButton1, lSelectAllCoversAllPagesButton2)
 	if (strAnswer = "Cancel")
 		return
 }
@@ -977,7 +975,7 @@ return
 ButtonDeleteSelectedClicked:
 ;-----------------------------------------------------------
 
-strAnswer := YesNoCancel(False, L(lDeleteAllSelectedTitle, lAppName), (intNbPages > 1 ? lDeleteAllSelectedPromptAllPages : lDeleteAllSelectedPrompt))
+strAnswer := YesNoCancel(False, L(lDeleteAllSelectedTitle, lAppName), (intNbPages > 1 ? lDeleteAllSelectedPromptAllPages : lDeleteAllSelectedPrompt), lDeleteAllSelectedButton1, lDeleteAllSelectedButton2)
 
 if (strAnswer <> "Yes")
 	return
@@ -1063,7 +1061,7 @@ loop, %intNbTracks%
 	{
 		if !(blnResizeInProgress)
 			Gosub, EnableGui
-		if YesNoCancel(False, L(lITunesNeedReindexTitle, lAppName), lITunesNeedReindexPrompt) = "Yes"
+		if YesNoCancel(False, L(lITunesNeedReindexTitle, lAppName), lITunesNeedReindexPrompt, lITunesNeedReindexButton1, lITunesNeedReindexButton2) = "Yes"
 		{
 			FileDelete, %A_ScriptDir%%strIndexFolder%%strSourceType%_%strSourceSelection%_%strIndexFilenameExtension%
 			Cover_BuildArtistsAlbumsIndex()
@@ -1527,7 +1525,7 @@ if (intCommand = 1)
 
 		if (blnOnOtherPages)
 		{
-			strAnswer := YesNoCancel(True, L(lBoardPastingSelected, lAppName), lBoardPasteAllPagesPrompt)
+			strAnswer := YesNoCancel(True, L(lBoardPastingSelected, lAppName), lBoardPasteAllPagesPrompt, lBoardPasteAllPagesButton1, lBoardPasteAllPagesButton2)
 			if (strAnswer = "Cancel")
 				return
 			else
@@ -1535,7 +1533,7 @@ if (intCommand = 1)
 		}
 		
 		blnWriteOK := !(blnExistingArtwork)
-			or (YesNoCancel(False, L(lBoardPastingSelected, lAppName), lBoardOverwrite) = "Yes")
+			or (YesNoCancel(False, L(lBoardPastingSelected, lAppName), lBoardOverwritePrompt, lBoardOverwriteButton1, lBoardOverwriteButton2) = "Yes")
 	
 		ProgressStart(1, lBoardPastingProgress, arrTrackSelected.MaxIndex())
 		for intThisTrack, blnSelected in arrTrackSelected
@@ -1767,10 +1765,23 @@ Url2Var(strUrl)
 
 
 ; ------------------------------------------------
-YesNoCancel(blnWithCancel, strTitle, strPrompt)
+YesNoCancel(blnWithCancel, strTitle, strPrompt, strAltYes := "", strAltNo := "", strAltCancel := "")
 ; ------------------------------------------------
 {
+	global strChangeNamesWindowName
+	global strChangeNamesButtonYes
+	global strChangeNamesButtonNo
+	global strChangeNamesButtonCancel
+
 	Gui, +OwnDialogs
+	if StrLen(strAltYes . strAltNo . strAltCancel)
+	{
+		strChangeNamesWindowName := strTitle
+		strChangeNamesButtonYes := strAltYes
+		strChangeNamesButtonNo := strAltNo
+		strChangeNamesButtonCancel := strAltCancel
+		SetTimer, ChangeButtonNames, 50
+	}
 	MsgBox, % 4 - blnWithCancel, %strTitle%, %strPrompt%
 	IfMsgBox, Yes
 		return "Yes"
@@ -1780,6 +1791,25 @@ YesNoCancel(blnWithCancel, strTitle, strPrompt)
 		return "Cancel"
 }
 ; ------------------------------------------------
+
+
+;------------------------------------------------------------
+ChangeButtonNames: 
+;------------------------------------------------------------
+
+IfWinNotExist, %strChangeNamesWindowName%
+    return  ; Keep waiting.
+SetTimer, ChangeButtonNames, Off 
+WinActivate 
+if StrLen(strChangeNamesButtonYes)
+	ControlSetText, Button1, %strChangeNamesButtonYes%
+if StrLen(strChangeNamesButtonNo)
+	ControlSetText, Button2, %strChangeNamesButtonNo%
+if StrLen(strChangeNamesButtonCancel)
+	ControlSetText, Button3, %strChangeNamesButtonCancel%
+
+return
+;------------------------------------------------------------
 
 
 ; ------------------------------------------------
