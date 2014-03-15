@@ -10,7 +10,7 @@
 	TODO
 	- encode indexes
 
-	2014-03-## v0.6 ALPHA
+	2014-03-14 v0.6 ALPHA
 	* moved source selection to options dialog box
 	* added iTunes Playlist selection and saving index file according to current playlist selection
 	* moved display only no cover and list only ablum with no cover checkboxes to option dialog box
@@ -20,6 +20,8 @@
 	* add logo to gui
 	* add picture size selection to settings
 	* add skin selection in settings
+	* prepare 3 skins for initial shipping
+	* add custom button names to YesNoCancel function
 
 	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
@@ -67,7 +69,7 @@
 	* Library Cover_ and iTunes_ refactoring, add iTunes/MP3 sources radio buttons, iTunes source implemented
 
 	2014-01-05 v0.1 ALPHA
-	* First Alpha release. Not ready for alpha distribution yet. But you can take a lkook at sources
+	* First Alpha release. Not ready for alpha distribution yet. But you can take a look at sources
 	* Initialize script and language file, read ini file, implement check for update
 	* Base of iTunesLib as tracks source (a future version could also support MP3 source files in a directory - ie without the use of iTunes)
 	* Base of CoversLib libraries, rudimentary Gui with covers read from iTunes
