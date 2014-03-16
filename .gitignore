@@ -5,4 +5,6 @@ BK/
 images/icons/
 small_icons-256-RED.ico
 audiogenie3/
-.psp*
+*.psp
+*.pspimage
+images/captures/

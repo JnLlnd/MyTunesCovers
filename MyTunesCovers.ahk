@@ -6,8 +6,7 @@
 
 	BUGS
 	- none (known)
-	- deselect after delete or other(?) actions
-	- check progress bar values, look inacurate
+	- check progress bar values, sometime inacurate?
 	
 	TODO
 	- encode indexes
@@ -24,6 +23,7 @@
 	* add skin selection in settings
 	* prepare 3 skins for initial shipping
 	* add custom button names to YesNoCancel function
+	* replace select button by deselect when a button is selected
 
 	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
@@ -281,10 +281,11 @@ if !FileExist(A_ScriptDir . "\skins\")
 ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\no_cover-200x200.png")
 ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\fill_cover-200x200.png")
 ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\empty-200x200.png")
-ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\copy_here-200x200.png")
+ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\selected-200x200.png")
 ptrBitmapError := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\error-200x200.png")
 ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\clip-200x200.png")
-ptrBitmapCoverButton2 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\select-200x200.png")
+ptrBitmapCoverButton2a := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\select-200x200.png")
+ptrBitmapCoverButton2b := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\deselect-200x200.png")
 ptrBitmapCoverButton3 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\paste_here-200x200.png")
 ptrBitmapCoverButton4 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\delete-200x200.png")
 ptrBitmapBoardButton0 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\paste_to_selected-200x200.png")
@@ -508,6 +509,8 @@ loop, %intCoversPerPage%
 		{
 			Gui, Add, Picture, % "x" . (intXPic + intPictureSize) . " y" . (intYPic + (intButtonSize * (A_Index - 1))) . " w" . intButtonSize . " h" . intButtonSize . " 0xE vpicCoverButton" . A_Index . intIndex . " gCoverButtonClicked hidden"
 			LoadPicControl(picCoverButton%A_Index%%intIndex%, (A_Index + 19))
+			if (arrTrackSelected[intIndex] and A_Index = 2)
+				LoadPicControl(picCoverButton%A_Index%%intIndex%, (A_Index + 24)) ; Deselect
 		}
 		; Gui, Font, s8 w700, Arial
 		Gui, Font, %strFontOptionsCoverName%, %strFontNameCoverName%
@@ -548,7 +551,7 @@ loop, %intCoversPerPage%
 	intXPic := intX + 5
 	if (A_Index > 200)
 	{
-		###_D("Infinite Loop Error :-)")
+		Oops("Infinite Loop Error :-)")
 		ExitApp
 	}
 }
@@ -995,7 +998,9 @@ for intThisTrack, blnSelected in arrTrackSelected
 		ProgressUpdate(1, intThisTrack, arrTrackSelected.MaxIndex(), lBoardPastingProgress)
 	}
 ProgressStop(1)
-Gosub, DisplayCoversPage ; ### display only affected Covers?
+GuiControl, Show, btnSelectAll
+GuiControl, Hide, btnDeselectAll
+Gosub, DisplayCoversPage
 
 return
 ;-----------------------------------------------------------
@@ -1199,8 +1204,14 @@ if (objCovers[intTrack].Kind <> 1)
 		GuiControl, Hide, % "picCoverButton" . (A_Index + 1) . intPosition
 }
 else
+{
+	if (arrTrackSelected[intTrack])
+		LoadPicControl(picCoverButton2%intPosition%, 24) ; Deselect
+	else
+		LoadPicControl(picCoverButton2%intPosition%, 21) ; Select
 	loop, 4
 		GuiControl, Show, picCoverButton%A_Index%%intPosition%
+}
 
 return
 ;-----------------------------------------------------------
@@ -1248,12 +1259,12 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 ; intPicType =
 ; 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 copy here / 6 error
 ; 10 make master board button / 11 load clipboard board button / 12 load file board button / 13 remove board button / 14 paste to selected board button 1
-; 20 clip cover button / 21 select cover button / 22 paste cover button / 23 delete cover button
+; 20 clip cover button / 21 select cover button / 22 paste cover button / 23 delete cover button / 24 deselect cover button
 {
 	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapCopyHere, ptrBitmapError
-		, ptrBitmapCoverButton1, ptrBitmapCoverButton2, ptrBitmapCoverButton3, ptrBitmapCoverButton4
+		, ptrBitmapCoverButton1, ptrBitmapCoverButton2a, ptrBitmapCoverButton3, ptrBitmapCoverButton4
 		, ptrBitmapBoardButton1, ptrBitmapBoardButton2, ptrBitmapBoardButton3, ptrBitmapBoardButton4
-		, ptrBitmapBoardButton0
+		, ptrBitmapBoardButton0, ptrBitmapCoverButton2b
 
 	GuiControlGet, posControl, Pos, picControl
 	GuiControlGet, hwnd, hwnd, picControl
@@ -1284,11 +1295,13 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 	if (intPicType = 20)
 		ptrBitmap := ptrBitmapCoverButton1
 	if (intPicType = 21)
-		ptrBitmap := ptrBitmapCoverButton2
+		ptrBitmap := ptrBitmapCoverButton2a
 	if (intPicType = 22)
 		ptrBitmap := ptrBitmapCoverButton3
 	if (intPicType = 23)
 		ptrBitmap := ptrBitmapCoverButton4
+	if (intPicType = 24)
+		ptrBitmap := ptrBitmapCoverButton2b
 	
 	intWidth := Gdip_GetImageWidth(ptrBitmap)
 	intHeight := Gdip_GetImageHeight(ptrBitmap)
@@ -1372,16 +1385,26 @@ if (objCovers[intTrack].Kind > 1)
 }
 
 ; Now, we know kind is 1 (File track)
-if (intCommand = 2) ; Select
-	arrTrackSelected[intTrack] := !arrTrackSelected[intTrack]
-else if (intCommand = 3) ; Paste here
+if (intCommand = 2) ; Select / Deselect
 {
-	blnGo := !(objCovers[intTrack].ArtworkCount)
-	if !(blnGo)
-		blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), lCoverOverwrite) = "Yes")
-	if (blnGo)
-		Cover_SaveCoverToTune(objCovers[intTrack], arrBoardPicFiles[1])
+	arrTrackSelected[intTrack] := !arrTrackSelected[intTrack]
+	if !SelectedCovers(arrTrackSelected)
+	{
+		GuiControl, Show, btnSelectAll
+		GuiControl, Hide, btnDeselectAll
+	}
 }
+else if (intCommand = 3) ; Paste here
+	if StrLen(arrBoardPicFiles[1])
+	{
+		blnGo := !(objCovers[intTrack].ArtworkCount)
+		if !(blnGo)
+			blnGo := (YesNoCancel(False, L(lCoverPasteMaster, lAppName), lCoverOverwrite) = "Yes")
+		if (blnGo)
+			Cover_SaveCoverToTune(objCovers[intTrack], arrBoardPicFiles[1])
+	}
+	else
+		Oops(lCoverFirstLoadMaster)
 else if (intCommand = 4) ; Delete
 {
 	blnGo := !(objCovers[intTrack].ArtworkCount)
@@ -1401,6 +1424,19 @@ if (intCommand >= 3)
 Gosub, DisplayCover
 
 return
+;-----------------------------------------------------------
+
+
+;-----------------------------------------------------------
+SelectedCovers(arrTrackSelected)
+;-----------------------------------------------------------
+{
+	blnSelected := false
+	loop, % arrTrackSelected.MaxIndex()
+		if (arrTrackSelected[A_index])
+			blnSelected := true
+	return blnSelected
+}
 ;-----------------------------------------------------------
 
 
@@ -1515,19 +1551,30 @@ if (intCommand = 1)
 	if (intThisPosition = 1) ; paste to selected
 	{
 		if !StrLen(arrBoardPicFiles[1])
+		{
+			Oops(lBoardFirstLoadMaster)
 			return
+		}
 		
+		blnSelectedExist := false
 		blnOnOtherPages := false
 		blnExistingArtwork := false
 		for intThisTrack, blnSelected in arrTrackSelected
 			if (blnSelected)
 			{
+				blnSelectedExist := true
 				if PageOfTrack(intThisTrack) <> intPage
 					blnOnOtherPages := true
 				if (objCovers[intThisTrack].ArtworkCount)
 					blnExistingArtwork := true
 			}
 
+		if !(blnSelectedExist[1])
+		{
+			Oops(lBoardFirstSelectCovers)
+			return
+		}
+		
 		if (blnOnOtherPages)
 		{
 			strAnswer := YesNoCancel(True, L(lBoardPastingSelected, lAppName), lBoardPasteAllPagesPrompt, lBoardPasteAllPagesButton1, lBoardPasteAllPagesButton2)
