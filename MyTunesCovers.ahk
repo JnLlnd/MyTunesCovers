@@ -105,12 +105,15 @@ Menu, Tray, Icon, %A_ScriptDir%\small_icons-256-RED.ico, 1
 #NoTrayIcon 
 ListLines, Off
 
-strCurrentVersion := "0.6 alpha" ; always "." between sub-versions, eg "0.1.2"
+strCurrentVersion := "0.6" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\MyTunesCovers_LANG.ahk
 #Include %A_ScriptDir%\lib\Cover.ahk
 ; lib\Cover.ahk is also calling lib\iTunes.ahk
 ; Also using Gdip.ahk (v1.45, modified 5/1/2013) in \AutoHotkey\Lib default lib folder
+
+if YesNoCancel(false, L(lAlphaTestingTitle, lAppName), L(lAlphaTestingPrompt, lAppName), lAlphaTestingButton1) <> "Yes"
+	ExitApp
 
 ; Keep gosubs in this order
 Gosub, Init
@@ -342,7 +345,7 @@ Gui, Add, Text, % "x" . intHeaderHeight . " y5 left backgroundtrans", %lAppName3
 ; Gui, Add, Button, x+10 yp vbtnSettings gGuiSettings Disabled, %lSettings%
 Gui, Add, Picture, % "x+20 y" . (intHeaderHeight / 2) - 10 . " vbtnSettings gGuiSettings Disabled",% A_ScriptDir . "\skins\" . strSkin . "\button_settings.png"
 ; Gui, Add, Button, x+10 yp vbtnSelectAll gButtonSelectAllClicked w70, %lSelectAll%
-Gui, Add, Picture, % "x+20 yp vbtnSelectAll gButtonSelectAllClicked", % A_ScriptDir . "\skins\" . strSkin . "\button_select_all.png"
+Gui, Add, Picture, x+20 yp vbtnSelectAll gButtonSelectAllClicked, % A_ScriptDir . "\skins\" . strSkin . "\button_select_all.png"
 ; Gui, Add, Button, x+10 yp vbtnDeleteSelected gButtonDeleteSelectedClicked w90, %lDeleteSelected%
 GuiControlGet, arrButtonPos, Pos, btnSelectAll
 Gui, Add, Picture, x%arrButtonPosX% y%arrButtonPosY% vbtnDeselectAll gButtonDeselectAllClicked hidden, % A_ScriptDir . "\skins\" . strSkin . "\button_deselect_all.png"
@@ -353,6 +356,8 @@ Gui, Add, DropDownList, x+10 yp w300 vlstArtists gArtistsDropDownChanged Sort
 Gui, Add, Text, x+20 yp gLabelAllAlbumsClicked backgroundtrans, %lAlbumsDropdownLabel%
 Gui, Add, DropDownList, x+10 yp w300 vlstAlbums gAlbumsDropDownChanged Sort
 Gui, Font
+Gui, Add, Picture, x+30 yp gGuiHelp, % A_ScriptDir . "\skins\" . strSkin . "\button_help.png"
+Gui, Add, Picture, x+10 yp gGuiAbout, % A_ScriptDir . "\skins\" . strSkin . "\button_about.png"
 
 ; Gui, Font, s10 w700, Verdana
 ; Gui, Add, Text, x10 w%intBoardWidth% center backgroundtrans, %lBoard%
@@ -635,8 +640,9 @@ Gui, 2:Add, DropDownList, x10 y+10 w300 vdrpSkin gSettingChanged, %strITunesPlay
 Gui, 2:Add, Link, x50 y+5, %lSettingsSkinCallOut%
 
 ; Build Gui footer
-Gui, 2:Add, Button, x40 y+20 w100 gButtonDonate, %lDonateButton%
-Gui, 2:Add, Button, x+60 yp w80 gButtonSettingsSave vbtnSettingsSave, %lSettingsClose%
+Gui, 2:Add, Button, x50 y+20 w100 gButtonCheck4Update, %lSettingsCheck4Update%
+Gui, 2:Add, Button, x+20 yp w100 gButtonDonate, %lDonateButton%
+Gui, 2:Add, Button, x120 y+10 w80 gButtonSettingsSave vbtnSettingsSave, %lSettingsClose%
 GuiControl, 2:Focus, btnSettingsSave
 
 Gosub, ClickedRadSource
@@ -749,17 +755,6 @@ if (intPreviousPictureSize <> intPictureSize)
 	IniWrite, %intPictureSize%, %strSkinIniFile%, Global, PictureSize
 	if YesNoCancel(false, L(lSettingsSizeOrSkinReloadTitle, lAppName), L(lSettingsSizeOrSkinReloadPrompt, lSettingsSizeOrSkinReloadSize, lAppName), lSettingsSizeOrSkinReloadButton1, lSettingsSizeOrSkinReloadButton2) = "Yes"
 		Reload
-	/*
-	; Gosub, InitPersistentCovers
-	if StrLen(lstArtists)
-		strPreviousArtist := lstArtists
-	if StrLen(lstAlbums)
-		strPreviousAlbum := lstAlbums
-	Gui, Destroy
-	Gosub, BuildGui
-	Gosub, PopulateDropdownLists ; ### DEBUG - do not respect artist selection in albums
-	GuiControl, Enable, btnSettings
-	*/
 }
 
 if (strPreviousSkin <> strSkin)
@@ -1603,7 +1598,7 @@ if (intCommand = 1)
 		ProgressStop(1)
 		GuiControl, Show, btnSelectAll
 		GuiControl, Hide, btnDeselectAll
-		Gosub, DisplayCoversPage ; ### display only affected Covers?
+		Gosub, DisplayCoversPage
 	}
 	else ; make master
 	{
@@ -1633,7 +1628,7 @@ else if (intCommand = 3) ; load file
 	SplitPath, strLoadMasterFilename, , , strExtension
 	if StrLen(strLoadMasterFilename)
 		if InStr("mp3 m4a", strExtension)
-			Oops(lBoardTuneFilesNotSupported) ; ###
+			Oops(lBoardTuneFilesNotSupported) ; add MP3 file support with AudioGenie3, is it possible with MP4? ###
 		else
 			arrBoardPicFiles.Insert(intThisPosition, strLoadMasterFilename)
 }
@@ -1641,7 +1636,7 @@ else if (intCommand = 4) ; remove
 	arrBoardPicFiles.Remove(intThisPosition)
 
 if !(intCommand = 1 and intThisPosition = 1)
-	Gosub, DisplayBoard ; ### display only current Board
+	Gosub, DisplayBoard
 
 return
 ;-----------------------------------------------------------
@@ -1714,6 +1709,89 @@ PageOfTrack(intThisTrack)
 ;-----------------------------------------------------------
 
 
+;-----------------------------------------------------------
+GuiHelp:
+;-----------------------------------------------------------
+
+intGui1WinID := WinExist("A")
+Gui, 1:Submit, NoHide
+Gui, Help:New, , % L(lHelpTitle, lAppName, lAppVersion)
+Gui, Help:+Owner1
+intWidth := 450
+Gui, Help:Font, s12 w700, Verdana
+Gui, Help:Add, Text, x10 y10, %lAppName%
+Gui, Help:Font, s10 w400, Verdana
+Gui, Help:Add, Link, x10 w%intWidth%, %lHelpTextLead%
+Gui, Help:Font, s8 w400, Verdana
+loop, 7
+	Gui, Help:Add, Link, w%intWidth%, % lHelpText%A_Index%
+Gui, Help:Add, Button, x100 y+20 gButtonDonate, %lDonateButton%
+Gui, Help:Add, Button, x320 yp gHelpGuiClose vbtnHelpClose, %lHelpClose%
+GuiControl, Focus, btnHelpClose
+Gui, Help:Show, AutoSize Center
+Gui, 1:+Disabled
+
+return
+;-----------------------------------------------------------
+
+
+;------------------------------------------------------------
+HelpGuiClose:
+HelpGuiEscape:
+;------------------------------------------------------------
+
+Gui, 1:-Disabled
+Gui, Help:Destroy
+Gui, 1:Default ; REMEMBER!
+
+WinActivate, ahk_id %intGui1WinID%
+
+return
+;------------------------------------------------------------
+
+
+;-----------------------------------------------------------
+GuiAbout:
+;-----------------------------------------------------------
+
+intGui1WinID := WinExist("A")
+Gui, 1:Submit, NoHide
+Gui, About:New, , % L(lAboutTitle, lAppName, lAppVersion)
+Gui, About:+Owner1
+str32or64 := A_PtrSize  * 8
+Gui, About:Font, s12 w700, Verdana
+Gui, About:Add, Link, y10 vlblAboutText1, % L(lAboutText1, lAppName, lAppVersion, str32or64)
+Gui, About:Font, s8 w400, Verdana
+Gui, About:Add, Link, , % L(lAboutText2)
+Gui, About:Add, Link, , % L(lAboutText3)
+Gui, About:Font, s10 w400, Verdana
+Gui, About:Add, Link, , % L(lAboutText4)
+Gui, About:Font, s8 w400, Verdana
+Gui, About:Add, Button, x115 y+20 gButtonDonate, %lDonateButton%
+Gui, About:Add, Button, x150 y+20 gAboutGuiClose vbtnAboutClose, %lAboutClose%
+GuiControl, Focus, btnAboutClose
+Gui, About:Show, AutoSize Center
+Gui, 1:+Disabled
+
+return
+;-----------------------------------------------------------
+
+
+;------------------------------------------------------------
+AboutGuiClose:
+AboutGuiEscape:
+;------------------------------------------------------------
+
+Gui, 1:-Disabled
+Gui, About:Destroy
+Gui, 1:Default ; REMEMBER!
+
+WinActivate, ahk_id %intGui1WinID%
+
+return
+;------------------------------------------------------------
+
+
 
 ;============================================================
 ; TOOLS
@@ -1721,9 +1799,9 @@ PageOfTrack(intThisTrack)
 
 
 ; ------------------------------------------------
-ButtonCheck4Update: ; ### NEED TEST
+ButtonCheck4Update:
 ; ------------------------------------------------
-blnButtonCheck4Update := True ; ???
+blnButtonCheck4Update := True
 Gosub, Check4Update
 
 return
@@ -1731,14 +1809,23 @@ return
 
 
 ; ------------------------------------------------
-Check4Update: ; ### NEED TEST
+Check4Update:
 ; ------------------------------------------------
 Gui, +OwnDialogs 
 IniRead, strLatestSkipped, %strIniFile%, global, strLatestSkipped, 0.0
-strLatestVersion := Url2Var("https://raw.github.com/JnLlnd/CSVBuddy/master/latest-version.txt") ; ###
+strLatestVersion := Url2Var("https://raw.github.com/JnLlnd/MyTunesCovers/master/latest-version.txt")
 
 if RegExMatch(strCurrentVersion, "(alpha|beta)")
-	or (FirstVsSecondIs(strLatestSkipped, strLatestVersion) >= 0 and (!blnButtonCheck4Update)) ; ### blnButtonCheck4Update ???
+{
+	if (blnButtonCheck4Update)
+	{
+		Oops(lUpdateBeta)
+		Run, %lUpdateURL%
+	}
+	return
+}
+
+if (FirstVsSecondIs(strLatestSkipped, strLatestVersion) >= 0 and (!blnButtonCheck4Update))
 	return
 
 if FirstVsSecondIs(strLatestVersion, lAppVersion) = 1
@@ -1748,7 +1835,7 @@ if FirstVsSecondIs(strLatestVersion, lAppVersion) = 1
 
 	MsgBox, 3, % l(lUpdateTitle, lAppName), % l(lUpdatePrompt, lAppName, lAppVersion, strLatestVersion), 30
 	IfMsgBox, Yes
-		Run, http://code.jeanlalonde.ca/csvbuddy/
+		Run, %lUpdateURL%
 	IfMsgBox, No
 		IniWrite, %strLatestVersion%, %strIniFile%, global, strLatestSkipped
 	IfMsgBox, Cancel ; Remind me
@@ -1760,7 +1847,7 @@ else if (blnButtonCheck4Update)
 {
 	MsgBox, 4, % l(lUpdateTitle, lAppName), % l(lUpdateYouHaveLatest, lAppVersion, lAppName)
 	IfMsgBox, Yes
-		Run, http://code.jeanlalonde.ca/csvbuddy/ ; ###
+		Run, %lUpdateURL%
 }
 
 return
@@ -1790,7 +1877,7 @@ FirstVsSecondIs(strFirstVersion, strSecondVersion)
 
 
 ; ------------------------------------------------
-ChangeButtonNames4Update: ; ### TEST
+ChangeButtonNames4Update:
 ; ------------------------------------------------
 IfWinNotExist, % l(lUpdateTitle, lAppName)
     return  ; Keep waiting.
