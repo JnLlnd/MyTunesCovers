@@ -112,8 +112,9 @@ strCurrentVersion := "0.6" ; always "." between sub-versions, eg "0.1.2"
 ; lib\Cover.ahk is also calling lib\iTunes.ahk
 ; Also using Gdip.ahk (v1.45, modified 5/1/2013) in \AutoHotkey\Lib default lib folder
 
-if YesNoCancel(false, L(lAlphaTestingTitle, lAppName), L(lAlphaTestingPrompt, lAppName), lAlphaTestingButton1) <> "Yes"
-	ExitApp
+if (A_IsCompiled)
+	if YesNoCancel(false, L(lAlphaTestingTitle, lAppName), L(lAlphaTestingPrompt, lAppName), lAlphaTestingButton1) <> "Yes"
+		ExitApp
 
 ; Keep gosubs in this order
 Gosub, Init
@@ -1812,7 +1813,7 @@ return
 Check4Update:
 ; ------------------------------------------------
 Gui, +OwnDialogs 
-IniRead, strLatestSkipped, %strIniFile%, global, strLatestSkipped, 0.0
+IniRead, strLatestSkipped, %strIniFile%, Global, LatestVersionSkipped, 0.0
 strLatestVersion := Url2Var("https://raw.github.com/JnLlnd/MyTunesCovers/master/latest-version.txt")
 
 if RegExMatch(strCurrentVersion, "(alpha|beta)")
@@ -1828,16 +1829,16 @@ if RegExMatch(strCurrentVersion, "(alpha|beta)")
 if (FirstVsSecondIs(strLatestSkipped, strLatestVersion) >= 0 and (!blnButtonCheck4Update))
 	return
 
-if FirstVsSecondIs(strLatestVersion, lAppVersion) = 1
+if FirstVsSecondIs(strLatestVersion, strCurrentVersion) = 1
 {
 	Gui, 1:+OwnDialogs
 	SetTimer, ChangeButtonNames4Update, 50
 
-	MsgBox, 3, % l(lUpdateTitle, lAppName), % l(lUpdatePrompt, lAppName, lAppVersion, strLatestVersion), 30
+	MsgBox, 3, % l(lUpdateTitle, lAppName), % l(lUpdatePrompt, lAppName, strCurrentVersion, strLatestVersion), 30
 	IfMsgBox, Yes
 		Run, %lUpdateURL%
 	IfMsgBox, No
-		IniWrite, %strLatestVersion%, %strIniFile%, global, strLatestSkipped
+		IniWrite, %strLatestVersion%, %strIniFile%, Global, LatestVersionSkipped
 	IfMsgBox, Cancel ; Remind me
 		IniWrite, 0.0, %strIniFile%, Global, LatestVersionSkipped
 	IfMsgBox, TIMEOUT ; Remind me
@@ -1876,7 +1877,7 @@ FirstVsSecondIs(strFirstVersion, strSecondVersion)
 ;------------------------------------------------------------
 
 
-; ------------------------------------------------
+;------------------------------------------------
 ChangeButtonNames4Update:
 ; ------------------------------------------------
 IfWinNotExist, % l(lUpdateTitle, lAppName)
