@@ -23,6 +23,8 @@ iTunes_InitCoversSource()
 {
 	objITunesunesApp := ComObjCreate("iTunes.Application")
 	; Creates a COM object for the iTunes application (iTunes will be launched if not running)
+	if !(objITunesunesApp.Sources.Count)
+		return -1
 	objITunesLibrary := objITunesunesApp.Sources.Item(1)
 	; iTunes library (named "LIBRARY" in English, "BIBLIOTHÈQUE" in French) - source #1 is the main library
 	objITunesPlaylists := objITunesLibrary.Playlists

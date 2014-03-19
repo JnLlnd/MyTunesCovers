@@ -6,10 +6,10 @@
 
 	BUGS
 	- none (known)
-	- check progress bar values, sometime inacurate?
 	
 	TODO
 	- encode indexes
+	- implement MP3 source type
 
 	2014-03-14 v0.6 ALPHA
 	* moved source selection to options dialog box
@@ -24,6 +24,11 @@
 	* prepare 3 skins for initial shipping
 	* add custom button names to YesNoCancel function
 	* replace select button by deselect when a button is selected
+	* add help and about dialog boxes, texts to be written
+	* check4update ready
+	* add ListsWithNoCover and OnlyNoCover options to ini file
+	* adapt font size of cover link according to cover size, font sizxe in ini skin file will override these calculated values
+	* more appropriate message when playlist has no track, do not save index when no track
 
 	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
@@ -204,6 +209,8 @@ strAlbumArtistDelimiter := chr(182)
 strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
 strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=~artist~ ""~album~"""
 strSearchLink2 := "http://www.covermytunes.com/search.php?search_query=~artist~ ~album~"
+blnOnlyNoCover := false
+blnListsWithNoCover := false
 strSkin := "Night by Not an artist"
 
 IfNotExist, %strIniFile%
@@ -235,6 +242,8 @@ IniRead, intPictureSize, %strIniFile%, Global, PictureSize, %intPictureSize%
 IniRead, strSearchLink1, %strIniFile%, Global, SearchLink1, %strSearchLink1%
 IniRead, strSearchLink2, %strIniFile%, Global, SearchLink2, %strSearchLink2%
 IniRead, strLatestSkipped, %strIniFile%, Global, LatestVersionSkipped, 0.0
+IniRead, blnOnlyNoCover, %strIniFile%, Global, OnlyNoCover, %blnOnlyNoCover%
+IniRead, blnListsWithNoCover, %strIniFile%, Global, ListsWithNoCover, %blnListsWithNoCover%
 IniRead, strSkin, %strIniFile%, Global, Skin, %strSkin%
 
 Loop
@@ -444,6 +453,7 @@ loop, %intMaxNbRow%
 	if (intNbBoardCreated < A_Index)
 	{
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% 0xE vpicBoard%A_Index% gPicBoardClicked
+		Gui, Font, % (intPictureSize <= 120 ? "s6" : (intPictureSize > 200 ? "s10" : "s8")) . " w500"
 		Gui, Font, %strFontOptionsBoardInside%, %strFontNameBoardInside%
 		Gui, Add, Link, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% vlnkBoardLink%A_Index% gBoardLinkClicked border hidden
 		intIndex := A_Index
@@ -508,6 +518,7 @@ loop, %intCoversPerPage%
 		Gui, Add, Picture, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% 0xE vpicCover%A_Index% gPicCoverClicked
 		GuiControlGet, posCover%A_Index%, Pos, picCover%A_Index%
 		; Gui, Font, s8 w500, Arial
+		Gui, Font, % (intPictureSize <= 120 ? "s6" : (intPictureSize > 200 ? "s10" : "s8")) . " w500"
 		Gui, Font, %strFontOptionsCoverInside%, %strFontNameCoverInside%
 		Gui, Add, Link, x%intXPic% y%intYPic% w%intPictureSize% h%intPictureSize% vlnkCoverLink%A_Index% gCoverLinkClicked border hidden
 		intIndex := A_Index
@@ -709,12 +720,11 @@ ButtonSettingsSave:
 ;------------------------------------------------------------
 Gui, 2:Submit, NoHide
 
+strSourceSelection := drpITunesPlaylist
 blnOnlyNoCover := chkOnlyNoCover
 blnListsWithNoCover := chkListsWithNoCover
-strSourceSelection := drpITunesPlaylist
-strSkin := drpSkin
-
 intPictureSize := (radPictureSize = 1 ? 60 : (radPictureSize = 2 ? 200 : (radPictureSize = 3 ? 80 : (radPictureSize = 4 ? 260 : (radPictureSize = 5 ? 120 : (radPictureSize = 6 ? 320 : 160))))))
+strSkin := drpSkin
 
 Gosub, 2GuiClose
 
@@ -741,6 +751,11 @@ Gui, 2:Destroy
 Gui, 1:Default ; REMEMBER!
 
 WinActivate, ahk_id %intGui1WinID%
+
+if (blnPreviousOnlyNoCover <> blnOnlyNoCover)
+	IniWrite, %blnOnlyNoCover%, %strIniFile%, Global, OnlyNoCover
+if (blnPreviousListsWithNoCover <> blnListsWithNoCover)
+	IniWrite, %blnListsWithNoCover%, %strIniFile%, Global, ListsWithNoCover
 
 if (strPreviousSourceType <> strSourceType or strPreviousSourceTypeSelection <> strSourceSelection)
 {
@@ -795,7 +810,10 @@ if !FileExist(strCoversCacheFolder)
 	}
 }
 
-if (Cover_InitCoversSource(strSourceType))
+intInitResult := Cover_InitCoversSource(strSourceType)
+if !(intInitResult)
+	Oops(lInitSourceZeroTrack)
+else if (intInitResult > 0)
 {
 	if FileExist(A_ScriptDir . strIndexFolder . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension)
 	{
@@ -815,8 +833,11 @@ if (Cover_InitCoversSource(strSourceType))
 	
 	Gosub, PopulateDropdownLists
 }
-else
-	Oops(lInitSourceError)
+else ; if -1 = error
+{
+	Oops(lInitSourceError%strSourceType%)
+	ExitApp
+}
 
 GuiControl, Enable, btnSettings
 
@@ -1565,7 +1586,7 @@ if (intCommand = 1)
 					blnExistingArtwork := true
 			}
 
-		if !(blnSelectedExist[1])
+		if !(blnSelectedExist)
 		{
 			Oops(lBoardFirstSelectCovers)
 			return
@@ -1980,7 +2001,7 @@ L(strMessage, objVariables*)
 
 
 ; ------------------------------------------------
-ProgressStart(intType, strText, intMax := "")
+ProgressStart(intType, strText, intMax)
 ; ------------------------------------------------
 {
 	StringReplace, strText, strText, ##, 0
