@@ -30,6 +30,7 @@ By JnLlnd on [AHKScript forum](http://ahkscript.org/boards/memberlist.php?mode=v
 * add ListsWithNoCover and OnlyNoCover options to ini file
 * adapt font size of cover link according to cover size, font sizxe in ini skin file will override these calculated values
 * more appropriate message when playlist has no track, do not save index when no track
+* fix a bug with default skin in the ini file
 
 ### 2014-03-07 v0.5 ALPHA
 * prompt before saving source

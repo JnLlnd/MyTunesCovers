@@ -29,6 +29,7 @@
 	* add ListsWithNoCover and OnlyNoCover options to ini file
 	* adapt font size of cover link according to cover size, font sizxe in ini skin file will override these calculated values
 	* more appropriate message when playlist has no track, do not save index when no track
+	* fix a bug with default skin in the ini file
 
 	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
@@ -211,7 +212,7 @@ strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=~artist~ ""~album~"""
 strSearchLink2 := "http://www.covermytunes.com/search.php?search_query=~artist~ ~album~"
 blnOnlyNoCover := false
 blnListsWithNoCover := false
-strSkin := "Night by Not an artist"
+strSkin := "Night - by Not an artist"
 
 IfNotExist, %strIniFile%
 	FileAppend,
@@ -224,7 +225,7 @@ IfNotExist, %strIniFile%
 			PictureSize=%intPictureSize%
 			SearchLink1=%strSearchLink1%
 			SearchLink2=%strSearchLink2%
-			Skin=Default
+			Skin=%strSkin%
 )
 		, %strIniFile%
 Loop
