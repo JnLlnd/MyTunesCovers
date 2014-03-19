@@ -24,6 +24,12 @@ By JnLlnd on [AHKScript forum](http://ahkscript.org/boards/memberlist.php?mode=v
 * add skin selection in settings
 * prepare 3 skins for initial shipping
 * add custom button names to YesNoCancel function
+* replace select button by deselect when a button is selected
+* add help and about dialog boxes, texts to be written
+* check4update ready
+* add ListsWithNoCover and OnlyNoCover options to ini file
+* adapt font size of cover link according to cover size, font sizxe in ini skin file will override these calculated values
+* more appropriate message when playlist has no track, do not save index when no track
 
 ### 2014-03-07 v0.5 ALPHA
 * prompt before saving source

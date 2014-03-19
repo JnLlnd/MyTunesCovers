@@ -11,7 +11,7 @@
 	- encode indexes
 	- implement MP3 source type
 
-	2014-03-14 v0.6 ALPHA
+	2014-03-18 v0.6 ALPHA
 	* moved source selection to options dialog box
 	* added iTunes Playlist selection and saving index file according to current playlist selection
 	* moved display only no cover and list only ablum with no cover checkboxes to option dialog box
