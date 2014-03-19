@@ -11,7 +11,7 @@
 	- encode indexes
 	- implement MP3 source type
 
-	2014-03-18 v0.6 ALPHA
+	2014-03-19 v0.6 ALPHA
 	* moved source selection to options dialog box
 	* added iTunes Playlist selection and saving index file according to current playlist selection
 	* moved display only no cover and list only ablum with no cover checkboxes to option dialog box
@@ -30,6 +30,8 @@
 	* adapt font size of cover link according to cover size, font sizxe in ini skin file will override these calculated values
 	* more appropriate message when playlist has no track, do not save index when no track
 	* fix a bug with default skin in the ini file
+	* tooltip while launching iTunes
+	* better error handling if iTunes quits while MTC is running
 
 	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
