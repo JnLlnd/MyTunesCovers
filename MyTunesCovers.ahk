@@ -1088,13 +1088,10 @@ loop, %intNbTracks%
 	{
 		if !(blnResizeInProgress)
 			Gosub, EnableGui
-		if YesNoCancel(False, L(lITunesNeedReindexTitle, lAppName), lITunesNeedReindexPrompt, lITunesNeedReindexButton1, lITunesNeedReindexButton2) = "Yes"
-		{
-			FileDelete, %A_ScriptDir%%strIndexFolder%%strSourceType%_%strSourceSelection%_%strIndexFilenameExtension%
-			Cover_BuildArtistsAlbumsIndex()
-			Gosub, PopulateDropdownLists
-		}
-		return
+		if YesNoCancel(False, L(lNoCoverErrorTitle%strSourceType%, lAppName), L(lNoCoverErrorPrompt%strSourceType%, lAppName), lNoCoverErrorButton1%strSourceType%, lNoCoverErrorButton2%strSourceType%) = "Yes"
+			Reload
+		else
+			return
 	}
 
 	objCovers.Insert(A_Index, objNewCover)

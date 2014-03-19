@@ -21,6 +21,7 @@ global strITunesIndexFilename
 ;-----------------------------------------------------------
 iTunes_InitCoversSource()
 {
+	ToolTip, % L(lAppLaunchingiTunes, lAppname)
 	objITunesunesApp := ComObjCreate("iTunes.Application")
 	; Creates a COM object for the iTunes application (iTunes will be launched if not running)
 	if !(objITunesunesApp.Sources.Count)
@@ -35,6 +36,7 @@ iTunes_InitCoversSource()
 	objITunesTracks := objITunesPlaylist.Tracks
 
 	strITunesIndexFilename := A_ScriptDir . strIndexFolder . strSourceType . "_" . strSourceSelection . "_" . strIndexFilenameExtension
+	ToolTip
 
 	return objITunesTracks.Count
 }
