@@ -32,6 +32,7 @@
 	* fix a bug with default skin in the ini file
 	* tooltip while launching iTunes
 	* better error handling if iTunes quits while MTC is running
+	* v0.6.1 (2014-03-21): Enable check for update for alpha and beta release
 
 	2014-03-07 v0.5 ALPHA
 	* prompt before saving source
@@ -1837,6 +1838,7 @@ Gui, +OwnDialogs
 IniRead, strLatestSkipped, %strIniFile%, Global, LatestVersionSkipped, 0.0
 strLatestVersion := Url2Var("https://raw.github.com/JnLlnd/MyTunesCovers/master/latest-version.txt")
 
+/*
 if RegExMatch(strCurrentVersion, "(alpha|beta)")
 {
 	if (blnButtonCheck4Update)
@@ -1846,16 +1848,22 @@ if RegExMatch(strCurrentVersion, "(alpha|beta)")
 	}
 	return
 }
+*/
+
+if InStr(strCurrentVersion, " ")
+	strCurrentVersionTrim := SubStr(strCurrentVersion, 1, InStr(strCurrentVersion, " ") - 1) 
+else
+	strCurrentVersionTrim := strCurrentVersion
 
 if (FirstVsSecondIs(strLatestSkipped, strLatestVersion) >= 0 and (!blnButtonCheck4Update))
 	return
 
-if FirstVsSecondIs(strLatestVersion, strCurrentVersion) = 1
+if FirstVsSecondIs(strLatestVersion, strCurrentVersionTrim) = 1
 {
 	Gui, 1:+OwnDialogs
 	SetTimer, ChangeButtonNames4Update, 50
 
-	MsgBox, 3, % l(lUpdateTitle, lAppName), % l(lUpdatePrompt, lAppName, strCurrentVersion, strLatestVersion), 30
+	MsgBox, 3, % l(lUpdateTitle, lAppName), % l(lUpdatePrompt, lAppName, strCurrentVersionTrim, strLatestVersion), 30
 	IfMsgBox, Yes
 		Run, %lUpdateURL%
 	IfMsgBox, No
