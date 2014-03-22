@@ -95,7 +95,7 @@
 
 ;@Ahk2Exe-SetName MyTunesCovers
 ;@Ahk2Exe-SetDescription iTunes Cover Manager. Freeware.
-;@Ahk2Exe-SetVersion 0.6
+;@Ahk2Exe-SetVersion 0.6.1
 ;@Ahk2Exe-SetOrigFilename MyTunesCovers.exe
 
 ;@Ahk2Exe-IgnoreBegin
@@ -114,7 +114,7 @@ Menu, Tray, Icon, %A_ScriptDir%\small_icons-256-RED.ico, 1
 #NoTrayIcon 
 ListLines, Off
 
-strCurrentVersion := "0.6 ALPHA" ; always "." between sub-versions, eg "0.1.2"
+strCurrentVersion := "0.6.1 ALPHA" ; always "." between sub-versions, eg "0.1.2"
 
 #Include %A_ScriptDir%\MyTunesCovers_LANG.ahk
 #Include %A_ScriptDir%\lib\Cover.ahk
