@@ -298,7 +298,7 @@ if !FileExist(A_ScriptDir . "\skins\")
 ptrBitmapNoCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\no_cover-200x200.png")
 ptrBitmapFillCover := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\fill_cover-200x200.png")
 ptrBitmapEmptyBoard := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\empty-200x200.png")
-ptrBitmapCopyHere := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\selected-200x200.png")
+ptrBitmapSelected := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\selected-200x200.png")
 ptrBitmapError := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\error-200x200.png")
 ptrBitmapCoverButton1 := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\clip-200x200.png")
 ptrBitmapCoverButton2a := Gdip_CreateBitmapFromFile(A_ScriptDir . "\skins\" . strSkin . "\select-200x200.png")
@@ -1181,7 +1181,7 @@ if !StrLen(objCovers[intTrack].CoverTempFilePathName) or !FileExist(objCovers[in
 
 blnNoCover := false
 if (arrTrackSelected[intTrack])
-	LoadPicControl(picCover%intPosition%, 5) ; Copy here
+	LoadPicControl(picCover%intPosition%, 5) ; Selected
 else if StrLen(objCovers[intTrack].CoverTempFilePathName)
 	if FileExist(objCovers[intTrack].CoverTempFilePathName)
 		LoadPicControl(picCover%intPosition%, 1, objCovers[intTrack].CoverTempFilePathName)
@@ -1275,11 +1275,11 @@ return
 ;-----------------------------------------------------------
 LoadPicControl(ByRef picControl, intPicType, strFile := "")
 ; intPicType =
-; 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 copy here / 6 error
+; 1 regular cover / 2 no cover / 3 fill cover / 4 empty board / 5 selected / 6 error
 ; 10 make master board button / 11 load clipboard board button / 12 load file board button / 13 remove board button / 14 paste to selected board button 1
 ; 20 clip cover button / 21 select cover button / 22 paste cover button / 23 delete cover button / 24 deselect cover button
 {
-	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapCopyHere, ptrBitmapError
+	global ptrBitmapNoCover, ptrBitmapFillCover, ptrBitmapEmptyBoard, ptrBitmapSelected, ptrBitmapError
 		, ptrBitmapCoverButton1, ptrBitmapCoverButton2a, ptrBitmapCoverButton3, ptrBitmapCoverButton4
 		, ptrBitmapBoardButton1, ptrBitmapBoardButton2, ptrBitmapBoardButton3, ptrBitmapBoardButton4
 		, ptrBitmapBoardButton0, ptrBitmapCoverButton2b
@@ -1297,7 +1297,7 @@ LoadPicControl(ByRef picControl, intPicType, strFile := "")
 	if (intPicType = 4)
 		ptrBitmap := ptrBitmapEmptyBoard
 	if (intPicType = 5)
-		ptrBitmap := ptrBitmapCopyHere
+		ptrBitmap := ptrBitmapSelected
 	if (intPicType = 6)
 		ptrBitmap := ptrBitmapError
 	if (intPicType = 10)
