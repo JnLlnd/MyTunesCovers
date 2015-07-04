@@ -33,7 +33,8 @@ By JnLlnd on [AHKScript forum](http://ahkscript.org/boards/memberlist.php?mode=v
 * fix a bug with default skin in the ini file
 * tooltip while launching iTunes
 * better error handling if iTunes quits while MTC is running
-* v0.6.1 (2014-03-21): Enable check for update for alpha and beta release
+* v0.6.1 (2014-03-21): enable check for update for alpha and beta release
+* v0.6.2 (2015-07-04): add support for playlist folders in playlist selection dropdown in Settings
 
 ### 2014-03-07 v0.5 ALPHA
 * prompt before saving source

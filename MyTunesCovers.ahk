@@ -11,9 +11,13 @@
 	- encode indexes
 	- implement MP3 source type
 
-	2015-07-04 v0.6.1 ALPHA
+	2015-07-04 v0.6.2 ALPHA
 	* add support for playlist folders in playlist selection dropdown in Settings
-	
+
+	2015-03-21 v0.6.1 ALPHA
+	* enable check for update for alpha and beta release
+	* rename variable from ptrBitmapCopyHere to ptrBitmapSelected to be consistent with image files naming
+
 	2014-03-19 v0.6 ALPHA
 	* moved source selection to options dialog box
 	* added iTunes Playlist selection and saving index file according to current playlist selection
