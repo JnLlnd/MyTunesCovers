@@ -11,6 +11,9 @@
 	- encode indexes
 	- implement MP3 source type
 
+	2015-07-04 v0.6.1 ALPHA
+	* add support for playlist folders in playlist selection dropdown in Settings
+	
 	2014-03-19 v0.6 ALPHA
 	* moved source selection to options dialog box
 	* added iTunes Playlist selection and saving index file according to current playlist selection
@@ -210,6 +213,7 @@ LoadIniFile:
 strSourceType := "iTunes"
 strSourceSelection := ""
 strAlbumArtistDelimiter := chr(182)
+strPlaylistFolderPrefix := ">>>"
 strCoversCacheFolder := A_ScriptDir . "\covers_cache\"
 strSearchLink1 := "http://www.google.ca/search?tbm=isch&q=~artist~ ""~album~"""
 strSearchLink2 := "http://www.covermytunes.com/search.php?search_query=~artist~ ~album~"
@@ -224,6 +228,7 @@ IfNotExist, %strIniFile%
 			Source=%strSourceType%
 			SourceSelection=%strSourceSelection%
 			AlbumArtistDelimiter=%strAlbumArtistDelimiter%
+			PlaylistFolderPrefix=%strPlaylistFolderPrefix%
 			CoversCacheFolder=%strCoversCacheFolder%
 			PictureSize=%intPictureSize%
 			SearchLink1=%strSearchLink1%
@@ -239,6 +244,7 @@ Loop
 	else
 		break
 }
+IniRead, strPlaylistFolderPrefix, %strIniFile%, Global, PlaylistFolderPrefix, %strPlaylistFolderPrefix%
 IniRead, strSourceType, %strIniFile%, Global, Source, %strSourceType%
 IniRead, strSourceSelection, %strIniFile%, Global, SourceSelection, %strSourceSelection%
 IniRead, strCoversCacheFolder, %strIniFile%, Global, CoversCacheFolder, %strCoversCacheFolder%
@@ -724,7 +730,7 @@ ButtonSettingsSave:
 ;------------------------------------------------------------
 Gui, 2:Submit, NoHide
 
-strSourceSelection := drpITunesPlaylist
+strSourceSelection := (SubStr(drpITunesPlaylist, 1, StrLen(strPlaylistFolderPrefix)) = strPlaylistFolderPrefix ? SubStr(drpITunesPlaylist, StrLen(strPlaylistFolderPrefix) + 2, 9999) : drpITunesPlaylist)
 blnOnlyNoCover := chkOnlyNoCover
 blnListsWithNoCover := chkListsWithNoCover
 intPictureSize := (radPictureSize = 1 ? 60 : (radPictureSize = 2 ? 200 : (radPictureSize = 3 ? 80 : (radPictureSize = 4 ? 260 : (radPictureSize = 5 ? 120 : (radPictureSize = 6 ? 320 : 160))))))

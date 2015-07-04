@@ -515,10 +515,12 @@ iTunes_GetITunesPlaylist()
 {
 	global strAlbumArtistDelimiter
 	global strSourceSelection
+	global strPlaylistFolderPrefix
 	
 	strPlaylists := ""
 	loop, % objITunesPlaylists.Count
-		strPlaylists := strPlaylists . strAlbumArtistDelimiter . objITunesPlaylists.Item(A_Index).Name
+		; ITUserPlaylistSpecialKindFolder (4) Folder playlist.
+		strPlaylists .= strAlbumArtistDelimiter . (objITunesPlaylists.Item(A_Index).SpecialKind = 4 ? strPlaylistFolderPrefix . " " : "") . objITunesPlaylists.Item(A_Index).Name
 
 	return strPlaylists
 }
